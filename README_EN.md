@@ -1,14 +1,59 @@
-# AI Short Drama Director
+# AI Short Drama From Zero
 
 [简体中文](README.md) | **English**
 
-> A production-oriented Skill for AI short dramas, animated stories, and cinematic shorts—from an idea or novel to screenplay, shots, reusable assets, Seedance 2.0 prompts, generation repair, editing, and final quality control.
+> You do not need to learn screenwriting, shot planning, camera language, or prompt syntax before you begin. This Skill finds your real starting point and guides one production step at a time—from an idea, novel, or half-finished project to screenplay, shots, assets, images, Seedance 2.0 video, audio, editing, and a finished film.
 
-![Version](https://img.shields.io/badge/version-2.0.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.1.0-2563eb)
+![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-Chinese%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
 
 ![Workflow demo](docs/media/workflow-demo.gif)
+
+## Start at any point
+
+| What you have | What the Skill does first | Your first deliverable |
+|---|---|---|
+| **A. Only an idea** | Turns a vague thought into a protagonist, goal, conflict, hook, and ending direction | Logline and a usable story skeleton |
+| **B. A novel, story, outline, or script** | Separates usable material from narration that must become visible action or dialogue | Adaptation plan and episode structure or shootable screenplay |
+| **C. A half-finished project that is stuck** | Audits what is actually complete, incomplete, and due for rework, then traces the real cause | A repaired shot script, asset package, prompt, or checked document |
+
+Reply with `A`, `B`, or `C`, or upload the text, images, prompts, error screenshots, or clips you already have. When there is enough evidence, the Skill selects the entry point automatically instead of making you complete a long questionnaire.
+
+## Beginner mode: make while learning
+
+Each turn advances one production gate:
+
+1. explain the single task in plain language and the failure it prevents;
+2. inherit facts already confirmed instead of asking again;
+3. translate professional decisions into no more than three clear choices and recommend one;
+4. create the actual production deliverable;
+5. check it and report what is complete, incomplete, blocked, or due for rework;
+6. offer at least three concrete next steps that can be selected with a letter.
+
+The professional acceptance bar stays the same. Timing, atomic actions, identity, props, screen direction, first/last states, reference roles, audio, and edit continuity are still checked—the rules are simply revealed only when they are useful.
+
+```text
+Use $ai-short-drama-director in beginner mode.
+I only have an idea / I have a novel / I am halfway through and stuck.
+Find my starting point, guide one step at a time,
+and tell me what is complete and what is still missing.
+```
+
+> The repository is named `ai-short-drama-from-zero`. The invocation name remains `$ai-short-drama-director` so existing users and projects do not break.
+
+## Tutorial snapshots
+
+| Map the workflow | Lock character assets | Lock scene space |
+|---|---|---|
+| ![Full production workflow](docs/tutorial/01-workflow-map.jpg) | ![Character turnaround and detail asset](docs/tutorial/02-character-assets.jpg) | ![Six-panel scene concept board](docs/tutorial/03-scene-board.jpg) |
+| **Turn the pipeline into executable steps** | **Reduce face and wardrobe drift** | **Fix space before blocking and shots** |
+| Assemble the video input | Review the generated result | Repair dialogue and audio |
+| ![Prompt and character references](docs/tutorial/04-video-prompt-package.jpg) | ![Generated short-drama frame](docs/tutorial/05-generated-result.jpg) | ![Dialogue and audio editing timeline](docs/tutorial/06-audio-editing.jpg) |
+| **Send only what the current clip needs** | **Check story and asset fidelity** | **Repair missing words, voice drift, and joins** |
+
+The frames are excerpts from tutorial videos made available for download by their creator. Original watermarks and creator identifiers are preserved. See the [media note and frame index](docs/tutorial/README.md); the repository does not redistribute the full videos.
 
 ## Why this project exists
 
@@ -23,11 +68,11 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 - a local prop fix is never propagated to later shots and prompt packages;
 - clips look good independently but fail when edited together.
 
-`ai-short-drama-director` first diagnoses the project state and the real blocker. It then creates or repairs the production-ready deliverable, checks downstream impact, and reports exactly what is complete, incomplete, blocked, or due for rework.
+`ai-short-drama-director` first diagnoses the project state and the real blocker. It then creates or repairs the production-ready deliverable, checks downstream impact, and reports exactly what is complete, incomplete, blocked, or due for rework. For first-time creators, the same professional workflow becomes a one-gate-at-a-time guided mode.
 
 ## What makes it different
 
-| Typical prompt assistant | AI Short Drama Director |
+| Typical prompt assistant | AI Short Drama From Zero |
 |---|---|
 | Responds only to the latest request | Reconstructs the verified production stage and blocker |
 | Gives suggestions | Repairs the screenplay, shot plan, asset, prompt, or full document |
@@ -39,6 +84,14 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 ![Before and after comparison](docs/media/before-after.svg)
 
 ## Core capabilities
+
+### 0. Step-by-step beginner mode
+
+- Detects three entry points: only an idea, existing writing, or a half-finished project.
+- Explains a technical term in plain language only when it becomes useful.
+- Activates one production gate at a time and produces the real deliverable for that gate.
+- Updates a beginner progress card with completed, locked, incomplete, and rework items.
+- Recommends a path when the user is unsure and accepts “continue with the recommendation.”
 
 ### 1. Project-state diagnosis
 
@@ -147,11 +200,11 @@ A stage is complete only when the deliverable is usable downstream, consistent w
 
 ### Download
 
-- [Download the main branch as ZIP](https://github.com/sanxsnr/ai-short-drama-director/archive/refs/heads/main.zip)
+- [Download the main branch as ZIP](https://github.com/sanxsnr/ai-short-drama-from-zero/archive/refs/heads/main.zip)
 - Or clone:
 
 ```bash
-git clone https://github.com/sanxsnr/ai-short-drama-director.git
+git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 ```
 
 Import the repository root using the custom Skill workflow supported by your ChatGPT or Codex client. Keep `SKILL.md`, `references/`, `scripts/`, `assets/`, and `agents/` in their original relative locations.
@@ -207,7 +260,7 @@ They validate timing and dialogue capacity, evidence for project-stage claims, p
 ## Repository structure
 
 ```text
-ai-short-drama-director/
+ai-short-drama-from-zero/
 ├── SKILL.md
 ├── README.md
 ├── README_EN.md
@@ -218,7 +271,8 @@ ai-short-drama-director/
 ├── scripts/
 ├── docs/
 │   ├── demo/
-│   └── media/
+│   ├── media/
+│   └── tutorial/
 └── .github/
     └── ISSUE_TEMPLATE/
 ```
@@ -238,7 +292,7 @@ ai-short-drama-director/
 - [General original workflow demo](docs/demo/README.md)
 - [Project roadmap](ROADMAP.md)
 - [Contribution guide](CONTRIBUTING.md)
-- [Report a production or prompt failure](https://github.com/sanxsnr/ai-short-drama-director/issues/new/choose)
+- [Report a production or prompt failure](https://github.com/sanxsnr/ai-short-drama-from-zero/issues/new/choose)
 
 Reproducible examples are especially useful: include the production stage, sanitized input, expected result, actual result, reference responsibilities, and the smallest prompt that still reproduces the problem.
 

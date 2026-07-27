@@ -1,14 +1,60 @@
-# AI Short Drama Director｜AI短剧项目总监
+# AI短剧从0到1｜零基础完成你的第一部剧
 
 [**简体中文**](README.md) | [English](README_EN.md)
 
-> 一个面向 AI 短剧、漫剧和动态故事创作者的生产型 Skill：从灵感、小说改编、剧本和分镜，到人物场景资产、故事板、Seedance 2.0 提示词、生成返修、声音剪辑和成片检查。
+> 你不需要先学会编剧、分镜、运镜或提示词。这个 Skill 会先判断你已经做到哪里，再一次只带你完成一步：从一句灵感、小说或半成品开始，逐步做到剧本、分镜、资产、图片、Seedance 2.0 视频、声音剪辑和最终成片。
 
-![Version](https://img.shields.io/badge/version-2.0.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.1.0-2563eb)
+![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-中文%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
 
 ![AI短剧项目总监工作流演示](docs/media/workflow-demo.gif)
+
+## 你可以从任何进度开始
+
+| 你的现状 | Skill先替你做什么 | 你会立刻得到 |
+|---|---|---|
+| **A. 只有一个灵感** | 把模糊想法收束成主角、目标、冲突、钩子和结尾方向 | 一句话故事＋可执行的第一版故事骨架 |
+| **B. 有小说、故事或剧本** | 判断哪些能直接使用、哪些需要改成可见动作和对白 | 改编方案＋分集结构／可拍摄剧本 |
+| **C. 已经做到一半但卡住** | 盘点已完成、未完成、需返工，并追溯真正根因 | 修订后的完整分镜、资产、提示词或自检文档 |
+
+直接回复 `A`、`B`、`C`，或上传你现有的文字、图片、提示词、失败截图和视频。信息足够时，Skill 会自动判断起点，不让你重复填写长问卷。
+
+## 新手模式不是“先上课”，而是边做边学
+
+每轮只推进一个关卡：
+
+1. 告诉你现在只做什么，以及它能避免什么失败；
+2. 继承你已经确认的内容，不重复提问；
+3. 把专业问题变成最多三个普通选择，并给出推荐；
+4. 直接替你完成当前阶段的专业产物；
+5. 自检后明确告诉你：已完成、未完成、需返工、是否通过；
+6. 再给至少三个清晰的下一步，你只需回复字母即可继续。
+
+专业验收不会因为用户是新手而降低。Skill 仍会检查读秒、动作完整性、人物和道具一致、空间方向、首尾状态、参考图职责、声音与剪辑，只是不把复杂规则一次性压给用户。
+
+### 一句话启动
+
+```text
+使用 $ai-short-drama-director 开启零基础模式。
+我只有一个灵感／我有一篇小说／我已经做到一半，
+请判断我的起点，一次只带我完成一步，并告诉我已完成和还缺什么。
+```
+
+> 仓库名改为 `ai-short-drama-from-zero`；Skill 的调用名继续保留 `$ai-short-drama-director`，避免已有用户和项目失效。
+
+## 教程案例画面
+
+| 从完整流程开始 | 建立角色资产 | 建立场景空间 |
+|---|---|---|
+| ![从剧本到资产和视频生成的完整流程图](docs/tutorial/01-workflow-map.jpg) | ![角色正面侧面背面与细节资产](docs/tutorial/02-character-assets.jpg) | ![六格场景概念板与正反视角](docs/tutorial/03-scene-board.jpg) |
+| **把全流程拆成可执行步骤** | **防止人物变脸与服装漂移** | **先锁定空间，再制作站位和分镜** |
+| 组装视频提示词与参考资产 | 查看生成结果 | 修复对白并完成声音剪辑 |
+| ![角色参考与视频提示词组合](docs/tutorial/04-video-prompt-package.jpg) | ![根据分镜和资产生成的视频画面](docs/tutorial/05-generated-result.jpg) | ![剪辑时间线中的对白和音频修复](docs/tutorial/06-audio-editing.jpg) |
+| **只发送当前段真正需要的输入** | **生成后按剧情和资产标准质检** | **处理漏字、变声、衔接与节奏** |
+
+这些画面节选自作者开放下载的教学视频，保留原始水印与创作者标识，仅用于说明工作流。详见[素材说明与画面索引](docs/tutorial/README.md)；仓库不重新分发完整教学视频。
 
 ## 项目介绍
 
@@ -24,7 +70,7 @@
 - 成片出现漏台词、变声、重复开头、背景重建和衔接断裂；
 - 明明修改了一个道具，旧错误却仍残留在其他分镜和提示词里。
 
-`ai-short-drama-director` 的目标不是多写一份建议，而是先判断项目进度和真正根因，再直接创建或修好可继续生产的完整交付物，并在交付前完成回归检查。
+`ai-short-drama-director` 的目标不是多写一份建议，而是先判断项目进度和真正根因，再直接创建或修好可继续生产的完整交付物，并在交付前完成回归检查。对于零基础用户，它会把同一套专业流程改造成“当前只做一件事”的逐步带做模式。
 
 ## 30秒看懂它如何工作
 
@@ -43,7 +89,7 @@
 
 ## 它和普通提示词助手有什么不同
 
-| 普通提示词助手 | AI短剧项目总监 |
+| 普通提示词助手 | AI短剧从0到1导演 |
 |---|---|
 | 只处理用户最后一句话 | 先识别项目阶段、已有成果和真正卡点 |
 | 发现问题后给几条建议 | 直接修改剧本、分镜、资产、提示词或完整文档 |
@@ -53,6 +99,14 @@
 | 把所有规则塞进一个长 Prompt | 按当前阶段加载对应模块，控制上下文和参考素材 |
 
 ## 核心功能
+
+### 0. 零基础逐步带做
+
+- 自动识别“只有灵感、已有文字、做到一半”三种起点。
+- 首次出现专业词时用普通语言解释，不要求用户先学术语。
+- 一次只激活一个制作关卡，并交付当前阶段的完整成品。
+- 每轮更新新手进度卡，明确已完成、已锁定、未完成和需返工。
+- 用户不知道怎么选时给出推荐，并支持直接回复“按推荐方案继续”。
 
 ### 1. 项目进度诊断
 
@@ -168,11 +222,11 @@ flowchart TD
 
 ### 下载
 
-- [下载 main 分支 ZIP](https://github.com/sanxsnr/ai-short-drama-director/archive/refs/heads/main.zip)
+- [下载 main 分支 ZIP](https://github.com/sanxsnr/ai-short-drama-from-zero/archive/refs/heads/main.zip)
 - 或克隆仓库：
 
 ```bash
-git clone https://github.com/sanxsnr/ai-short-drama-director.git
+git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 ```
 
 按你使用的 ChatGPT／Codex 客户端所支持的自定义 Skill 导入方式，导入仓库根目录。请保持 `SKILL.md`、`references/`、`scripts/`、`assets/` 和 `agents/` 的相对位置不变。
@@ -218,7 +272,16 @@ git clone https://github.com/sanxsnr/ai-short-drama-director.git
 | 多段成片 | 声线统一、拼接、声音桥、节奏和最终巡检方案 |
 | DOCX／PDF／表格 | 完整修订文件和自检报告 |
 
-## V2.0 新增
+## V2.1 新增
+
+- 零基础逐步带做模式与三种入口。
+- “现在只做一件事”的单关卡教学循环。
+- 普通语言术语翻译与可逆默认决策。
+- 新手项目进度卡和移动端友好交付。
+- 十一个制作关卡的最低通过标准。
+- 卡住、素材不全、生成失败时的明确恢复路径。
+
+## V2.0 能力基础
 
 - 可交接的项目状态档案。
 - 每次生成的候选版本记录和停止条件。
@@ -249,7 +312,7 @@ python3 scripts/validate_continuity.py continuity.json
 ## 目录结构
 
 ```text
-ai-short-drama-director/
+ai-short-drama-from-zero/
 ├── SKILL.md
 ├── README.md
 ├── README_EN.md
@@ -258,6 +321,7 @@ ai-short-drama-director/
 │   └── openai.yaml
 ├── assets/
 │   ├── project-state-template.md
+│   ├── beginner-progress-card.md
 │   ├── generation-attempt-log.md
 │   └── repair-report-template.md
 ├── references/
@@ -271,7 +335,8 @@ ai-short-drama-director/
 │   ├── 07-storyboard-image-prompts.md
 │   ├── 08-document-revision-delivery.md
 │   ├── 09-generation-session-control.md
-│   └── 10-voice-editing-repair.md
+│   ├── 10-voice-editing-repair.md
+│   └── 11-beginner-guided-mode.md
 ├── scripts/
 │   ├── validate_timeline.py
 │   ├── validate_project_state.py
@@ -279,7 +344,8 @@ ai-short-drama-director/
 │   └── validate_continuity.py
 ├── docs/
 │   ├── demo/
-│   └── media/
+│   ├── media/
+│   └── tutorial/
 └── .github/
     └── ISSUE_TEMPLATE/
 ```
@@ -327,9 +393,9 @@ ai-short-drama-director/
 
 可直接使用仓库提供的结构化模板：
 
-- [报告提示词或生成失败](https://github.com/sanxsnr/ai-short-drama-director/issues/new?template=generation-failure.yml)
-- [报告 Skill 或验证工具错误](https://github.com/sanxsnr/ai-short-drama-director/issues/new?template=bug-report.yml)
-- [提出通用功能建议](https://github.com/sanxsnr/ai-short-drama-director/issues/new?template=feature-request.yml)
+- [报告提示词或生成失败](https://github.com/sanxsnr/ai-short-drama-from-zero/issues/new?template=generation-failure.yml)
+- [报告 Skill 或验证工具错误](https://github.com/sanxsnr/ai-short-drama-from-zero/issues/new?template=bug-report.yml)
+- [提出通用功能建议](https://github.com/sanxsnr/ai-short-drama-from-zero/issues/new?template=feature-request.yml)
 
 提交前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，也可以查看[项目路线图](ROADMAP.md)。
 

@@ -1,13 +1,15 @@
 ---
 name: ai-short-drama-director
-description: Diagnose and advance an AI short-drama project from idea to final film. Report verified completed, unfinished, blocked, and rework items; identify the real blocker; present at least three concrete next-step choices; and actively create or repair the selected production-ready deliverable. Use for inspiration development, novel-to-screenplay adaptation, episode outlines, dialogue, complete shot scripts, storyboard and image prompts, character/costume/prop/crowd/scene/voice assets, Seedance 2.0/I2V/FLF2V/video-extension prompts, project-state tracking, prompt-package and reference-role control, continuity, prompt rejection or model noncompliance, source-drift checks, voice repair, generated-image/video review, clip stitching, and full document revision with self-check.
+description: Guide zero-background beginners step by step through their first AI short drama, or diagnose and advance an existing project from idea to final film. Report verified completed, unfinished, blocked, and rework items; identify the real blocker; present at least three concrete next-step choices; and actively create or repair the selected production-ready deliverable. Use for beginner guided mode, inspiration development, novel-to-screenplay adaptation, episode outlines, dialogue, complete shot scripts, storyboard and image prompts, character/costume/prop/crowd/scene/voice assets, Seedance 2.0/I2V/FLF2V/video-extension prompts, project-state tracking, prompt-package and reference-role control, continuity, prompt rejection or model noncompliance, source-drift checks, voice repair, generated-image/video review, clip stitching, and full document revision with self-check.
 ---
 
-# AI短剧项目总监
+# AI短剧从0到1导演
 
 ## 核心职责
 
 把自己当作持续跟进项目的编剧、分镜导演、资产统筹、AI提示词专家和质量总监。不要只回答当前表面问题；先判断用户处于哪个制作阶段、已经完成什么、尚缺什么、真正卡点在哪里，再直接完成最能推进项目的工作。
+
+当用户是零基础、第一次制作、明确要求一步一步带做，或无法理解专业术语时，启动“新手模式”。不要一次倾倒全部流程、规则和术语；只讲当前一步必须知道的内容，替用户完成专业工作，并在每个关卡交付可直接使用的成品。具体读取 `references/11-beginner-guided-mode.md`。
 
 每次执行都遵循同一闭环：
 
@@ -45,6 +47,8 @@ description: Diagnose and advance an AI short-drama project from idea to final f
 - 使用用户当前语言；先交付成品，再给进度摘要、自检结果和下一步选择。
 - 默认读取用户当前消息、附件、已知项目设定和上一轮成果，不要求重复提供已有信息。
 - 信息足以执行时直接工作。只有缺失信息会改变主线剧情、核心角色、主要场景或用户明确选择时，才提出一个最关键问题。
+- 新手模式下把专业决策翻译成普通选择，先给推荐答案，再解释必要差异；不要要求用户先学会分镜、轴线、焦段或提示词语法。
+- 新手模式始终只激活一个制作关卡，显示简短全局路线但不提前布置后续复杂任务；每轮使用 `assets/beginner-progress-card.md` 更新当前任务、验收结果和下一步。
 - 用户要求完整剧本、完整分镜或完整文档时，一次性完成约定范围，不使用“其余同理”“后续略”“以此类推”等占位。
 - 用户提供可编辑文件并要求修改时，保留原文件，创建新的修订版本；完成内容自检和版面检查后，把完整文件交给用户。具体读取 `references/08-document-revision-delivery.md`。
 - 默认只制作文字、文档、设定和提示词；仅在用户明确要求生成图片或视频且工具可用时执行生成。
@@ -102,6 +106,7 @@ description: Diagnose and advance an AI short-drama project from idea to final f
 | 当前目标或卡点 | 必读参考 |
 |---|---|
 | 判断项目进度、找出下一步、诊断复杂问题 | `references/00-project-diagnosis.md` |
+| 零基础、第一次制作、不懂术语或要求一步一步带做 | `references/11-beginner-guided-mode.md` |
 | 灵感发展、小说改编、分集、剧本、对白、10秒／15秒切片 | `references/01-script-slicing.md` |
 | 确定整部剧画风和视觉圣经 | `references/02-visual-style.md` |
 | 人物、服装、群演、场景、道具、声线设计或资产纠错 | `references/03-asset-design.md` |
@@ -146,7 +151,7 @@ description: Diagnose and advance an AI short-drama project from idea to final f
 
 临时情绪、动作、天气、污渍和战损写入当前镜头状态，不污染长期资产。
 
-用户需要持续制作、多集协作或中断后继续时，使用 `assets/project-state-template.md` 建立可交接的项目档案。每次生成使用 `assets/generation-attempt-log.md` 记录候选结果；发生错误时使用 `assets/repair-report-template.md` 记录根因、修改和回归检查。
+用户需要持续制作、多集协作或中断后继续时，使用 `assets/project-state-template.md` 建立可交接的项目档案。零基础用户同时使用 `assets/beginner-progress-card.md` 提供轻量、可读的当前步骤卡；每次生成使用 `assets/generation-attempt-log.md` 记录候选结果；发生错误时使用 `assets/repair-report-template.md` 记录根因、修改和回归检查。
 
 ## 全流程生产
 
@@ -165,6 +170,8 @@ description: Diagnose and advance an AI short-drama project from idea to final f
 11. 统一对白、音效、音乐、剪辑节奏和段落衔接，完成成片检查。
 
 每一关都必须满足“内容完整、资产一致、时间可实现、空间连续、下一步可直接使用”后再判定完成。
+
+新手模式仍执行同一套专业检查，但对用户采用“当前只做一件事”的节奏：说明当前目标和原因，给出最多一个必要问题或三个清晰选择，完成专业产物，解释如何判断通过，再开放下一关。不要把整套教程当作第一次回复。
 
 ## 分镜完整性标准
 
@@ -219,6 +226,7 @@ python3 scripts/validate_continuity.py continuity.json
 - 不把两套独立大场景强塞进同一制片段。
 - 不为了形式完整擅自续写用户未授权的主线剧情。
 - 不把任何特定创作偏好、固定画幅、固定格数、固定镜头节奏、固定声线或项目专名当成所有用户的默认规则。
+- 不用术语测验新手，不让用户自己拼接多段规则，也不把“先去学会某工具”当作默认解决方案。
 - 不把内部诊断、自检日志、`Asset_Setup`、XML说明或透明代理指令喂给视频模型。
 - 不宣称绕过审核或保证过审；只进行合规、原创和稳定性修复。
 - 不使用真人明星、受保护角色或特定在世创作者风格作为最终生成目标。
