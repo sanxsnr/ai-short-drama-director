@@ -35,6 +35,7 @@ def validate(payload: dict) -> dict:
     mode = str(payload.get("segment_mode", "10s"))
     target = float(payload.get("target_duration", 0))
     pacing = str(payload.get("pacing", "stable"))
+    content_type = str(payload.get("content_type", "mixed"))
     shots = payload.get("shots", [])
 
     absolute_limit = 13.0 if mode == "10s" else 18.0 if mode == "15s" else None
@@ -45,6 +46,8 @@ def validate(payload: dict) -> dict:
 
     if target <= 0:
         errors.append("target_duration 必须大于0")
+    if content_type not in {"dialogue", "action", "montage", "mixed"}:
+        errors.append("content_type 必须是 dialogue、action、montage 或 mixed")
     if not isinstance(shots, list) or not shots:
         errors.append("shots 必须是非空数组")
         return {"ok": not errors, "errors": errors, "warnings": warnings}
@@ -101,11 +104,38 @@ def validate(payload: dict) -> dict:
             f"全段约{total_dialogue_chars}字对白 / {target:g}s，"
             f"超过正常语速容量约{total_capacity:.1f}字"
         )
+    elif target > 0:
+        dialogue_rate = total_dialogue_chars / target
+        if dialogue_rate > 4.0:
+            warnings.append(
+                f"全段对白密度约{dialogue_rate:.1f}字/秒，接近物理上限；"
+                "优先压缩重复信息或增加可用时长"
+            )
+        elif dialogue_rate > 3.5:
+            warnings.append(
+                f"全段对白密度约{dialogue_rate:.1f}字/秒，属于较密区间；"
+                "需检查情绪停顿和动作空间"
+            )
+
+    shot_ranges = {
+        "dialogue": {"10s": (1, 3), "15s": (2, 4)},
+        "action": {"10s": (2, 5), "15s": (3, 6)},
+        "montage": {"10s": (3, 6), "15s": (4, 8)},
+        "mixed": {"10s": (1, 5), "15s": (2, 7)},
+    }
+    if mode in {"10s", "15s"} and content_type in shot_ranges:
+        low, high = shot_ranges[content_type][mode]
+        if len(shots) > high:
+            warnings.append(
+                f"{content_type} 类型的 {mode} 段共有{len(shots)}镜，"
+                f"高于常用范围{low}—{high}镜；检查是否误把故事板格数当成切镜数"
+            )
 
     return {
         "ok": not errors,
         "mode": mode,
         "target_duration": target,
+        "content_type": content_type,
         "shot_count": len(shots),
         "dialogue_char_count": total_dialogue_chars,
         "errors": errors,
