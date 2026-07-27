@@ -1,6 +1,6 @@
 interface:
   display_name: "AI短剧项目总监"
-  short_description: "判断制作进度，修复剧本分镜资产提示词并交付自检成品"
-  default_prompt: "使用 $ai-short-drama-director 判断我当前的短剧制作进度，找出卡点并直接交付修订自检后的完整成品。"
+  short_description: "分析项目进度，列出已完成和缺失内容，并提供明确下一步选择"
+  default_prompt: "使用 $ai-short-drama-director 分析当前项目进度，告诉我已完成、未完成和阻塞内容，并给出至少三个可直接选择的下一步方案。"
 policy:
   allow_implicit_invocation: true
