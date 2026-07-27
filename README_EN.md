@@ -4,7 +4,7 @@
 
 > You do not need to learn screenwriting, shot planning, camera language, or prompt syntax before you begin. This Skill finds your real starting point and guides one production step at a time—from an idea, novel, or half-finished project to screenplay, shots, assets, images, Seedance 2.0 video, audio, editing, and a finished film.
 
-![Version](https://img.shields.io/badge/version-2.4.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.5.0-2563eb)
 ![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-Chinese%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
@@ -34,7 +34,7 @@ Each turn advances one production gate:
 5. check it and report what is complete, incomplete, blocked, or due for rework;
 6. end every response with exactly three concrete next steps that can be selected with a letter.
 
-The professional acceptance bar stays the same. Timing, atomic actions, identity, props, screen direction, first/last states, reference roles, audio, and edit continuity are still checked—the rules are simply revealed only when they are useful.
+The professional acceptance bar stays the same. Timing, atomic actions, identity, props, screen direction, action start/completion states, reference roles, audio, and edit continuity are still checked—the rules are simply revealed only when they are useful.
 
 ```text
 Use $ai-short-drama-director in beginner mode.
@@ -54,15 +54,12 @@ Every response uses the same four-part shell:
 3. **Self-check**: passed, in progress, rework, or blocked, based on actual evidence;
 4. **Choose next**: exactly A, B, and C, with exactly one recommended action.
 
-Production documents also use one stable wrapper: document metadata, progress summary, complete body, self-check report, revision log, and remaining work. Shot documents use compact tables instead of a long label/value stack:
+Production documents use one stable wrapper, except shootable screenplays and complete shot scripts, which always use UTF-8 CSV for cross-model compatibility. Short outputs appear in one `csv` code block; long outputs are delivered as `.csv` files:
 
-| Shot section | Required content |
+| CSV type | Required content |
 |---|---|
-| Basics | Episode, production-unit ID, 10s/15s mode, duration, story function, scene |
-| Assets and continuity | Character, wardrobe, prop, blocking, inherited state, opening state, final frame, next inheritance |
-| Timeline | Timecode, internal shot, visible action, performance, dialogue/audio, framing/camera/lens/movement |
-| Generation and references | Global style, one role per reference, storyboard/image/video prompt |
-| Unit self-check | Duration, atomic action, dialogue capacity, assets, screen direction, opening/final state |
+| Shootable screenplay CSV | Scene, cast, story purpose, beat, visible action, speaker, complete dialogue, sound, and continuity |
+| Complete shot-script CSV | Production unit, 10s/15s mode, internal shot, timecode, camera, cast, props, action states, dialogue/audio, reference roles, Seedance 2.0 prompt, and self-check |
 
 The A/B/C navigation always stays outside prompts, XML, JSON, and model payloads.
 
@@ -132,7 +129,7 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 
 - Extracts the main plot, necessary subplots, relationships, world rules, and immutable facts.
 - Converts narration and internal thoughts into visible actions, environments, or performable dialogue.
-- Produces episode outlines, scene structures, and shootable scripts.
+- Produces episode outlines, scene structures, and shootable screenplays in a fixed UTF-8 CSV format.
 
 ### 4. Dialogue and duration control
 
@@ -149,7 +146,7 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 - Reads the entire episode before segmenting it.
 - Protects atomic actions such as opening a door, falling, grabbing an object, or completing physical contact.
 - Starts a new unit for scene changes, time jumps, and major state changes.
-- Outputs assets, opening state, action, camera, dialogue, sound, and end-state continuity.
+- Outputs complete shot scripts in a fixed UTF-8 CSV format with assets, action states, camera, dialogue, sound, and continuity.
 
 ### 6. Visual and reusable asset design
 
@@ -167,7 +164,7 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 - Gemini is limited to a clean, simplified 3×3 continuity grid by default.
 - Other image tools default to an overhead blocking reference plus a front blocking reference instead of a multi-panel storyboard.
 - Treats nine panels as continuity keys, not automatically as nine separate cuts.
-- Locks the first frame, last frame, screen direction, held object, hand, scene anchor, and motion path.
+- Locks screen direction, held object, hand, scene anchor, motion path, and action continuity.
 - Assigns one responsibility to each layout, character, scene, prop, or transition reference.
 
 ## V2.4 additions
@@ -177,6 +174,14 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 - Adds overhead and front blocking templates for non-GPT tools.
 - Adds a GPT character master-board template with a visible character name and asset ID.
 - Requires a character name and asset ID in every character prompt, filename, and asset summary.
+
+## V2.5 additions
+
+- Locks video-prompt delivery to Seedance 2.0 only.
+- Uses actual uploaded assets through uniquely assigned `@image`, `@video`, and `@audio` references.
+- Removes alternate model exports and obsolete boundary-frame or transition fields from production prompts and next-step choices.
+- Adds a reusable [Seedance 2.0 prompt template](assets/seedance2-prompt-template.md).
+- Locks shootable screenplays and complete shot scripts to reusable UTF-8 CSV schemas.
 
 ### 8. Blocking, screen direction, and physical contact
 
@@ -188,9 +193,10 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 ### 9. Seedance 2.0 and multimodal video prompts
 
 - Separates internal directing logic from the clean prompt sent to the video model.
-- Supports Seedance 2.0, I2V, FLF2V, first/last frame, video extension, action reference, and camera reference workflows.
-- Adapts prompt structure to the target platform.
-- Controls reference priority, action complexity, dialogue, sound, lighting, and the final hold.
+- Outputs Seedance 2.0 prompts only; no alternate video-model formats are generated.
+- Binds actual uploaded media with `@image`, `@video`, and `@audio` references, each with one explicit role.
+- Uses the locked 10-second or 15-second duration with timed action, camera, dialogue, sound, visual style, and generation requirements.
+- Delivers one clean natural-language code block without first/last-frame fields, `CUT`, `TAIL`, XML, internal analysis, or self-check logs.
 
 ### 10. Generation-failure diagnosis
 
@@ -276,8 +282,8 @@ then return the complete repaired prompt package and self-check report.
 | A novel or story | Adaptation plan, episode outline, screenplay |
 | A complete script | 10s/15s units, shot script, asset list |
 | Character background and visual direction | Character, crowd, costume, scene, prop, and voice assets |
-| A shot script | Storyboard prompts, image prompts, first/last frame prompts |
-| Storyboards and references | Seedance 2.0, I2V, FLF2V, or extension prompts |
+| A shot script | Storyboard prompts, image prompts, blocking images, and action-state notes |
+| Storyboards and references | One production-ready Seedance 2.0 natural-language prompt |
 | A rejected or ignored prompt | Compliance, complexity, reference, and context diagnosis plus a full revision |
 | Generated images or videos | Visible defects, upstream cause, repaired version, regression check |
 | Multiple clips | Voice consistency, stitching, audio bridge, pacing, and final QC plan |
