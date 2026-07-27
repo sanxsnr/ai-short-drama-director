@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">普通提示词助手与 AI 短剧项目总监效果对比</title>
+  <desc id="desc">左侧只返回一段提示词，右侧诊断进度、定位根因、修复完整交付物、自检并给出下一步。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="1" stop-color="#142647"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4f8cff"/>
+      <stop offset="1" stop-color="#7c5cff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000814" flood-opacity=".38"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <circle cx="1100" cy="90" r="230" fill="#2753a3" opacity=".16"/>
+  <circle cx="120" cy="650" r="250" fill="#6f42c1" opacity=".12"/>
+  <text x="640" y="68" fill="#f8fbff" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="34" font-weight="700" text-anchor="middle">从“给一段提示词”到“解决整个制作问题”</text>
+  <text x="640" y="105" fill="#aebbd0" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="18" text-anchor="middle">AI Short Drama Director · production diagnosis and repair</text>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="145" width="520" height="500" rx="24" fill="#111d30" stroke="#33425a" stroke-width="2"/>
+    <rect x="690" y="145" width="520" height="500" rx="24" fill="#101d36" stroke="#527bff" stroke-width="2"/>
+  </g>
+
+  <rect x="100" y="175" width="210" height="44" rx="22" fill="#283448"/>
+  <text x="205" y="204" fill="#dbe4f2" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="20" font-weight="700" text-anchor="middle">普通提示词助手</text>
+  <rect x="720" y="175" width="250" height="44" rx="22" fill="url(#accent)"/>
+  <text x="845" y="204" fill="#ffffff" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="20" font-weight="700" text-anchor="middle">AI 短剧项目总监</text>
+
+  <text x="110" y="264" fill="#8fa0b8" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="16">用户：</text>
+  <text x="110" y="298" fill="#eef4ff" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="21">“第4段道具错了，怎么办？”</text>
+  <path d="M110 340 H550" stroke="#2e3d54" stroke-width="2"/>
+  <text x="110" y="382" fill="#8fa0b8" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="16">返回：</text>
+  <rect x="110" y="405" width="440" height="112" rx="14" fill="#18263b"/>
+  <text x="135" y="447" fill="#d7e0ed" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="19">“请保持道具一致，重新生成……”</text>
+  <text x="135" y="482" fill="#7f90aa" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="16">只改一句，没有追溯错误来源</text>
+  <text x="110" y="570" fill="#ff8e8e" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="18">结果：后续分镜继续继承错误</text>
+
+  <g font-family="Arial, 'Noto Sans SC', sans-serif">
+    <circle cx="745" cy="268" r="17" fill="#4f8cff"/><text x="745" y="275" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">1</text>
+    <text x="778" y="275" fill="#f0f5ff" font-size="20" font-weight="700">判断进度</text>
+    <text x="930" y="275" fill="#9eb0ca" font-size="16">资产完成，视频返修阶段</text>
+
+    <circle cx="745" cy="335" r="17" fill="#5d78ff"/><text x="745" y="342" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">2</text>
+    <text x="778" y="342" fill="#f0f5ff" font-size="20" font-weight="700">定位根因</text>
+    <text x="930" y="342" fill="#9eb0ca" font-size="16">错误参考图压过锁定资产</text>
+
+    <circle cx="745" cy="402" r="17" fill="#6b68ff"/><text x="745" y="409" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">3</text>
+    <text x="778" y="409" fill="#f0f5ff" font-size="20" font-weight="700">完整修复</text>
+    <text x="930" y="409" fill="#9eb0ca" font-size="16">资产、分镜、首尾帧、提示词</text>
+
+    <circle cx="745" cy="469" r="17" fill="#775dff"/><text x="745" y="476" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">4</text>
+    <text x="778" y="476" fill="#f0f5ff" font-size="20" font-weight="700">回归自检</text>
+    <text x="930" y="476" fill="#9eb0ca" font-size="16">旧错误清除，连续性通过</text>
+
+    <circle cx="745" cy="536" r="17" fill="#824fff"/><text x="745" y="543" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">5</text>
+    <text x="778" y="543" fill="#f0f5ff" font-size="20" font-weight="700">明确下一步</text>
+    <text x="930" y="543" fill="#9eb0ca" font-size="16">三种方案＋推荐项＋输入要求</text>
+  </g>
+
+  <rect x="720" y="580" width="460" height="42" rx="12" fill="#19375a"/>
+  <text x="950" y="607" fill="#8fe4bd" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="18" font-weight="700" text-anchor="middle">结果：交付可直接继续生产的修订包</text>
+</svg>

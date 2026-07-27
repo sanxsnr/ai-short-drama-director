@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose a reusable workflow, validator, platform adapter, or documentation improvement.
+title: "[Feature] "
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Proposed area
+      options:
+        - Project diagnosis and tracking
+        - Story, screenplay, or dialogue
+        - Shot scripts and storyboards
+        - Asset design and reference control
+        - Video prompting and generation repair
+        - Voice and editing
+        - Validator or automation
+        - Documentation or examples
+        - Platform adaptation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Creator problem
+      description: Describe the repeated production problem before proposing a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: current_workaround
+    attributes:
+      label: Current workaround
+      placeholder: How do creators handle this today, and where does it fail?
+  - type: textarea
+    id: proposed_behavior
+    attributes:
+      label: Proposed behavior
+      placeholder: What should the Skill create, repair, validate, or report?
+    validations:
+      required: true
+  - type: textarea
+    id: reusable_example
+    attributes:
+      label: Generic example
+      description: Use a short original or sanitized example that can become a regression test.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: The proposal is reusable and does not depend on one private project's fixed rules.
+          required: true
