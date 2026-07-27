@@ -44,7 +44,16 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - One duration mode per episode or batch unless the user explicitly changes it.
 - New bilingual GitHub social preview and README cover.
 
-## V2.3 — Reproducible example packs 🟡
+## V2.3 — Fixed output and choice contract ✅
+
+- One four-part response shell: result, progress update, self-check, and next-step choice.
+- Exactly three A/B/C actions after every response, with exactly one recommendation.
+- Stable production-document wrapper and reusable template.
+- Compact shot metadata, asset continuity, and timecode execution tables.
+- Clear distinction between a 10s/15s production unit and its internal camera shots.
+- Required dialogue/audio, opening and final states, next-unit inheritance, and per-unit QC.
+
+## V2.4 — Reproducible example packs 🟡
 
 - A complete original sample from premise to final prompt package.
 - Small examples for prop drift, blocking errors, dialogue overload, and reference conflicts.
@@ -52,14 +61,14 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - Machine-readable JSON Schema files for the current validation inputs.
 - More before/after repair reports that never contain private project material.
 
-## V2.4 — Platform adaptation profiles 🔎
+## V2.5 — Platform adaptation profiles 🔎
 
 - Platform-specific prompt export profiles without duplicating the directing logic.
 - Capability declarations for text-to-video, I2V, FLF2V, extension, and reference media.
 - Clear fallbacks when a platform does not support timecodes, multiple references, dialogue, or audio.
 - Community-maintained compatibility notes that distinguish verified facts from temporary observations.
 
-## V2.5 — Media review and continuity tools 🔎
+## V2.6 — Media review and continuity tools 🔎
 
 - Structured image and video review checklists.
 - Clip-boundary comparison records for first/last frame, motion, prop, wardrobe, and audio state.

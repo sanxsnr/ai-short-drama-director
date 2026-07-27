@@ -102,8 +102,8 @@ def validate(payload: dict) -> dict:
         errors.append("进入视听切片或分镜阶段前，必须把 segment_duration_mode 设为10或15")
 
     options = payload.get("next_options")
-    if not isinstance(options, list) or len(options) < 3:
-        errors.append("next_options 至少包含3个可执行选项")
+    if not isinstance(options, list) or len(options) != 3:
+        errors.append("next_options 必须且只能包含3个可执行选项")
         options = options if isinstance(options, list) else []
     option_ids: set[str] = set()
     recommended_count = 0
@@ -126,6 +126,8 @@ def validate(payload: dict) -> dict:
 
     if options and recommended_count != 1:
         errors.append("next_options 必须且只能有1个 recommended=true")
+    if options and option_ids != {"A", "B", "C"}:
+        errors.append("next_options 的 id 必须且只能是 A、B、C")
 
     source_of_truth = payload.get("source_of_truth")
     if not isinstance(source_of_truth, dict) or not source_of_truth:

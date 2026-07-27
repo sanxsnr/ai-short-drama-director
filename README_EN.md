@@ -4,7 +4,7 @@
 
 > You do not need to learn screenwriting, shot planning, camera language, or prompt syntax before you begin. This Skill finds your real starting point and guides one production step at a time—from an idea, novel, or half-finished project to screenplay, shots, assets, images, Seedance 2.0 video, audio, editing, and a finished film.
 
-![Version](https://img.shields.io/badge/version-2.2.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.3.0-2563eb)
 ![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-Chinese%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
@@ -29,10 +29,10 @@ Each turn advances one production gate:
 
 1. explain the single task in plain language and the failure it prevents;
 2. inherit facts already confirmed instead of asking again;
-3. translate professional decisions into no more than three clear choices and recommend one;
+3. translate professional decisions into exactly three choices—A, B, and C—with one recommendation;
 4. create the actual production deliverable;
 5. check it and report what is complete, incomplete, blocked, or due for rework;
-6. offer at least three concrete next steps that can be selected with a letter.
+6. end every response with exactly three concrete next steps that can be selected with a letter.
 
 The professional acceptance bar stays the same. Timing, atomic actions, identity, props, screen direction, first/last states, reference roles, audio, and edit continuity are still checked—the rules are simply revealed only when they are useful.
 
@@ -44,6 +44,27 @@ and tell me what is complete and what is still missing.
 ```
 
 > The repository is named `ai-short-drama-from-zero`. The invocation name remains `$ai-short-drama-director` so existing users and projects do not break.
+
+## Fixed output contract
+
+Every response uses the same four-part shell:
+
+1. **Result**: the answer, repaired content, prompt, or file comes first;
+2. **Progress update**: current stage, completed, in progress, incomplete, rework, and blockers;
+3. **Self-check**: passed, in progress, rework, or blocked, based on actual evidence;
+4. **Choose next**: exactly A, B, and C, with exactly one recommended action.
+
+Production documents also use one stable wrapper: document metadata, progress summary, complete body, self-check report, revision log, and remaining work. Shot documents use compact tables instead of a long label/value stack:
+
+| Shot section | Required content |
+|---|---|
+| Basics | Episode, production-unit ID, 10s/15s mode, duration, story function, scene |
+| Assets and continuity | Character, wardrobe, prop, blocking, inherited state, opening state, final frame, next inheritance |
+| Timeline | Timecode, internal shot, visible action, performance, dialogue/audio, framing/camera/lens/movement |
+| Generation and references | Global style, one role per reference, storyboard/image/video prompt |
+| Unit self-check | Duration, atomic action, dialogue capacity, assets, screen direction, opening/final state |
+
+The A/B/C navigation always stays outside prompts, XML, JSON, and model payloads.
 
 ## Tutorial snapshots
 
@@ -80,7 +101,7 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 | Gives suggestions | Repairs the screenplay, shot plan, asset, prompt, or full document |
 | Fixes one sentence | Traces the source of truth and updates every affected deliverable |
 | Treats one generation as completion | Checks story, assets, space, audio, and clip continuity |
-| Ends with “keep optimizing” | Gives at least three concrete next actions with a recommendation |
+| Ends with “keep optimizing” | Gives exactly A/B/C next actions with one recommendation |
 | Packs every rule into one giant prompt | Loads only the workflow needed for the current stage |
 
 ![Before and after comparison](docs/media/before-after.svg)
@@ -219,7 +240,7 @@ Import the repository root using the custom Skill workflow supported by your Cha
 ```text
 Use $ai-short-drama-director to diagnose my short-drama project.
 Tell me what is verified complete, incomplete, blocked, or due for rework.
-Identify the real blocker and give me at least three concrete next actions.
+Identify the real blocker and end every response with exactly three next actions: A, B, and C.
 ```
 
 ```text
@@ -248,6 +269,15 @@ then return the complete repaired prompt package and self-check report.
 | Generated images or videos | Visible defects, upstream cause, repaired version, regression check |
 | Multiple clips | Voice consistency, stitching, audio bridge, pacing, and final QC plan |
 | DOCX, PDF, or tables | Fully revised file and validation report |
+
+## V2.3 additions
+
+- Fixed four-part response shell: result, progress, self-check, and next-step choice.
+- Exactly three A/B/C actions at the end of every response, with exactly one recommendation.
+- Stable production-document wrapper and reusable template.
+- Compact production-unit metadata, asset continuity, and timeline tables.
+- Clear separation between a 10s/15s production unit and its internal camera shots.
+- Required dialogue/audio, opening state, final frame, next-unit inheritance, and unit self-check fields.
 
 ## V2.2 additions
 

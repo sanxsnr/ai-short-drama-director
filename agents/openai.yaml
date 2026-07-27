@@ -1,4 +1,4 @@
 interface:
   display_name: "AI短剧从0到1导演"
-  short_description: "一步一步带零基础用户从灵感、剧本和分镜做到视频成片"
-  default_prompt: "使用 $ai-short-drama-director 开启零基础模式，从我现有的灵感或素材开始，一步一步带我完成第一部AI短剧。"
+  short_description: "用固定文档和三选一步骤带新手从灵感做到成片"
+  default_prompt: "使用 $ai-short-drama-director 开启零基础模式，从我现有的灵感或素材开始，用固定制作文档一步一步带我完成第一部AI短剧，并在每次回复后给我A/B/C三个下一步选择。"
