@@ -4,7 +4,7 @@
 
 > You do not need to learn screenwriting, shot planning, camera language, or prompt syntax before you begin. This Skill finds your real starting point and guides one production step at a time—from an idea, novel, or half-finished project to screenplay, shots, assets, images, Seedance 2.0 video, audio, editing, and a finished film.
 
-![Version](https://img.shields.io/badge/version-2.3.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.4.0-2563eb)
 ![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-Chinese%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
@@ -154,16 +154,29 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 ### 6. Visual and reusable asset design
 
 - Supports cinematic live action, stylized 3D, game CG, 2D animation, and custom visual systems.
-- Creates character, crowd, costume, scene, prop, and voice assets.
+- Creates character, crowd, costume, scene, prop, and voice assets; every character-image prompt must include both the asset ID and the character name.
+- GPT can produce a dense character master board with the project name, character name, asset ID, turnarounds, story states, costume details, and expression studies.
+- Gemini and other tools default to a simpler turnaround or character card instead of a text-heavy master board.
 - Separates permanent identity from temporary story state.
 - Tracks draft, candidate, locked, and obsolete versions.
 
 ### 7. Storyboards and image prompts
 
-- Chooses 6, 9, 12, or custom panels from information density instead of habit.
-- Treats storyboard panels as continuity keys, not automatically as separate cuts.
+- Resolves the user's image tool before creating a storyboard prompt.
+- GPT can use the full professional workboard: a central 3×3 sequence, camera/blocking diagrams on the left, character/palette/spatial references on the right, and a technical strip along the bottom.
+- Gemini is limited to a clean, simplified 3×3 continuity grid by default.
+- Other image tools default to an overhead blocking reference plus a front blocking reference instead of a multi-panel storyboard.
+- Treats nine panels as continuity keys, not automatically as nine separate cuts.
 - Locks the first frame, last frame, screen direction, held object, hand, scene anchor, and motion path.
 - Assigns one responsibility to each layout, character, scene, prop, or transition reference.
+
+## V2.4 additions
+
+- Adds an image-tool decision gate for GPT, Gemini, and other generators.
+- Adds a reusable GPT professional 3×3 cinematic storyboard workboard template.
+- Adds overhead and front blocking templates for non-GPT tools.
+- Adds a GPT character master-board template with a visible character name and asset ID.
+- Requires a character name and asset ID in every character prompt, filename, and asset summary.
 
 ### 8. Blocking, screen direction, and physical contact
 
