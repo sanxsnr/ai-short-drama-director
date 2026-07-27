@@ -36,7 +36,15 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - Acceptance criteria for every gate from premise to final-film QC.
 - Tutorial snapshots with preserved creator attribution.
 
-## V2.2 — Reproducible example packs 🟡
+## V2.2 — Duration choice gate and project cover ✅
+
+- Mandatory user choice between 10-second and 15-second production slicing.
+- Optional side-by-side sample before the user locks a mode.
+- Project-state persistence and validation for the selected duration mode.
+- One duration mode per episode or batch unless the user explicitly changes it.
+- New bilingual GitHub social preview and README cover.
+
+## V2.3 — Reproducible example packs 🟡
 
 - A complete original sample from premise to final prompt package.
 - Small examples for prop drift, blocking errors, dialogue overload, and reference conflicts.
@@ -44,14 +52,14 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - Machine-readable JSON Schema files for the current validation inputs.
 - More before/after repair reports that never contain private project material.
 
-## V2.3 — Platform adaptation profiles 🔎
+## V2.4 — Platform adaptation profiles 🔎
 
 - Platform-specific prompt export profiles without duplicating the directing logic.
 - Capability declarations for text-to-video, I2V, FLF2V, extension, and reference media.
 - Clear fallbacks when a platform does not support timecodes, multiple references, dialogue, or audio.
 - Community-maintained compatibility notes that distinguish verified facts from temporary observations.
 
-## V2.4 — Media review and continuity tools 🔎
+## V2.5 — Media review and continuity tools 🔎
 
 - Structured image and video review checklists.
 - Clip-boundary comparison records for first/last frame, motion, prop, wardrobe, and audio state.

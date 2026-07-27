@@ -4,10 +4,12 @@
 
 > You do not need to learn screenwriting, shot planning, camera language, or prompt syntax before you begin. This Skill finds your real starting point and guides one production step at a time—from an idea, novel, or half-finished project to screenplay, shots, assets, images, Seedance 2.0 video, audio, editing, and a finished film.
 
-![Version](https://img.shields.io/badge/version-2.1.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.2.0-2563eb)
 ![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-Chinese%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
+
+![AI Short Drama From Zero social preview](docs/media/social-preview.jpg)
 
 ![Workflow demo](docs/media/workflow-demo.gif)
 
@@ -120,6 +122,9 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 
 ### 5. 10-second and 15-second production slicing
 
+- Requires the user to choose the 10-second or 15-second mode before the full screenplay is segmented.
+- If the user is unsure, creates one representative clip in both modes and waits for the user to choose.
+- Locks one mode for the current episode or batch instead of silently mixing both.
 - Reads the entire episode before segmenting it.
 - Protects atomic actions such as opening a door, falling, grabbing an object, or completing physical contact.
 - Starts a new unit for scene changes, time jumps, and major state changes.
@@ -243,6 +248,15 @@ then return the complete repaired prompt package and self-check report.
 | Generated images or videos | Visible defects, upstream cause, repaired version, regression check |
 | Multiple clips | Voice consistency, stitching, audio bridge, pacing, and final QC plan |
 | DOCX, PDF, or tables | Fully revised file and validation report |
+
+## V2.2 additions
+
+- Mandatory duration-choice gate before full shot segmentation.
+- Three paths: `A: 10-second`, `B: 15-second`, or `C: compare one sample in both`.
+- Persists the confirmed choice in the project-state record.
+- Prevents unexplained mixing of 10-second and 15-second modes in one episode.
+- Validates that a duration mode has been selected when shot planning begins.
+- Adds a 1280×640 GitHub social preview image.
 
 ## Validation tools
 

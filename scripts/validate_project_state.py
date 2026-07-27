@@ -43,6 +43,10 @@ def validate(payload: dict) -> dict:
         if not nonempty_text(payload.get(field)):
             errors.append(f"缺少有效字段：{field}")
 
+    segment_duration_mode = payload.get("segment_duration_mode")
+    if segment_duration_mode not in (None, 10, 15, "10", "15"):
+        errors.append("segment_duration_mode 只能是10或15")
+
     stages = payload.get("stages")
     if not isinstance(stages, list) or not stages:
         errors.append("stages 必须是非空数组")
@@ -84,6 +88,19 @@ def validate(payload: dict) -> dict:
         if status == "rework" and not nonempty_text(stage.get("rework_reason")):
             warnings.append(f"需返工阶段“{name}”建议写 rework_reason")
 
+    slicing_active = any(
+        isinstance(stage, dict)
+        and any(keyword in str(stage.get("name", "")).lower()
+                for keyword in ("切片", "分镜", "slicing", "storyboard"))
+        and stage.get("status") in {"completed", "in_progress", "rework"}
+        for stage in stages
+    )
+    current_stage = str(payload.get("current_stage", "")).lower()
+    if any(keyword in current_stage for keyword in ("切片", "分镜", "slicing", "storyboard")):
+        slicing_active = True
+    if slicing_active and segment_duration_mode not in (10, 15, "10", "15"):
+        errors.append("进入视听切片或分镜阶段前，必须把 segment_duration_mode 设为10或15")
+
     options = payload.get("next_options")
     if not isinstance(options, list) or len(options) < 3:
         errors.append("next_options 至少包含3个可执行选项")
@@ -120,6 +137,7 @@ def validate(payload: dict) -> dict:
         "stage_count": len(stages),
         "status_counts": dict(status_counts),
         "next_option_count": len(options),
+        "segment_duration_mode": segment_duration_mode,
         "errors": errors,
         "warnings": warnings,
     }

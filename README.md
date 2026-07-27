@@ -4,10 +4,12 @@
 
 > 你不需要先学会编剧、分镜、运镜或提示词。这个 Skill 会先判断你已经做到哪里，再一次只带你完成一步：从一句灵感、小说或半成品开始，逐步做到剧本、分镜、资产、图片、Seedance 2.0 视频、声音剪辑和最终成片。
 
-![Version](https://img.shields.io/badge/version-2.1.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.2.0-2563eb)
 ![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-中文%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
+
+![AI短剧从0到1项目封面](docs/media/social-preview.jpg)
 
 ![AI短剧项目总监工作流演示](docs/media/workflow-demo.gif)
 
@@ -137,6 +139,9 @@
 
 ### 5. 10秒／15秒视听切片
 
+- 正式拆完整剧本前，必须让用户选择10秒版或15秒版。
+- 用户拿不准时，可先对同一代表片段制作10秒／15秒双版本样例，再由用户确认。
+- 同一集或同一批次锁定一种规格，不自行混用。
 - 全局通读后再切片，不把整集剧本直接塞给视频模型。
 - 保护完整动作，不腰斩开门、跌倒、拿取、推搡等原子动作。
 - 场景切换、时间跳跃和重大状态变化自动新开制片段。
@@ -271,6 +276,15 @@ git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 | 生成图片或视频 | 可见问题、上游根因、返修版本和回归检查 |
 | 多段成片 | 声线统一、拼接、声音桥、节奏和最终巡检方案 |
 | DOCX／PDF／表格 | 完整修订文件和自检报告 |
+
+## V2.2 新增
+
+- 分镜拆分前增加强制规格选择门。
+- 支持 `A：10秒版`、`B：15秒版`、`C：同一片段双版本比较`。
+- 项目进度档案会保存用户确认的分镜规格。
+- 同一集禁止无理由混用10秒版和15秒版。
+- 项目状态验证工具会检查分镜阶段是否已经选择规格。
+- 新增1280×640 GitHub社交分享封面。
 
 ## V2.1 新增
 
