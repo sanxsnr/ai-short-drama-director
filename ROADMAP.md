@@ -18,7 +18,7 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - At least three concrete next actions with a recommendation.
 - Novel adaptation, dialogue, production slicing, shot scripts, and storyboard prompts.
 - Character, costume, crowd, scene, prop, and voice asset workflows.
-- Seedance 2.0, I2V, FLF2V, first/last-frame, and extension prompts.
+- Seedance 2.0 multimodal prompts with explicit `@image`, `@video`, and `@audio` reference roles.
 - Reference-role control, clean context reset, and source-drift checks.
 - Generation-attempt logging and stop conditions.
 - Voice repair, clip stitching, and final-film QC.
@@ -53,7 +53,22 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - Clear distinction between a 10s/15s production unit and its internal camera shots.
 - Required dialogue/audio, opening and final states, next-unit inheritance, and per-unit QC.
 
-## V2.4 — Reproducible example packs 🟡
+## V2.4 — Tool-aware image workflows ✅
+
+- GPT professional 3×3 cinematic storyboard workboards.
+- Gemini simplified 3×3 storyboard prompts.
+- Overhead and front blocking images for other generators.
+- Named character master-board and character-sheet prompts.
+
+## V2.5 — Seedance 2.0 single-format export ✅
+
+- One clean Seedance 2.0 natural-language prompt for every video production unit.
+- Actual uploaded media referenced through uniquely assigned `@image`, `@video`, and `@audio` roles.
+- No I2V, FLF2V, WAN, VACE, first/last-frame fields, `CUT`, `TAIL`, XML, or alternate platform exports.
+- A reusable Seedance 2.0 prompt template and production validation rules.
+- Fixed UTF-8 CSV exports for shootable screenplays and complete shot scripts.
+
+## V2.6 — Reproducible example packs 🟡
 
 - A complete original sample from premise to final prompt package.
 - Small examples for prop drift, blocking errors, dialogue overload, and reference conflicts.
@@ -61,17 +76,10 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - Machine-readable JSON Schema files for the current validation inputs.
 - More before/after repair reports that never contain private project material.
 
-## V2.5 — Platform adaptation profiles 🔎
-
-- Platform-specific prompt export profiles without duplicating the directing logic.
-- Capability declarations for text-to-video, I2V, FLF2V, extension, and reference media.
-- Clear fallbacks when a platform does not support timecodes, multiple references, dialogue, or audio.
-- Community-maintained compatibility notes that distinguish verified facts from temporary observations.
-
-## V2.6 — Media review and continuity tools 🔎
+## V2.7 — Media review and continuity tools 🔎
 
 - Structured image and video review checklists.
-- Clip-boundary comparison records for first/last frame, motion, prop, wardrobe, and audio state.
+- Clip-boundary comparison records for action completion, motion, prop, wardrobe, and audio state.
 - Episode-level defect summaries and repair priority scores.
 - Optional utilities for generating review contact sheets from user-authorized media.
 
