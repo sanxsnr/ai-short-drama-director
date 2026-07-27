@@ -1,4 +1,4 @@
-# AI Short Drama Director Roadmap
+# AI Short Drama From Zero Roadmap
 
 [简体中文](README.md) | [English](README_EN.md)
 
@@ -26,7 +26,17 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - Chinese and English project documentation.
 - Original workflow demo, comparison visual, and structured issue templates.
 
-## V2.1 — Reproducible example packs 🟡
+## V2.1 — Step-by-step beginner mode ✅
+
+- Three automatic entry points: idea only, existing writing, or a half-finished project.
+- One active production gate at a time instead of a full workflow dump.
+- Plain-language terminology and recommended, reversible defaults.
+- Beginner progress card with completed, locked, missing, blocked, and rework items.
+- Mobile-friendly instructions and one-letter next-step selection.
+- Acceptance criteria for every gate from premise to final-film QC.
+- Tutorial snapshots with preserved creator attribution.
+
+## V2.2 — Reproducible example packs 🟡
 
 - A complete original sample from premise to final prompt package.
 - Small examples for prop drift, blocking errors, dialogue overload, and reference conflicts.
@@ -34,14 +44,14 @@ This roadmap describes likely directions, not guaranteed delivery dates. Priorit
 - Machine-readable JSON Schema files for the current validation inputs.
 - More before/after repair reports that never contain private project material.
 
-## V2.2 — Platform adaptation profiles 🔎
+## V2.3 — Platform adaptation profiles 🔎
 
 - Platform-specific prompt export profiles without duplicating the directing logic.
 - Capability declarations for text-to-video, I2V, FLF2V, extension, and reference media.
 - Clear fallbacks when a platform does not support timecodes, multiple references, dialogue, or audio.
 - Community-maintained compatibility notes that distinguish verified facts from temporary observations.
 
-## V2.3 — Media review and continuity tools 🔎
+## V2.4 — Media review and continuity tools 🔎
 
 - Structured image and video review checklists.
 - Clip-boundary comparison records for first/last frame, motion, prop, wardrobe, and audio state.

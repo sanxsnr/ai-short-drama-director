@@ -1,4 +1,4 @@
 interface:
-  display_name: "AI短剧项目总监"
-  short_description: "从灵感到成片，诊断进度并修复分镜、资产、视频与剪辑问题"
-  default_prompt: "使用 $ai-short-drama-director 分析我的AI短剧项目进度，找出当前卡点，直接修复最关键的交付物，并给出至少三个明确的下一步选择。"
+  display_name: "AI短剧从0到1导演"
+  short_description: "一步一步带零基础用户从灵感、剧本和分镜做到视频成片"
+  default_prompt: "使用 $ai-short-drama-director 开启零基础模式，从我现有的灵感或素材开始，一步一步带我完成第一部AI短剧。"

@@ -18,7 +18,7 @@
   <circle cx="1100" cy="90" r="230" fill="#2753a3" opacity=".16"/>
   <circle cx="120" cy="650" r="250" fill="#6f42c1" opacity=".12"/>
   <text x="640" y="68" fill="#f8fbff" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="34" font-weight="700" text-anchor="middle">从“给一段提示词”到“解决整个制作问题”</text>
-  <text x="640" y="105" fill="#aebbd0" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="18" text-anchor="middle">AI Short Drama Director · production diagnosis and repair</text>
+  <text x="640" y="105" fill="#aebbd0" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="18" text-anchor="middle">AI Short Drama From Zero · guided production and repair</text>
 
   <g filter="url(#shadow)">
     <rect x="70" y="145" width="520" height="500" rx="24" fill="#111d30" stroke="#33425a" stroke-width="2"/>
