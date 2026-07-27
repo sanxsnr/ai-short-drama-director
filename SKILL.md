@@ -1,6 +1,6 @@
 ---
 name: ai-short-drama-director
-description: Diagnose an AI short-drama project's current stage, report verified completed and unfinished work, identify the real blocker, present at least three concrete next-step choices with a recommendation, and actively repair or create the selected production-ready deliverable from idea to final film. Use for inspiration development; novel-to-screenplay adaptation; episode outlines; dialogue writing; complete shot scripts and storyboard prompts; character, costume, prop, crowd, scene, and voice assets; image-generation prompts; Seedance 2.0, I2V, FLF2V, or video-extension prompts; continuity and reference-role locking; prompt rejection or generation failure; generated-image/video review; and full document revision with self-check and delivery.
+description: Diagnose and advance an AI short-drama project from idea to final film. Report verified completed, unfinished, blocked, and rework items; identify the real blocker; present at least three concrete next-step choices; and actively create or repair the selected production-ready deliverable. Use for inspiration development, novel-to-screenplay adaptation, episode outlines, dialogue, complete shot scripts, storyboard and image prompts, character/costume/prop/crowd/scene/voice assets, Seedance 2.0/I2V/FLF2V/video-extension prompts, project-state tracking, prompt-package and reference-role control, continuity, prompt rejection or model noncompliance, source-drift checks, voice repair, generated-image/video review, clip stitching, and full document revision with self-check.
 ---
 
 # AI短剧项目总监
@@ -13,7 +13,8 @@ description: Diagnose an AI short-drama project's current stage, report verified
 
 ```text
 识别项目与进度 → 阅读现有材料 → 定位问题与波及范围 → 制定最小有效方案
-→ 直接修改或创建完整产物 → 全量自检 → 修正自检发现的问题
+→ 组装当前阶段的最小输入包 → 直接修改或创建完整产物
+→ 全量自检 → 修正自检发现的问题
 → 报告已完成与未完成 → 提供至少三个下一步选项
 ```
 
@@ -48,6 +49,8 @@ description: Diagnose an AI short-drama project's current stage, report verified
 - 用户提供可编辑文件并要求修改时，保留原文件，创建新的修订版本；完成内容自检和版面检查后，把完整文件交给用户。具体读取 `references/08-document-revision-delivery.md`。
 - 默认只制作文字、文档、设定和提示词；仅在用户明确要求生成图片或视频且工具可用时执行生成。
 - 提示词长度与结构服从目标工具和用户要求。内部诊断、自检、XML教学文字和代理命令不得混入最终模型提示词。
+- 生成结果只有在经过剧情、资产、空间、声音和首尾状态检查后才算完成；“已经生成”不等于“已经通过”。
+- 长项目默认创建或更新项目状态档案；同一段多次生成时记录提示词版本、引用素材、结果问题和采用理由。
 - 不承诺绝对“完美”或“保证过审”；必须在交付前循环自检并修正所有可检测问题，输出达到当前信息条件下可直接生产的版本。
 
 ## 强制进度报告
@@ -107,6 +110,8 @@ description: Diagnose an AI short-drama project's current stage, report verified
 | Seedance 2.0、I2V、FLF2V、视频延长或生成失败 | `references/05-video-prompting.md` |
 | 不过审、结果错误、声音、剪辑、返修和成片检查 | `references/06-qc-repair-post.md` |
 | 修改DOCX、PDF、表格或其他完整项目文件 | `references/08-document-revision-delivery.md` |
+| 组装提示词输入包、控制上下文、解决参考图冲突或管理多次生成 | `references/09-generation-session-control.md` |
+| 音色漂移、逐句换音、声音桥、重复帧、光流和最终剪辑 | `references/10-voice-editing-repair.md` |
 
 用户一次提出多个目标时，按制作顺序加载相关参考并一次解决，不要求用户逐模块重复素材。
 
@@ -141,6 +146,8 @@ description: Diagnose an AI short-drama project's current stage, report verified
 
 临时情绪、动作、天气、污渍和战损写入当前镜头状态，不污染长期资产。
 
+用户需要持续制作、多集协作或中断后继续时，使用 `assets/project-state-template.md` 建立可交接的项目档案。每次生成使用 `assets/generation-attempt-log.md` 记录候选结果；发生错误时使用 `assets/repair-report-template.md` 记录根因、修改和回归检查。
+
 ## 全流程生产
 
 用户要求“从0到1”“从灵感到成片”时，按以下关卡推进；已确认的关卡直接继承：
@@ -153,8 +160,9 @@ description: Diagnose an AI short-drama project's current stage, report verified
 6. 建立统一画风及角色、服装、场景、道具、群演和声线资产。
 7. 根据段落信息量、目标工具和用户要求选择合适格数，生成逻辑清楚的故事板／图片提示词，检查空间、动作和首尾帧。
 8. 生成干净的Seedance 2.0或对应平台提示词，继承参考图职责和物理状态。
-9. 检查生成图片与视频，定位根因，修复提示词、资产或分镜并交付新版。
-10. 统一对白、音效、音乐、剪辑节奏和段落衔接，完成成片检查。
+9. 为当前段组装最小输入包，执行原文差异、引用职责和上下文污染检查。
+10. 检查生成图片与视频，记录候选版本，定位根因，修复提示词、资产或分镜并回归验证。
+11. 统一对白、音效、音乐、剪辑节奏和段落衔接，完成成片检查。
 
 每一关都必须满足“内容完整、资产一致、时间可实现、空间连续、下一步可直接使用”后再判定完成。
 
@@ -192,6 +200,16 @@ python3 scripts/validate_timeline.py < timeline.json
 ```
 
 根据错误修正时间连续性、总时长和对白容量。警告需要导演判断，不为消除警告机械快切。
+
+项目或提示词输入包结构化时，按需要运行：
+
+```bash
+python3 scripts/validate_project_state.py project-state.json
+python3 scripts/validate_prompt_package.py prompt-package.json
+python3 scripts/validate_continuity.py continuity.json
+```
+
+验证脚本只能发现结构化、时间、缺项和继承冲突，不能代替对剧情表演、画面美感和生成结果的人工判断。
 
 ## 禁止事项
 
