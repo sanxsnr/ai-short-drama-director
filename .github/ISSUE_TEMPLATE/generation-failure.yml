@@ -1,0 +1,86 @@
+name: Generation or prompt failure
+description: Report a reproducible prompt rejection, ignored instruction, reference conflict, or continuity failure.
+title: "[Generation failure] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for reproducible production failures. Do not request moderation bypasses. Remove private data and share only original or authorized media.
+  - type: dropdown
+    id: failure_type
+    attributes:
+      label: Failure type
+      options:
+        - Prompt cannot be submitted
+        - Prompt is accepted but instructions are ignored
+        - Character or costume drift
+        - Prop drift
+        - Scene, doorway, or background drift
+        - Blocking, screen direction, or physical-contact error
+        - Missing or incorrect dialogue
+        - Voice inconsistency or poor intelligibility
+        - First/last-frame or clip-stitching failure
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform or model
+      placeholder: "Example: Seedance 2.0, I2V model, FLF2V model"
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Production stage
+      options:
+        - Storyboard image
+        - First frame
+        - Last frame
+        - Single video clip
+        - Video extension
+        - Multi-clip continuity
+        - Voice replacement
+        - Final edit
+    validations:
+      required: true
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Smallest sanitized prompt that reproduces the issue
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Reference roles and priorities
+      description: List each reference and the one responsibility it should control.
+      placeholder: |
+        Reference A — character identity only
+        Reference B — scene structure only
+        Reference C — prop shape only
+    validations:
+      required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected result and actual result
+      placeholder: Describe the first visible divergence and when it happens.
+    validations:
+      required: true
+  - type: textarea
+    id: attempts
+    attributes:
+      label: Attempts already made
+      description: Include prompt versions, reference changes, clean-session attempts, and whether the failure repeated.
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: The example is original or authorized, with private information removed.
+          required: true
+        - label: This report is for diagnosis and safe repair, not for bypassing platform review.
+          required: true

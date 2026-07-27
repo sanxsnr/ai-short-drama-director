@@ -1,0 +1,62 @@
+name: Bug report
+description: Report incorrect Skill behavior, validator output, or documentation.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve AI Short Drama Director. Remove private information and share only media or text you are authorized to publish.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Project diagnosis and routing
+        - Story or screenplay adaptation
+        - Dialogue and timing
+        - Shot script or storyboard
+        - Character, scene, prop, costume, crowd, or voice asset
+        - Video prompt package
+        - Continuity or blocking
+        - Voice, editing, or final-film QC
+        - Validator script
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: Sanitized user request
+      description: Include the smallest input that still reproduces the problem.
+      placeholder: What did you ask the Skill to do?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Reproduction evidence
+      description: Add output excerpts, validator messages, or sanitized screenshots. Do not upload unlicensed or private material.
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I removed private information and have permission to share the attached material.
+          required: true
+        - label: I checked that the issue is not only a temporary platform limit or quota.
+          required: true

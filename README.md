@@ -1,10 +1,14 @@
 # AI Short Drama Director｜AI短剧项目总监
 
+[**简体中文**](README.md) | [English](README_EN.md)
+
 > 一个面向 AI 短剧、漫剧和动态故事创作者的生产型 Skill：从灵感、小说改编、剧本和分镜，到人物场景资产、故事板、Seedance 2.0 提示词、生成返修、声音剪辑和成片检查。
 
 ![Version](https://img.shields.io/badge/version-2.0.0-2563eb)
-![Language](https://img.shields.io/badge/language-中文-ef4444)
+![Languages](https://img.shields.io/badge/docs-中文%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
+
+![AI短剧项目总监工作流演示](docs/media/workflow-demo.gif)
 
 ## 项目介绍
 
@@ -21,6 +25,21 @@
 - 明明修改了一个道具，旧错误却仍残留在其他分镜和提示词里。
 
 `ai-short-drama-director` 的目标不是多写一份建议，而是先判断项目进度和真正根因，再直接创建或修好可继续生产的完整交付物，并在交付前完成回归检查。
+
+## 30秒看懂它如何工作
+
+![普通提示词助手与AI短剧项目总监对比](docs/media/before-after.svg)
+
+当用户只说“第4段道具错了”时，Skill 不会只补一句“保持道具一致”。它会：
+
+1. 判断项目当前处于哪个生产阶段；
+2. 查明错误来自资产、分镜、首尾帧、参考图还是视频提示词；
+3. 修改错误真源以及全部受影响的下游内容；
+4. 检查旧错误是否清除、时长和连续性是否仍然成立；
+5. 汇报已完成、未完成和需返工项；
+6. 给出至少三种可以立即执行的下一步，并标记推荐方案。
+
+查看[通用原创演示案例](docs/demo/README.md)，了解一次“道具漂移＋场景衔接＋漏台词”问题如何被完整诊断和修复。
 
 ## 它和普通提示词助手有什么不同
 
@@ -232,6 +251,9 @@ python3 scripts/validate_continuity.py continuity.json
 ```text
 ai-short-drama-director/
 ├── SKILL.md
+├── README.md
+├── README_EN.md
+├── ROADMAP.md
 ├── agents/
 │   └── openai.yaml
 ├── assets/
@@ -250,11 +272,16 @@ ai-short-drama-director/
 │   ├── 08-document-revision-delivery.md
 │   ├── 09-generation-session-control.md
 │   └── 10-voice-editing-repair.md
-└── scripts/
-    ├── validate_timeline.py
-    ├── validate_project_state.py
-    ├── validate_prompt_package.py
-    └── validate_continuity.py
+├── scripts/
+│   ├── validate_timeline.py
+│   ├── validate_project_state.py
+│   ├── validate_prompt_package.py
+│   └── validate_continuity.py
+├── docs/
+│   ├── demo/
+│   └── media/
+└── .github/
+    └── ISSUE_TEMPLATE/
 ```
 
 ## 设计原则
@@ -298,7 +325,13 @@ ai-short-drama-director/
 - 更可靠的验证脚本和测试样例；
 - 对不同视频模型的通用适配规则。
 
-提交前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+可直接使用仓库提供的结构化模板：
+
+- [报告提示词或生成失败](https://github.com/sanxsnr/ai-short-drama-director/issues/new?template=generation-failure.yml)
+- [报告 Skill 或验证工具错误](https://github.com/sanxsnr/ai-short-drama-director/issues/new?template=bug-report.yml)
+- [提出通用功能建议](https://github.com/sanxsnr/ai-short-drama-director/issues/new?template=feature-request.yml)
+
+提交前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，也可以查看[项目路线图](ROADMAP.md)。
 
 ## License
 

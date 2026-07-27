@@ -2,6 +2,10 @@
 
 感谢你愿意帮助改进 `ai-short-drama-director`。
 
+[中文说明](#中文说明) | [English guide](#english-guide)
+
+## 中文说明
+
 ## 适合提交的内容
 
 - 可以复用于不同短剧项目的流程、检查规则和故障诊断方法。
@@ -35,3 +39,41 @@
 - 运行 Skill 基础校验。
 - 原有流程没有因新规则产生明显冲突。
 - README 的功能说明与实际文件一致。
+
+## English guide
+
+Thank you for helping improve `ai-short-drama-director`.
+
+### Good contributions
+
+- Workflows, validation rules, and failure-diagnosis methods reusable across different productions.
+- Reproducible problems involving adaptation, dialogue, shots, assets, blocking, video prompts, voice, or editing.
+- Counterexamples that reveal a conflict or missing boundary in an existing rule.
+- Dependency-free validators, or tools with clearly documented dependencies.
+- Documentation, examples, translations, and readability improvements.
+
+### Please do not submit
+
+- Character names, fixed voices, aspect ratios, visual preferences, or story rules that apply only to one private project.
+- Scripts, images, videos, voice recordings, or protected media you are not authorized to publish.
+- Instructions for bypassing platform review, impersonating a real person, or violating another person's rights.
+- Guaranteed success rates, quotas, or temporary platform rumors presented as permanent facts.
+- Large collections of repeated warnings that do not improve execution.
+
+### A useful issue or pull request
+
+1. Describe the original creator goal and the visible failure.
+2. Provide the smallest original or sanitized input that reproduces it.
+3. State the affected production stage.
+4. Explain the reusable rule and its limits.
+5. For scripts, include a known-pass and known-fail case.
+6. Confirm that no private or unlicensed material is included.
+
+### Pull-request checklist
+
+- Keep `SKILL.md` concise and place detailed guidance in directly linked `references/`.
+- Add a table of contents to long reference files and avoid deeply nested references.
+- Run every new or changed script.
+- Run the base Skill validation.
+- Check that the change does not introduce conflicts with existing workflows.
+- Keep the README feature claims consistent with the actual files.
