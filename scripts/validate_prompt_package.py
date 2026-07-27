@@ -19,6 +19,17 @@ INTERNAL_MARKERS = (
     "Transparent Proxy",
     "底层数据透传代理",
 )
+FORBIDDEN_VIDEO_PATTERNS = (
+    (re.compile(r"\bI2V\b", re.IGNORECASE), "I2V"),
+    (re.compile(r"\bFLF2V\b", re.IGNORECASE), "FLF2V"),
+    (re.compile(r"\bWAN\b", re.IGNORECASE), "WAN"),
+    (re.compile(r"\bVACE\b", re.IGNORECASE), "VACE"),
+    (re.compile(r"\bCUT\b", re.IGNORECASE), "CUT"),
+    (re.compile(r"\bTAIL\b", re.IGNORECASE), "TAIL"),
+    (re.compile(r"\bEND\s*FRAME\b", re.IGNORECASE), "END FRAME"),
+    (re.compile(r"首帧|尾帧"), "首帧／尾帧"),
+)
+SEEDANCE_REFERENCE_RE = re.compile(r"^@?(?:图片|视频|音频)\d+$")
 
 
 def load_payload(path: str | None) -> dict:
@@ -61,12 +72,20 @@ def validate(payload: dict) -> dict:
     except (TypeError, ValueError):
         errors.append("target_duration 必须是大于0的数字")
         target_duration = 0
+    if target_duration and target_duration not in (10, 15):
+        errors.append("Seedance 2.0生产段时长只能是10秒或15秒")
 
     final_prompt = str(payload.get("final_prompt", ""))
     compact_prompt = compact(final_prompt)
+    platform = str(payload.get("platform", "")).strip()
+    if platform.lower().replace(" ", "") not in {"seedance2.0", "即梦seedance2.0"}:
+        errors.append("platform 必须锁定为 Seedance 2.0")
     for marker in INTERNAL_MARKERS:
         if marker.lower() in final_prompt.lower():
             errors.append(f"生产版提示词包含内部标记：{marker}")
+    for pattern, label in FORBIDDEN_VIDEO_PATTERNS:
+        if pattern.search(final_prompt):
+            errors.append(f"Seedance 2.0生产版提示词包含禁用格式字段：{label}")
 
     references = payload.get("references")
     if not isinstance(references, list):
@@ -85,6 +104,13 @@ def validate(payload: dict) -> dict:
             errors.append(f"参考素材 id 重复：{ref_id}")
         else:
             reference_ids.add(ref_id)
+            if not SEEDANCE_REFERENCE_RE.fullmatch(ref_id):
+                errors.append(
+                    f"参考素材 id 必须使用Seedance编号，如@图片1、@视频1、@音频1：{ref_id}"
+                )
+            normalized_ref_id = ref_id if ref_id.startswith("@") else f"@{ref_id}"
+            if normalized_ref_id not in final_prompt:
+                errors.append(f"生产版提示词未使用参考素材：{normalized_ref_id}")
         if not role:
             errors.append(f"参考素材{ref_id or index}缺少唯一 role")
         roles = ref.get("roles")

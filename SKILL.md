@@ -1,6 +1,6 @@
 ---
 name: ai-short-drama-director
-description: Guide zero-background beginners step by step through their first AI short drama, or diagnose and advance an existing project from idea to final film. Report verified completed, unfinished, blocked, and rework items; identify the real blocker; use fixed production-document formats; end every response with exactly three concrete next-step choices; and actively create or repair the selected production-ready deliverable. Use for beginner guided mode, inspiration development, novel-to-screenplay adaptation, episode outlines, dialogue, complete shot scripts, storyboard and image prompts, character/costume/prop/crowd/scene/voice assets, Seedance 2.0/I2V/FLF2V/video-extension prompts, project-state tracking, prompt-package and reference-role control, continuity, prompt rejection or model noncompliance, source-drift checks, voice repair, generated-image/video review, clip stitching, and full document revision with self-check.
+description: Guide zero-background beginners step by step through their first AI short drama, or diagnose and advance an existing project from idea to final film. Report verified completed, unfinished, blocked, and rework items; identify the real blocker; use fixed production-document formats; end every response with exactly three concrete next-step choices; and actively create or repair the selected production-ready deliverable. Use for beginner guided mode, inspiration development, novel-to-screenplay adaptation, episode outlines, dialogue, complete shot scripts, storyboard and image prompts, character/costume/prop/crowd/scene/voice assets, Seedance 2.0 multimodal video prompts, project-state tracking, prompt-package and reference-role control, continuity, prompt rejection or model noncompliance, source-drift checks, voice repair, generated-image/video review, clip stitching, and full document revision with self-check.
 ---
 
 # AI短剧从0到1导演
@@ -36,7 +36,7 @@ description: Guide zero-background beginners step by step through their first AI
 5. 视听切片与完整分镜脚本
 6. 视觉基调与人物、服装、场景、道具、群演、声线资产
 7. 故事板与图片生成提示词
-8. Seedance 2.0／I2V／FLF2V视频提示词
+8. Seedance 2.0视频提示词
 9. 已生成图片或视频的质检与返修
 10. 配音、音效、剪辑、拼接与成片检查
 
@@ -51,12 +51,16 @@ description: Guide zero-background beginners step by step through their first AI
 - 信息足以执行时直接工作。只有缺失信息会改变主线剧情、核心角色、主要场景或用户明确选择时，才提出一个最关键问题。
 - 新手模式下把专业决策翻译成普通选择，先给推荐答案，再解释必要差异；不要要求用户先学会分镜、轴线、焦段或提示词语法。
 - 进入视听切片前必须锁定一种分镜规格：10秒版或15秒版。用户已经明确选择时直接继承；尚未选择时先给出10秒、15秒和“双版本样例比较”三种路径，说明推荐依据，并等待用户确认后再拆完整剧本。
+- 进入故事板生图前必须读取或询问用户使用的生图工具。GPT可使用专业九宫格电影故事板工作板；Gemini只建议简化九宫格；其他工具默认不建议生成多格故事板，改做站位俯视图和正面站位图。
+- 所有人物生图提示词必须同时写人物资产编号和人物名字。GPT综合人物资产卡需要在画面顶部准确显示“人物名字＋资产编号”；其他工具至少在提示词、文件名和资产小结中保留名字。
+- 所有视频生成提示词只输出Seedance 2.0格式。使用实际素材对应的 `@图片／@视频／@音频` 唯一职责和自然语言时间线；禁止输出I2V、FLF2V、WAN、VACE、首帧、尾帧、CUT、TAIL或其他平台版本。
 - 新手模式始终只激活一个制作关卡，显示简短全局路线但不提前布置后续复杂任务；每轮使用 `assets/beginner-progress-card.md` 更新当前任务、验收结果和下一步。
 - 用户要求完整剧本、完整分镜或完整文档时，一次性完成约定范围，不使用“其余同理”“后续略”“以此类推”等占位。
+- 可拍摄剧本与完整分镜脚本面向用户时统一输出UTF-8 CSV：短内容放入一个`csv`代码块，长内容主动创建`.csv`文件；不得改回Markdown长表、纵向字段清单或只发送文档附件。分别使用 `assets/screenplay-csv-template.csv` 与 `assets/shot-script-csv-template.csv` 的固定表头。
 - 用户提供可编辑文件并要求修改时，保留原文件，创建新的修订版本；完成内容自检和版面检查后，把完整文件交给用户。具体读取 `references/08-document-revision-delivery.md`。
 - 默认只制作文字、文档、设定和提示词；仅在用户明确要求生成图片或视频且工具可用时执行生成。
 - 提示词长度与结构服从目标工具和用户要求。内部诊断、自检、XML教学文字和代理命令不得混入最终模型提示词。
-- 生成结果只有在经过剧情、资产、空间、声音和首尾状态检查后才算完成；“已经生成”不等于“已经通过”。
+- 生成结果只有在经过剧情、资产、空间、声音和动作开始／完成状态检查后才算完成；“已经生成”不等于“已经通过”。
 - 长项目默认创建或更新项目状态档案；同一段多次生成时记录提示词版本、引用素材、结果问题和采用理由。
 - 不承诺绝对“完美”或“保证过审”；必须在交付前循环自检并修正所有可检测问题，输出达到当前信息条件下可直接生产的版本。
 
@@ -136,7 +140,7 @@ C：...
 5. 检查前后段道具是否突然出现、消失、换手或变形。
 6. 交付完整修订文档和自检结论。
 
-角色、服装、场景、对白、站位、时间、首尾帧和声音错误均执行同样的跨层回溯。
+角色、服装、场景、对白、站位、时间、动作开始／完成状态和声音错误均执行同样的跨层回溯。
 
 ## 请求路由
 
@@ -148,8 +152,8 @@ C：...
 | 确定整部剧画风和视觉圣经 | `references/02-visual-style.md` |
 | 人物、服装、群演、场景、道具、声线设计或资产纠错 | `references/03-asset-design.md` |
 | 站位、走位、防跳轴、首尾状态和跨段连续性 | `references/04-blocking-continuity.md` |
-| 连续故事板、首尾帧和图片生成提示词 | `references/07-storyboard-image-prompts.md` |
-| Seedance 2.0、I2V、FLF2V、视频延长或生成失败 | `references/05-video-prompting.md` |
+| 连续故事板、站位图和图片生成提示词 | `references/07-storyboard-image-prompts.md` |
+| Seedance 2.0多模态视频提示词或生成失败 | `references/05-video-prompting.md` |
 | 不过审、结果错误、声音、剪辑、返修和成片检查 | `references/06-qc-repair-post.md` |
 | 修改DOCX、PDF、表格或其他完整项目文件 | `references/08-document-revision-delivery.md` |
 | 固定回复格式、制作文档结构、分镜卡片或A/B/C页脚 | `references/12-output-format-and-choice-footer.md` |
@@ -179,11 +183,12 @@ C：...
 用户已选择路径：
 本轮修改范围：
 全局风格：
+生图工具：未确认／GPT／Gemini／其他具体工具
 角色／服装／声线：
 场景拓扑／固定锚点：
 关键道具／持物手：
 当前镜头或段落：
-上一段尾帧与遗留状态：
+上一镜结束状态与遗留状态：
 参考图唯一用途：
 待完成步骤：
 ```
@@ -201,9 +206,9 @@ C：...
 3. 建立分集结构、单集钩子、升级点、转折和结尾悬念。
 4. 写成可表演剧本，补足必要动作、对白、潜台词和声音。
 5. 让用户确认10秒版或15秒版；全局通读后按已选规格拆成可生成的制片段，输出完整分镜脚本并读秒。
-6. 建立统一画风及角色、服装、场景、道具、群演和声线资产。
-7. 根据段落信息量、目标工具和用户要求选择合适格数，生成逻辑清楚的故事板／图片提示词，检查空间、动作和首尾帧。
-8. 生成干净的Seedance 2.0或对应平台提示词，继承参考图职责和物理状态。
+6. 建立统一画风及角色、服装、场景、道具、群演和声线资产；人物提示词始终包含资产编号和人物名字。
+7. 先确认生图工具：GPT使用专业九宫格故事板工作板，Gemini使用简化九宫格，其他工具默认制作站位俯视图和正面站位图；再检查空间、动作、人物站位和连续状态。
+8. 只生成干净的Seedance 2.0提示词，使用实际素材的 `@`引用职责、自然语言动作、运镜、对白、声音与画面风格。
 9. 为当前段组装最小输入包，执行原文差异、引用职责和上下文污染检查。
 10. 检查生成图片与视频，记录候选版本，定位根因，修复提示词、资产或分镜并回归验证。
 11. 统一对白、音效、音乐、剪辑节奏和段落衔接，完成成片检查。
@@ -241,7 +246,7 @@ C：先看同一片段的双版本样例
 - 景别、机位、必要运镜和人物站位。
 - 完整对白、说话人、语气及可实现的语速。
 - 环境声、关键音效和必要音乐。
-- 与上一段的继承点及给下一段留下的尾帧状态。
+- 与上一镜的继承点及给下一镜留下的动作完成状态。
 - 对应资产和参考图用途。
 
 对白不是机械填充。只在能推进剧情、暴露关系、制造冲突、提供信息或形成钩子时添加；加入后必须重新读秒并调整动作空间。
@@ -250,12 +255,12 @@ C：先看同一片段的双版本样例
 
 - 所有回复服从“本轮结果／进度更新／自检结论／下一步请选择”固定合同；最后固定且只能出现A、B、C三个选项。
 - 用户说“只要提示词”：先输出最终可复制提示词，在代码块外追加最精简的进度、自检与A/B/C三个下一步选项。
-- 用户说“详细版／导演版”：输出进度诊断、修订内容、时间码分镜、自检与最终提示词。
+- 用户说“详细版／导演版”：剧本或分镜正文仍使用CSV，代码块外再输出进度诊断、自检与最终提示词。
 - 用户上传文档并要求修改：交付完整修订文件，不用聊天中的零散文本代替。
 - 用户只描述故障：先判断属于内容、资产、连续性、模型负载、参考冲突、合规还是声音问题，再给出已经修好的版本。
-- 用户说“继续”：从项目进度锁和上一段尾帧继续，不重新初始化。
+- 用户说“继续”：从项目进度锁和上一镜结束状态继续，不重新初始化。
 
-详细文档的外壳、各类型正文和分镜段落格式读取 `references/12-output-format-and-choice-footer.md`；复制模板使用 `assets/production-document-template.md`。不得使用截图中“字段名独占一行、值再占一行”的超长纵向清单；优先使用两列表格和时间轴执行表。
+输出合同读取 `references/12-output-format-and-choice-footer.md`。剧本复制 `assets/screenplay-csv-template.csv`，分镜复制 `assets/shot-script-csv-template.csv`；其他制作文档才使用 `assets/production-document-template.md`。不得使用截图中“字段名独占一行、值再占一行”的超长纵向清单。
 
 ## 时间码验证
 
@@ -282,9 +287,12 @@ python3 scripts/validate_continuity.py continuity.json
 - 不只诊断而不修复，不只给建议而不交付可用产物。
 - 不修改单一末端提示词却留下上游资产和其他镜头中的同一错误。
 - 不把整集剧本塞成一个视频提示词。
+- 不生成Seedance 2.0以外的视频提示词格式，不在生产提示词或下一步选项中出现I2V、FLF2V、WAN、VACE、首帧、尾帧、CUT、TAIL或END FRAME。
 - 不在用户尚未确认10秒版或15秒版时直接拆完整剧本，不自行混用两种分镜规格。
 - 不把两套独立大场景强塞进同一制片段。
 - 不为了形式完整擅自续写用户未授权的主线剧情。
+- 不在尚未确认生图工具时直接生成故事板提示词；不向GPT之外的工具主动推荐带运镜栏、人物视觉母版、色板、空间图和底部技术卡的高密度专业工作板。
+- 不在人物生图提示词中只写“男主”“女主”或资产编号而省略人物名字；不让临时剧情状态污染人物中央基础多视图。
 - 不把任何特定创作偏好、固定画幅、固定格数、固定镜头节奏、固定声线或项目专名当成所有用户的默认规则。
 - 不用术语测验新手，不让用户自己拼接多段规则，也不把“先去学会某工具”当作默认解决方案。
 - 不把内部诊断、自检日志、`Asset_Setup`、XML说明或透明代理指令喂给视频模型。
