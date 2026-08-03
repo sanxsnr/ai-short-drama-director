@@ -8,7 +8,6 @@ import json
 import math
 import sys
 from pathlib import Path
-from typing import Iterable
 
 EPSILON = 1e-9
 
@@ -23,72 +22,75 @@ SCALE_LEVELS = {
     "MWS": 2,
     "MEDIUM_WIDE": 2,
     "中远景": 2,
+    "MLS": 2,
+    "MEDIUM_LONG_SHOT": 2,
+    "中全景": 2,
     "MS": 3,
     "MEDIUM": 3,
+    "MEDIUM_SHOT": 3,
     "中景": 3,
     "MCU": 4,
     "MEDIUM_CLOSE": 4,
+    "MEDIUM_CLOSE_UP": 4,
     "中近景": 4,
+    "近景": 4,
     "CU": 5,
     "CLOSE": 5,
-    "近景": 5,
+    "CLOSE_UP": 5,
+    "特写": 5,
     "BCU": 6,
     "BIG_CLOSE": 6,
-    "特写": 6,
+    "大特写": 6,
     "ECU": 7,
     "EXTREME_CLOSE": 7,
-    "大特写": 7,
+    "EXTREME_CLOSE_UP": 7,
     "极近特写": 7,
     "眼部极近特写": 7,
 }
 
-CLAIMED_PATHS = {
-    "angle",
-    "axial_scale",
-    "subject_or_viewpoint",
-    "combined",
-    "intentional_jump",
-    "角度",
-    "同轴大景别",
-    "主体或视角变化",
-    "组合差异",
-    "有意跳切",
-}
-
-VISUAL_CHANGE_ALIASES = {
-    "camera_height",
-    "composition_center",
-    "spatial_layering",
-    "focus_target",
-    "character_relationship",
-    "screen_relation",
-    "lens_perspective",
-    "background_relation",
-    "摄影机高度",
-    "构图重心",
-    "空间层次",
-    "焦点主体",
-    "人物关系",
-    "屏幕关系",
-    "透视关系",
-    "背景关系",
-}
-
-NARRATIVE_CHANGE_ALIASES = {
-    "action_stage",
-    "new_information",
-    "emotion_or_power_focus",
-    "动作阶段",
-    "新增信息",
-    "情绪或权力重点",
-}
-
-PATH_CANONICAL = {
+PATH_ALIASES = {
+    "angle": "angle",
     "角度": "angle",
+    "axial_scale": "axial_scale",
     "同轴大景别": "axial_scale",
+    "subject_or_viewpoint": "subject_or_viewpoint",
     "主体或视角变化": "subject_or_viewpoint",
+    "combined": "combined",
     "组合差异": "combined",
+    "intentional_jump": "intentional_jump",
     "有意跳切": "intentional_jump",
+    "graphic_match": "graphic_match",
+    "图形匹配": "graphic_match",
+}
+
+AXIS_STATUSES = {
+    "same_side",
+    "reestablished",
+    "not_applicable",
+    "crossed_without_reestablish",
+    "同侧",
+    "已重新建立",
+    "不适用",
+    "越轴未重建",
+}
+
+EDITING_DEVICES = {
+    "none",
+    "intentional_jump_cut",
+    "graphic_match",
+    "无",
+    "有意跳切",
+    "图形匹配",
+}
+
+OPTIONAL_VISUAL_FIELDS = {
+    "camera_height": "camera_height",
+    "composition_center": "composition_center",
+    "focus_target": "focus_target",
+    "spatial_layering": "spatial_layering",
+    "relationship_frame": "relationship_frame",
+    "screen_relation": "screen_relation",
+    "background_relation": "background_relation",
 }
 
 
@@ -118,7 +120,7 @@ def vector(value: object, field: str, errors: list[str]) -> tuple[float, float, 
 
 def normalize(value: tuple[float, float, float]) -> tuple[float, float, float]:
     size = math.sqrt(sum(item * item for item in value))
-    return tuple(item / size for item in value)  # type: ignore[return-value]
+    return value[0] / size, value[1] / size, value[2] / size
 
 
 def angle_degrees(
@@ -141,22 +143,67 @@ def scale_level(value: object, field: str, errors: list[str]) -> int | None:
     return None
 
 
-def text_list(value: object, field: str, errors: list[str]) -> list[str]:
-    if value is None:
-        return []
-    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
-        errors.append(f"{field} 必须是字符串数组")
-        return []
-    return [item.strip() for item in value if item.strip()]
+def canonical_path(value: object) -> str:
+    return PATH_ALIASES.get(str(value or "").strip(), "")
 
 
-def canonical_path(value: str) -> str:
-    return PATH_CANONICAL.get(value, value)
+def canonical_axis(value: object) -> str:
+    return {
+        "同侧": "same_side",
+        "已重新建立": "reestablished",
+        "不适用": "not_applicable",
+        "越轴未重建": "crossed_without_reestablish",
+    }.get(str(value or "").strip(), str(value or "").strip())
+
+
+def canonical_device(value: object) -> str:
+    return {
+        "无": "none",
+        "有意跳切": "intentional_jump_cut",
+        "图形匹配": "graphic_match",
+    }.get(str(value or "").strip(), str(value or "").strip())
+
+
+def time_value(shot: dict) -> str:
+    explicit = str(shot.get("time", "")).strip()
+    if explicit:
+        return explicit
+    return str(shot.get("time_space", "")).strip()
+
+
+def space_value(shot: dict) -> str:
+    explicit = str(shot.get("space", "")).strip()
+    if explicit:
+        return explicit
+    return str(shot.get("time_space", "")).strip()
+
+
+def changed_optional_visual_fields(from_shot: dict, to_shot: dict) -> list[str]:
+    changed: list[str] = []
+    for field, label in OPTIONAL_VISUAL_FIELDS.items():
+        before = from_shot.get(field)
+        after = to_shot.get(field)
+        if before is None or after is None:
+            continue
+        if field == "camera_height":
+            try:
+                if abs(float(before) - float(after)) >= 0.25:
+                    changed.append(label)
+            except (TypeError, ValueError):
+                continue
+        elif str(before).strip() != str(after).strip():
+            changed.append(label)
+    return changed
 
 
 def validate(payload: dict) -> dict:
     errors: list[str] = []
     warnings: list[str] = []
+
+    transition_id = str(payload.get("transition_id", "")).strip()
+    if not transition_id:
+        transition_id = "unnamed-transition"
+        warnings.append("缺少 transition_id，已使用临时标识")
 
     from_shot = payload.get("from_shot")
     to_shot = payload.get("to_shot")
@@ -168,16 +215,18 @@ def validate(payload: dict) -> dict:
         to_shot = {}
 
     for name, shot in (("from_shot", from_shot), ("to_shot", to_shot)):
-        if not str(shot.get("id", "")).strip():
-            errors.append(f"{name}.id 不能为空")
-        if not str(shot.get("primary_subject", "")).strip():
-            errors.append(f"{name}.primary_subject 不能为空")
-        if not str(shot.get("time_space", "")).strip():
-            errors.append(f"{name}.time_space 不能为空")
-        if not str(shot.get("viewpoint", "")).strip():
-            errors.append(f"{name}.viewpoint 不能为空")
-        if not str(shot.get("action_stage", "")).strip():
-            errors.append(f"{name}.action_stage 不能为空")
+        for field in ("id", "primary_subject", "viewpoint", "action_stage"):
+            if not str(shot.get(field, "")).strip():
+                errors.append(f"{name}.{field} 不能为空")
+        if not time_value(shot):
+            errors.append(f"{name}.time 或 time_space 不能为空")
+        if not space_value(shot):
+            errors.append(f"{name}.space 或 time_space 不能为空")
+        if "camera_height" in shot:
+            try:
+                float(shot["camera_height"])
+            except (TypeError, ValueError):
+                errors.append(f"{name}.camera_height 必须是数字")
 
     from_vector = vector(
         from_shot.get("subject_to_camera"),
@@ -196,32 +245,33 @@ def validate(payload: dict) -> dict:
     if not isinstance(independent_task, bool):
         errors.append("independent_task 必须是布尔值")
         independent_task = False
-    if independent_task is False:
+    if not independent_task:
         errors.append("下一SHOT没有独立叙事任务，CUT不成立")
 
-    intentional_jump = payload.get("intentional_jump_cut", False)
-    if not isinstance(intentional_jump, bool):
-        errors.append("intentional_jump_cut 必须是布尔值")
-        intentional_jump = False
+    axis_status_raw = str(payload.get("axis_status", "")).strip()
+    if axis_status_raw not in AXIS_STATUSES:
+        errors.append(
+            "axis_status 必须是 same_side/reestablished/not_applicable/"
+            "crossed_without_reestablish 或中文对应值"
+        )
+    axis_status = canonical_axis(axis_status_raw)
+    if axis_status == "crossed_without_reestablish":
+        errors.append("180度轴线被无理由跨越；任何30度或景别变化都不能覆盖越轴错误")
 
-    declared_changes = text_list(
-        payload.get("declared_changes"), "declared_changes", errors
-    )
-    unknown_changes = [
-        item
-        for item in declared_changes
-        if item not in VISUAL_CHANGE_ALIASES and item not in NARRATIVE_CHANGE_ALIASES
-    ]
-    for item in unknown_changes:
-        warnings.append(f"declared_changes 包含未标准化变化项：{item}")
+    editing_device_raw = str(payload.get("editing_device", "none")).strip()
+    if editing_device_raw not in EDITING_DEVICES:
+        errors.append(
+            "editing_device 必须是 none/intentional_jump_cut/graphic_match 或中文对应值"
+        )
+    editing_device = canonical_device(editing_device_raw)
 
     claimed_path_raw = str(payload.get("claimed_difference_path", "")).strip()
-    if claimed_path_raw and claimed_path_raw not in CLAIMED_PATHS:
+    claimed_path = canonical_path(claimed_path_raw)
+    if claimed_path_raw and not claimed_path:
         errors.append(
             "claimed_difference_path 必须是 angle/axial_scale/subject_or_viewpoint/"
-            "combined/intentional_jump 或中文对应值"
+            "combined/intentional_jump/graphic_match 或中文对应值"
         )
-    claimed_path = canonical_path(claimed_path_raw)
 
     angle = None
     scale_steps = None
@@ -234,10 +284,8 @@ def validate(payload: dict) -> dict:
         str(from_shot.get("primary_subject", "")).strip()
         == str(to_shot.get("primary_subject", "")).strip()
     )
-    same_time_space = (
-        str(from_shot.get("time_space", "")).strip()
-        == str(to_shot.get("time_space", "")).strip()
-    )
+    same_time = time_value(from_shot) == time_value(to_shot)
+    same_space = space_value(from_shot) == space_value(to_shot)
     viewpoint_changed = (
         str(from_shot.get("viewpoint", "")).strip()
         != str(to_shot.get("viewpoint", "")).strip()
@@ -247,99 +295,118 @@ def validate(payload: dict) -> dict:
         != str(to_shot.get("action_stage", "")).strip()
     )
 
-    derived_path = None
-    thirty_degree_applicable = False
-    difference_strength = "insufficient"
-    moderate_changes: list[str] = []
+    optional_visual_changes = changed_optional_visual_fields(from_shot, to_shot)
+    moderate_visual_changes: list[str] = []
+    strong_visual_changes: list[str] = []
 
-    if intentional_jump:
+    if not same_subject:
+        strong_visual_changes.append("primary_subject")
+    if not same_time:
+        strong_visual_changes.append("time")
+    if not same_space:
+        strong_visual_changes.append("space")
+    if viewpoint_changed:
+        strong_visual_changes.append("viewpoint")
+    if angle is not None:
+        if angle >= 30.0:
+            strong_visual_changes.append("camera_angle_30_plus")
+        elif 15.0 <= angle < 30.0:
+            moderate_visual_changes.append("camera_angle_15_29")
+    if scale_steps is not None:
+        if scale_steps >= 2:
+            strong_visual_changes.append("shot_scale_2_plus")
+        elif scale_steps == 1:
+            moderate_visual_changes.append("shot_scale_1")
+    moderate_visual_changes.extend(optional_visual_changes)
+    moderate_visual_changes = list(dict.fromkeys(moderate_visual_changes))
+
+    derived_path = "invalid_near_jump"
+    difference_strength = "insufficient"
+
+    if editing_device == "intentional_jump_cut":
         derived_path = "intentional_jump"
         difference_strength = "intentional"
-    elif not same_subject or not same_time_space or viewpoint_changed:
+        if not str(payload.get("editing_device_purpose", "")).strip():
+            errors.append("有意跳切必须填写 editing_device_purpose")
+    elif editing_device == "graphic_match":
+        derived_path = "graphic_match"
+        difference_strength = "intentional"
+        if not str(payload.get("editing_device_purpose", "")).strip():
+            errors.append("图形匹配必须填写 editing_device_purpose")
+        if not str(payload.get("graphic_match_basis", "")).strip():
+            errors.append("图形匹配必须填写 graphic_match_basis")
+    elif not same_subject or not same_time or not same_space or viewpoint_changed:
         derived_path = "subject_or_viewpoint"
         difference_strength = "strong"
     elif angle is not None and angle >= 30.0:
         derived_path = "angle"
-        thirty_degree_applicable = True
         difference_strength = "strong"
     elif scale_steps is not None and scale_steps >= 2:
         derived_path = "axial_scale"
         difference_strength = "strong"
+    elif len(moderate_visual_changes) >= 2:
+        derived_path = "combined"
+        difference_strength = "combined"
     else:
-        # The 30-degree rule matters most when subject/time/viewpoint match and scale is same/adjacent.
-        thirty_degree_applicable = same_subject and same_time_space and not viewpoint_changed
-        if angle is not None and 15.0 <= angle < 30.0:
-            moderate_changes.append("camera_angle_15_29")
-        if scale_steps == 1:
-            moderate_changes.append("adjacent_scale_change")
-        moderate_changes.extend(
-            item for item in declared_changes if item in VISUAL_CHANGE_ALIASES
+        errors.append(
+            "相邻SHOT缺少合法视觉差异：需要一项强视觉变化，或至少两项中等视觉变化；"
+            "动作阶段、新信息和情绪重点只能证明CUT任务，不能代替画面差异"
         )
-        if action_stage_changed:
-            moderate_changes.append("action_stage")
-        moderate_changes.extend(
-            item for item in declared_changes if item in NARRATIVE_CHANGE_ALIASES
-        )
-        moderate_changes = list(dict.fromkeys(moderate_changes))
+        if angle is not None and angle < 15.0 and (scale_steps or 0) <= 1:
+            errors.append(
+                "前后SHOT为同一主体与连续时空，摄影机夹角小于15度，"
+                "景别相同或只差一级，且缺少其他中等视觉变化；属于无意近似跳切"
+            )
 
-        visual_count = sum(
-            1
-            for item in moderate_changes
-            if item in VISUAL_CHANGE_ALIASES
-            or item in {"camera_angle_15_29", "adjacent_scale_change"}
-        )
-        if len(moderate_changes) >= 2 and visual_count >= 1:
-            derived_path = "combined"
-            difference_strength = "combined"
-        else:
-            derived_path = "invalid_near_jump"
-            if angle is not None and angle < 15.0 and (scale_steps or 0) <= 1:
-                errors.append(
-                    "前后SHOT为同一主体与连续时空，摄影机夹角小于15度，"
-                    "景别相同或只差一级，且缺少足够组合差异；属于无意近似跳切"
-                )
-            else:
-                errors.append("相邻SHOT缺少一条合法视觉差异路径")
+    thirty_degree_applicable = bool(
+        same_subject
+        and same_time
+        and same_space
+        and not viewpoint_changed
+        and (scale_steps is not None and scale_steps <= 1)
+        and editing_device == "none"
+    )
+    if derived_path == "angle":
+        thirty_degree_status = "met"
+    elif thirty_degree_applicable and derived_path == "combined":
+        thirty_degree_status = "not_met_but_equivalent_visual_path"
+    elif thirty_degree_applicable:
+        thirty_degree_status = "not_met"
+    elif editing_device != "none":
+        thirty_degree_status = "not_applicable_editing_device"
+    else:
+        thirty_degree_status = "not_applicable"
 
     if claimed_path and claimed_path != derived_path:
         errors.append(
             f"声明的视觉差异路径为{claimed_path}，但几何推导结果为{derived_path}"
         )
 
-    if derived_path == "intentional_jump" and not str(
-        payload.get("jump_cut_purpose", "")
-    ).strip():
-        errors.append("有意跳切必须填写 jump_cut_purpose")
+    if axis_status == "not_applicable" and bool(payload.get("axis_required", False)):
+        errors.append("axis_required=true 时，axis_status 不能为 not_applicable")
 
-    if derived_path == "axial_scale" and angle is not None and angle > 30.0:
-        warnings.append("当前同时满足角度路径与大景别路径；优先记录角度路径即可")
-
-    if derived_path == "angle":
-        thirty_degree_status = "met"
-    elif derived_path == "combined" and thirty_degree_applicable:
-        thirty_degree_status = "not_met_but_combined_path"
-    elif derived_path == "invalid_near_jump" and thirty_degree_applicable:
-        thirty_degree_status = "not_met"
-    elif derived_path == "intentional_jump":
-        thirty_degree_status = "not_applicable_intentional_jump"
-    else:
-        thirty_degree_status = "not_applicable"
+    if action_stage_changed and derived_path == "invalid_near_jump":
+        warnings.append("动作阶段已经变化，但视觉差异仍不足；叙事变化不能自动豁免近似机位")
 
     return {
         "ok": not errors,
+        "transition_id": transition_id,
         "from_shot": from_shot.get("id"),
         "to_shot": to_shot.get("id"),
         "camera_angle_degrees": round(angle, 2) if angle is not None else None,
         "shot_scale_step_difference": scale_steps,
         "same_primary_subject": same_subject,
-        "same_time_space": same_time_space,
+        "same_time": same_time,
+        "same_space": same_space,
         "viewpoint_changed": viewpoint_changed,
         "action_stage_changed": action_stage_changed,
+        "axis_status": axis_status,
         "thirty_degree_applicable": thirty_degree_applicable,
         "thirty_degree_status": thirty_degree_status,
         "derived_difference_path": derived_path,
         "difference_strength": difference_strength,
-        "moderate_changes": moderate_changes,
+        "strong_visual_changes": strong_visual_changes,
+        "moderate_visual_changes": moderate_visual_changes,
         "errors": errors,
         "warnings": warnings,
     }
