@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -57,6 +58,22 @@ class RuleSourceTests(unittest.TestCase):
             result = VALIDATOR.validate(root)
             self.assertFalse(result["ok"])
             self.assertTrue(any("30度规则" in item for item in result["errors"]))
+
+    def test_stale_cumulative_cut_rule_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo"
+            shutil.copytree(ROOT, root)
+            path = root / "references/05-video-prompting.md"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\n相邻SHOT是否满足30度、景别差异、两变量和信息可见性。\n",
+                encoding="utf-8",
+            )
+            result = VALIDATOR.validate(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(
+                any("过时或累计式视觉差异规则" in item for item in result["errors"])
+            )
 
 
 if __name__ == "__main__":
