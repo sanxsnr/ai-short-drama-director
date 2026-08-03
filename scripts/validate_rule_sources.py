@@ -13,7 +13,14 @@ FILES = {
     "skill": ROOT / "SKILL.md",
     "script": ROOT / "references/01-script-slicing.md",
     "spatial": ROOT / "references/04-blocking-continuity.md",
+    "video": ROOT / "references/05-video-prompting.md",
+    "qc": ROOT / "references/06-qc-repair-post.md",
+    "storyboard": ROOT / "references/07-storyboard-image-prompts.md",
+    "beginner": ROOT / "references/11-beginner-guided-mode.md",
+    "output": ROOT / "references/12-output-format-and-choice-footer.md",
     "cut": ROOT / "references/13-cut-shot-geometry.md",
+    "agent": ROOT / "agents/openai.yaml",
+    "production_template": ROOT / "assets/production-document-template.md",
 }
 
 FORBIDDEN = {
@@ -26,6 +33,8 @@ FORBIDDEN = {
     "script": [
         "## 30度规则",
         "## 两变量规则",
+        "## 相邻SHOT视觉差异闸门",
+        "## 视觉差异充分性",
         "## 禁止切到相邻镜头",
         "## 跨SHOT状态继承",
         "## 信息可见性",
@@ -34,6 +43,8 @@ FORBIDDEN = {
         "## 有效CUT触发条件",
         "## CUT类型",
         "## 30度规则",
+        "## 相邻SHOT视觉差异闸门",
+        "## 视觉差异充分性",
         "## 景别跨级规则",
         "## 两变量规则",
     ],
@@ -80,6 +91,25 @@ SKILL_GEOMETRY_CONTRACT = (
     "只有`04`输出“几何结论：通过”后",
     "唯一方案锁",
     "validate_spatial_geometry.py",
+)
+
+CUT_DIFFERENCE_CONTRACT = (
+    "## 相邻SHOT视觉差异闸门",
+    "30度规则只在以下条件同时成立时重点适用",
+    "同轴大景别路径",
+    "角度路径与同轴大景别路径是替代关系",
+    "## 视觉差异充分性",
+    "无意的近似机位跳切",
+)
+
+STALE_GLOBAL_PHRASES = (
+    "相邻SHOT是否满足30度、景别差异、两变量",
+    "每次CUT至少改变两个有效视觉变量",
+    "禁止相邻机位和相邻景别",
+    "无相邻机位、相邻景别或近似构图",
+    "前后是相邻机位、相邻景别或近似构图",
+    "相邻机位和相邻景别造成无效跳切",
+    "满足30度和两变量规则",
 )
 
 
@@ -148,6 +178,28 @@ def validate(root: Path = ROOT) -> dict[str, object]:
     ):
         errors.append("13-cut-shot-geometry.md 必须把04空间事实置于CUT决策规则之前。")
 
+    for phrase in CUT_DIFFERENCE_CONTRACT:
+        if phrase not in cut_text:
+            errors.append(f"references/13-cut-shot-geometry.md 缺少视觉差异合同：{phrase}")
+
+    spatial_text = texts.get("spatial", "")
+    if "不是相邻SHOT之间的30度剪辑规则" not in spatial_text:
+        errors.append("04必须明确区分单机位可见面角度与相邻SHOT的30度剪辑规则。")
+
+    scanned_paths: set[Path] = set()
+    for path in root.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in {".md", ".yaml", ".yml"}:
+            continue
+        if any(part in {".git", "tests", "__pycache__"} for part in path.parts):
+            continue
+        scanned_paths.add(path)
+        text_value = path.read_text(encoding="utf-8")
+        for phrase in STALE_GLOBAL_PHRASES:
+            if phrase in text_value:
+                errors.append(
+                    f"{path.relative_to(root)} 保留了过时或累计式视觉差异规则：{phrase}"
+                )
+
     for name in ("skill", "script", "cut"):
         text = texts.get(name, "")
         for phrase in AMBIGUOUS_SEG_SHOT_PHRASES:
@@ -164,9 +216,26 @@ def validate(root: Path = ROOT) -> dict[str, object]:
                     f"{FILES[name].relative_to(ROOT)} 缺少单SHOT SEG明确合同：{phrase}"
                 )
 
+    readme = root / "README.md"
+    if readme.exists():
+        readme_text = readme.read_text(encoding="utf-8")
+        for phrase in ("validate_cut_geometry.py", "13-cut-shot-geometry.md"):
+            if phrase not in readme_text:
+                errors.append(f"README.md 缺少当前仓库结构或验证器说明：{phrase}")
+
+    readme_en = root / "README_EN.md"
+    if readme_en.exists() and "validate_cut_geometry.py" not in readme_en.read_text(encoding="utf-8"):
+        errors.append("README_EN.md 缺少CUT视觉差异验证器说明：validate_cut_geometry.py")
+
     geometry_validator = root / "scripts/validate_spatial_geometry.py"
     if not geometry_validator.exists():
         errors.append("缺少空间几何验证器：scripts/validate_spatial_geometry.py")
+
+    cut_geometry_validator = root / "scripts/validate_cut_geometry.py"
+    if not cut_geometry_validator.exists():
+        errors.append("缺少CUT视觉差异验证器：scripts/validate_cut_geometry.py")
+    if "validate_cut_geometry.py" not in skill_text:
+        errors.append("SKILL.md 缺少CUT视觉差异验证器入口：validate_cut_geometry.py")
 
     return {"ok": not errors, "errors": errors, "warnings": warnings}
 
