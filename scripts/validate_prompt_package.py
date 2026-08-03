@@ -21,6 +21,12 @@ INTERNAL_MARKERS = (
 )
 FRAME_ROLES = {"first_frame", "last_frame", "首帧", "尾帧"}
 FRAME_MODES = {"i2v", "flf2v", "video_extension", "首帧", "首尾帧", "视频延长"}
+ALLOWED_SHOT_RULES = {
+    "single_shot_per_segment",
+    "multiple_shots_per_segment",
+    "每个SEG单SHOT",
+    "允许SEG内多SHOT",
+}
 
 
 def load_payload(path: str | None) -> dict:
@@ -65,6 +71,14 @@ def validate(payload: dict) -> dict:
         target_duration = 0
 
     generation_mode = str(payload.get("generation_mode", "standard")).strip().lower()
+    shot_rule = payload.get("shot_rule")
+    segment_terminal = payload.get("segment_terminal")
+    if shot_rule is not None and shot_rule not in ALLOWED_SHOT_RULES:
+        errors.append(
+            "shot_rule 必须是 single_shot_per_segment 或 "
+            "multiple_shots_per_segment"
+        )
+
     final_prompt = str(payload.get("final_prompt", ""))
     compact_prompt = compact(final_prompt)
     for marker in INTERNAL_MARKERS:
@@ -141,6 +155,14 @@ def validate(payload: dict) -> dict:
         if not isinstance(shots, list) or not shots:
             errors.append("shots 存在时必须是非空数组")
         else:
+            if not isinstance(segment_terminal, bool):
+                errors.append("提供shots时必须明确 segment_terminal=true/false")
+            if shot_rule in {"single_shot_per_segment", "每个SEG单SHOT"} and len(shots) != 1:
+                errors.append(
+                    f"shot_rule={shot_rule} 时每个SEG必须且只能包含1个SHOT，"
+                    f"当前为{len(shots)}个"
+                )
+
             shot_ids: set[str] = set()
             for index, shot in enumerate(shots, start=1):
                 if not isinstance(shot, dict):
@@ -153,11 +175,22 @@ def validate(payload: dict) -> dict:
                     errors.append(f"SHOT id 重复：{shot_id}")
                 else:
                     shot_ids.add(shot_id)
-                if index < len(shots):
-                    if not str(shot.get("cut_point", "")).strip():
+
+                is_last = index == len(shots)
+                cut_point = str(shot.get("cut_point", "")).strip()
+                cut_type = str(shot.get("cut_type", "")).strip().upper()
+                if is_last and segment_terminal is True:
+                    if cut_type != "END":
+                        errors.append(f"终镜SHOT {shot_id or index}必须使用 cut_type=END")
+                else:
+                    if not cut_point:
                         errors.append(f"SHOT {shot_id or index}缺少 cut_point")
-                    if not str(shot.get("cut_type", "")).strip():
+                    if not cut_type:
                         errors.append(f"SHOT {shot_id or index}缺少 cut_type")
+                    elif cut_type == "END":
+                        errors.append(
+                            f"非终点SHOT {shot_id or index}不得使用 cut_type=END"
+                        )
 
     context_scope = payload.get("context_scope", {})
     if context_scope is not None and not isinstance(context_scope, dict):
@@ -180,6 +213,8 @@ def validate(payload: dict) -> dict:
         "missing_assets": missing_assets,
         "dialogue_line_count": len(dialogue_lines),
         "shot_count": len(shots) if isinstance(shots, list) else 0,
+        "shot_rule": shot_rule,
+        "segment_terminal": segment_terminal,
         "errors": errors,
         "warnings": warnings,
     }
