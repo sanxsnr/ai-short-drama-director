@@ -1,4 +1,4 @@
 interface:
   display_name: "AI短剧从0到1导演"
-  short_description: "用CUT优先、空间确认和固定文档带新手从灵感做到成片"
-  default_prompt: "使用 $ai-short-drama-director 开启零基础模式，从我现有的灵感或素材开始，用固定制作文档一步一步带我完成第一部AI短剧。涉及分镜时先锁定世界空间与摄影机观察签名，再验证每个SHOT是否真正拍到任务所需的主体、边界、路径、关键状态和视角证据；只有任务覆盖通过后才按自然切点CUT，再判断30度与视觉差异路径并拦截无意近似跳切。每次回复后给出A/B/C三个下一步选择，并让每个可复制选项都以‘使用 $ai-short-drama-director’开头。"
+  short_description: "用AI直接成片SEG、空间与CUT规则带新手从灵感做到成片"
+  default_prompt: "使用 $ai-short-drama-director 开启零基础模式，从我现有的灵感或素材开始，用固定制作文档一步一步带我完成第一部AI短剧。涉及分镜时先区分SEG、SHOT、CUT和同一SHOT内的连续运镜，锁定普通剧情、高速动作或固定机位时间流逝类型；再锁定世界空间与摄影机观察签名，验证每个SHOT或运镜阶段是否拍到任务所需证据，最后审核CUT、30度适用性与视觉差异。每次回复后给出A/B/C三个下一步选择，并让每个可复制选项都以‘使用 $ai-short-drama-director’开头。"

@@ -167,6 +167,7 @@ Skill调用命令属于对话导航，必须放在：
 | 目标平台／工具 |  |
 | 画幅 | 待确认／具体值／不适用 |
 | 分镜规格 | 未选择／10秒版／15秒版／不适用 |
+| 当前SEG类型 | normal／high_speed_action／fixed_camera_time_passage／不适用 |
 | 当前状态 | 草稿／候选／已锁定／修订自检版 |
 
 ## 进度摘要
@@ -211,7 +212,7 @@ Skill调用命令属于对话导航，必须放在：
 
 一次交给视频模型生成的10秒或15秒单元称为“分镜段落”或“制片段”；段落内部的连续摄影机记录称为“SHOT”；SHOT之间通过CUT连接。
 
-先按 `04-blocking-continuity.md` 锁世界空间，再按 `14-shot-task-action-coverage.md` 验证SHOT任务与动作覆盖，再按 `13-cut-shot-geometry.md` 审核CUT，最后封装为制片段。
+先按 `01-script-slicing.md` 锁SEG类型与动作链，再按 `04-blocking-continuity.md` 锁世界空间，再按 `14-shot-task-action-coverage.md` 验证SHOT任务与动作覆盖，再按 `13-cut-shot-geometry.md` 审核CUT，最后封装为制片段。
 
 每个分镜段落固定使用以下结构：
 
@@ -226,6 +227,8 @@ Skill调用命令属于对话导航，必须放在：
 | 分镜编号 | SEG012 |
 | 目标规格 | 10秒版 |
 | 预估时长 | 10秒 |
+| segment_content_type | normal／high_speed_action／fixed_camera_time_passage |
+| shot_count／cut_count | 仅按显式SHOT边界统计 |
 | 剧情功能 | 本段改变了什么 |
 | 场景 | SC003（场景名称） |
 
@@ -246,20 +249,35 @@ Skill调用命令属于对话导航，必须放在：
 
 | 时间码 | SHOT | 画面与动作 | CUT点／类型 | 表演／台词／声音 | 景别／机位／轴线侧／运镜 |
 |---|---:|---|---|---|---|
-| 00:00–00:03 | 1 |  |  |  |  |
-| 00:03–00:07 | 2 |  |  |  |  |
-| 00:07–00:10 | 3 |  |  |  |  |
+| 00:00–00:10 | 1 |  | END／段末状态 |  |  |
 
-## 4. 生成与参考
+时间轴行数由显式SHOT边界决定，不按景别、焦段或运镜阶段增加。需要多个SHOT时，为每个真实SHOT另起一行并填写CUT节点。
+
+每个SHOT另附结构字段：`shot_task`、`camera_zone`、`camera_direction`、`shot_size`、`camera_motion`、`cut_in`、`cut_out`、`focal_feel`、`action_stage`。其中`task_type`、`camera_zone_id`、`camera_forward_world`和`phase_task`属于04／14证据字段，不能替代这些SEG结构字段。
+
+## 4. 同一SHOT运镜阶段／时间流逝
+
+| SHOT | start_state | movement | end_state | lock_after_move |
+|---|---|---|---|---|
+| SHOT 1 |  |  |  | true／false |
+
+- focal_feel：广角空间感／标准透视／轻长焦压缩感／浅景深特写感。
+- time_passage：enabled、method、camera_locked_after_move、scene_geometry_unchanged、character_screen_positions_stable、time_transition_visible。
+
+## 5. 生成与参考
 
 - 全局风格：
 - 参考素材及唯一职责：
 - 故事板／图片提示词：
 - 视频提示词：
 
-## 5. 本段自检
+## 6. 本段自检
 
 - [ ] 总时长符合已锁定的10秒版或15秒版。
+- [ ] segment_content_type、shot_count和cut_count已通过`validate_segment_structure.py`。
+- [ ] 实际交付结构已原样运行验证器，没有用人工结论冒充`ok=true`。
+- [ ] 运镜、自然景别变化与焦段辅助提示没有被误计为SHOT边界。
+- [ ] 高速动作例外只用于真实高速动作链；固定机位时间流逝保持摄影机锁定和场景几何不变。
 - [ ] 时间码首尾相接，没有重叠或空洞。
 - [ ] 每个SHOT的task_type、必要画面证据、场景锚点和动作状态转换已经通过`14`。
 - [ ] 所有自然CUT点已按规则拆分，没有过载SHOT。
@@ -315,5 +333,6 @@ Skill调用命令属于对话导航，必须放在：
 - [ ] Skill调用命令是否留在生成提示词、XML、JSON和模型负载之外。
 - [ ] 制作文档是否使用固定文档外壳。
 - [ ] 分镜是否区分SEG、SHOT和CUT。
+- [ ] 是否记录SEG类型、显式SHOT／CUT计数、camera_motion_phases与time_passage。
 - [ ] 分镜是否包含空间确认、SHOT任务证据、动作状态机、CUT点、机位几何、资产、时间轴、声音、首尾状态和自检。
 - [ ] 是否消除了字段名和值各占一行的冗长排版。

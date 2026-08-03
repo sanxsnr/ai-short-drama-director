@@ -17,11 +17,10 @@ ALLOWED_STATUSES = {
     "rework",
 }
 SKILL_COMMAND_PREFIX = "使用 $ai-short-drama-director"
-ALLOWED_SHOT_RULES = {
-    "single_shot_per_segment",
-    "multiple_shots_per_segment",
-    "每个SEG单SHOT",
-    "允许SEG内多SHOT",
+ALLOWED_SEGMENT_CONTENT_TYPES = {
+    "normal",
+    "high_speed_action",
+    "fixed_camera_time_passage",
 }
 
 
@@ -112,11 +111,11 @@ def validate(payload: dict) -> dict:
     if slicing_active:
         if segment_duration_mode not in (10, 15, "10", "15"):
             errors.append("进入视听切片或分镜阶段前，必须设置10秒或15秒规格")
-        shot_rule = payload.get("shot_rule")
-        if shot_rule not in ALLOWED_SHOT_RULES:
+        current_segment_content_type = payload.get("current_segment_content_type")
+        if current_segment_content_type not in ALLOWED_SEGMENT_CONTENT_TYPES:
             errors.append(
-                "进入分镜阶段必须设置 shot_rule："
-                "single_shot_per_segment 或 multiple_shots_per_segment"
+                "进入分镜阶段必须设置 current_segment_content_type：normal、"
+                "high_speed_action 或 fixed_camera_time_passage"
             )
         spatial_state = payload.get("spatial_state")
         if not isinstance(spatial_state, dict) or not spatial_state:
@@ -132,6 +131,12 @@ def validate(payload: dict) -> dict:
             errors.append("进入分镜阶段必须填写 shot_task_rules_version，记录14任务覆盖真源版本")
         if not nonempty_text(payload.get("cut_rules_version")):
             errors.append("进入分镜阶段必须填写 cut_rules_version，记录13 CUT真源版本")
+
+    if payload.get("shot_rule") is not None:
+        warnings.append(
+            "shot_rule 已停用；项目状态应记录 current_segment_content_type，"
+            "SHOT数量只由显式SHOT边界统计"
+        )
 
     options = payload.get("next_options")
     if not isinstance(options, list) or len(options) != 3:
@@ -181,7 +186,7 @@ def validate(payload: dict) -> dict:
         "status_counts": dict(status_counts),
         "next_option_count": len(options),
         "segment_duration_mode": segment_duration_mode,
-        "shot_rule": payload.get("shot_rule"),
+        "current_segment_content_type": payload.get("current_segment_content_type"),
         "errors": errors,
         "warnings": warnings,
     }

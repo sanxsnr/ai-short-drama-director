@@ -58,7 +58,7 @@ Production documents also use one stable wrapper: document metadata, progress su
 
 | Shot section | Required content |
 |---|---|
-| Basics | Episode, production-unit ID, 10s/15s mode, duration, story function, scene |
+| Basics | Episode, SEG ID, 10s/15s mode, SEG content type, explicit SHOT/CUT counts, story function, scene |
 | Assets and continuity | Character, wardrobe, prop, blocking, inherited state, opening state, final frame, next inheritance |
 | Timeline | Timecode, internal shot, visible action, performance, dialogue/audio, framing/camera/lens/movement |
 | Generation and references | Global style, one role per reference, storyboard/image/video prompt |
@@ -294,10 +294,11 @@ then return the complete repaired prompt package and self-check report.
 
 ## Validation tools
 
-Eight dependency-free Python validators are included:
+Nine dependency-free Python validators are included:
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
+python3 scripts/validate_segment_structure.py segment-structure.json
 python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
 python3 scripts/validate_continuity.py continuity.json
@@ -307,7 +308,7 @@ python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_rule_sources.py
 ```
 
-They validate timing and dialogue capacity, project-stage evidence, prompt-package completeness, inherited state, subject-facing and camera visibility, SHOT task/action coverage, adjacent-shot visual-difference paths, and repository-wide rule-source consistency.
+They validate timing and dialogue capacity; AI-direct SEG type, explicit SHOT/CUT counts, camera-motion phases, and fixed-camera time passage; project-stage evidence; prompt-package completeness; inherited state; subject-facing and camera visibility; SHOT task/action coverage; adjacent-shot visual-difference paths; and repository-wide rule-source consistency.
 
 ## Repository structure
 

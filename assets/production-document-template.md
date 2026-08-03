@@ -12,7 +12,7 @@
 | 目标平台／工具 |  |
 | 画幅 | 待确认／不适用 |
 | 分镜规格 | 未选择／10秒版／15秒版／不适用 |
-| SHOT规则 | 每个SEG单SHOT／允许SEG内多SHOT／不适用 |
+| 当前SEG类型 | normal／high_speed_action／fixed_camera_time_passage／不适用 |
 | 当前状态 | 草稿／候选／已锁定／修订自检版 |
 
 ## 进度摘要
@@ -38,6 +38,7 @@
 | SEG编号 |  |
 | 目标规格 | 10秒版／15秒版 |
 | 预估时长 |  |
+| shot_count／cut_count | 仅按显式SHOT边界统计 |
 | 剧情功能 |  |
 | scene_id／time_id |  |
 | 场景标签 |  |
@@ -69,6 +70,7 @@
 
 每个SHOT补充：
 
+- shot_task／camera_zone／camera_direction／shot_size／camera_motion／cut_in／cut_out／focal_feel／action_stage：
 - SHOT任务合同／derived_independent_task：
 - required_evidence／visible_evidence：
 - camera_zone_id／camera_forward_world／primary_scene_anchor_id／visible_anchor_ids：
@@ -83,7 +85,16 @@
 
 终镜CUT类型写 `END`；下一SHOT起始状态可写“无／已知下一集状态”，不得擅自续写剧情。
 
-#### 4. 生成与参考
+#### 4. 同一SHOT运镜阶段／时间流逝
+
+| SHOT | start_state | movement | end_state | lock_after_move |
+|---|---|---|---|---|
+| SHOT 01 |  |  |  | true／false |
+
+- focal_feel：广角空间感／标准透视／轻长焦压缩感／浅景深特写感。
+- time_passage：enabled、method、camera_locked_after_move、scene_geometry_unchanged、character_screen_positions_stable、time_transition_visible。
+
+#### 5. 生成与参考
 
 - 全局风格：
 - 参考素材及唯一职责：
@@ -91,9 +102,10 @@
 - 故事板／图片提示词：
 - 视频提示词：
 
-#### 5. 本SEG自检
+#### 6. 本SEG自检
 
 - [ ] 时长符合规格，时间码连续。
+- [ ] SEG类型、显式SHOT／CUT计数、运镜阶段和时间流逝合同已通过结构验证。
 - [ ] 每个SHOT已通过`14`任务覆盖，不能依赖自报`independent_task=true`。
 - [ ] ENTER／EXIT的边界、路径和落点可见；POV／OTS／INSERT有真实证据。
 - [ ] 每个CUT有明确节点和经验证的独立叙事任务。

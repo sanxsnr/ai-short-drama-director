@@ -27,15 +27,16 @@
 
 不要把XML、自检日志、教学说明、ABC导航或Skill调用命令塞进最终视频提示词。
 
-## 镜头密度
+## SEG类型与镜头密度
 
-不使用固定的“10秒必须1—3镜”“15秒必须2—4镜”等配额。
+先读取`01-script-slicing.md`并锁定`segment_content_type`。普通剧情、高速动作和固定机位时间流逝使用不同的SHOT数量策略，本文件不得另写一套数量上限。
 
 SHOT数量由合法CUT点决定：
 
 - 没有成立的新画面任务时，可以保持一个SHOT。
 - 自然切点和下一SHOT任务成立时，必须保留CUT。
-- 蒙太奇、追逐或多个独立信息点可以更密。
+- 高速动作只有在已标记对应SEG类型并通过动作连续性检查时，才可使用多个短SHOT。
+- 固定机位时间流逝保持同一连续观察，不因日夜或人物状态变化改写为多机位蒙太奇。
 - 固定机位只有在没有新的独立画面任务时才继续，不能以“细微表演”名义吞并有效CUT。
 
 如果目标模型无法稳定承载当前SEG，优先：
@@ -46,6 +47,45 @@ SHOT数量由合法CUT点决定：
 
 不得为了降低负载把多个有效SHOT合并成一个过载长镜头。
 
+## 运镜、景别、焦段与CUT表达
+
+在同一SHOT内按连续时间写运镜：
+
+```text
+起始构图 → 推／拉／摇／移／跟／升降／环绕 → 目标构图 → 是否锁定
+```
+
+- 运镜只改变当前SHOT中的摄影机状态，不自动新增SHOT。
+- 人物靠近或远离摄影机、景别自然改变、摄影机先移动后固定，都可保持同一SHOT。
+- 只有显式写出CUT或进入新的SHOT块，才表示连续观察发生切换。
+- 运镜不得替代人物换位过程、轴线交代、动作进度和空间连续性。
+
+精确焦段只能作为辅助视觉提示。最终提示词优先使用：
+
+```text
+广角空间感／标准透视／轻长焦压缩感／浅景深特写感
+```
+
+不得用35mm、50mm、65mm、85mm等数值硬判CUT、运镜、越轴、换位、景别、动作可见性或SHOT数量。
+
+- 不同SHOT分别列出不同焦段：表示各SHOT的视觉参数，不表示连续变焦。
+- 同一SHOT列出多个焦段：必须明确写`continuous_zoom`、摄影机推近或摄影机后退。
+- 同一SHOT多焦段且无任何过渡说明：输出警告`ambiguous_focal_transition`，但不得自动推导CUT或运镜。
+
+同轴眼部极近特写到全身动作可以选择硬切，也可以选择极速后拉。硬切通常更容易稳定生成；极速后拉仍是合法的单SHOT方案，不能判错。
+
+## 固定机位时间流逝提示词
+
+标记`FIXED_CAMERA_TIME_PASSAGE`并保持一个连续观察。合法表达包括：
+
+```text
+摄影机从床头双人构图缓慢推进到圆窗，到达后完全锁定；
+场景几何和人物屏幕位置不变，窗外夜色、晨光、夜色依次可见变化，
+人物状态同步递进，不切换到人物近景或其他机位。
+```
+
+摄影机也可从开始即固定。日夜、灯光和人物衰弱状态的可见变化不写CUT；只有画面真正切换到另一连续观察时才建立新SHOT。
+
 ## 内部导演计划
 
 逐段检查：
@@ -54,6 +94,10 @@ SHOT数量由合法CUT点决定：
 - 出场资产及当前物理状态。
 - 已确认scene_id／time_id、摄影机世界坐标与朝向、人物位置、轴线侧和固定锚点。
 - 每个SHOT的task_type、必要画面证据、动作状态转换、景别、机位和CUT点。
+- segment_content_type、shot_count、cut_count与显式SHOT边界。
+- 同一SHOT的camera_motion_phases、景别变化方法和`lock_after_move`。
+- time_passage启用时的摄影机锁定、场景几何、人物屏幕位置与可见时间变化。
+- SEG结构中的`shot_task`、`camera_zone`、`camera_direction`和`action_stage`已经显式填写；04／14的相近字段只提供值来源，不能替代结构字段名。
 - 每个SHOT是否已按`14`取得`derived_independent_task=true`，进出场边界、路径、视角证据和动作结果是否真实可见。
 - 相邻SHOT是否已按`13`标明视觉差异路径、30度适用性／不适用原因、景别差异和信息可见性。
 - CUT前结束状态与下一SHOT起始状态。
@@ -73,11 +117,14 @@ scene_id／camera_zone_id／scene anchor：
 CUT点／类型：
 结束状态：
 
+【同一SHOT运镜阶段】
+start_state／movement／end_state／lock_after_move：
+
 【SHOT 2】【00:XX—00:XX】
 ……
 ```
 
-三个以上时间码时运行 `scripts/validate_timeline.py`；涉及人物进出、视线揭示、POV／OTS／INSERT或主体切换时运行`scripts/validate_shot_task.py`；相邻SHOT再运行`scripts/validate_cut_geometry.py`。
+每个结构化SEG先把实际JSON原样输入`scripts/validate_segment_structure.py`，以脚本返回`ok=true`为准；三个以上时间码时运行 `scripts/validate_timeline.py`；涉及人物进出、视线揭示、POV／OTS／INSERT或主体切换时运行`scripts/validate_shot_task.py`；相邻SHOT再运行`scripts/validate_cut_geometry.py`。不得用人工判断替代脚本结果并口头宣称通过。
 
 ## Seedance可复制提示词
 
@@ -94,7 +141,7 @@ CUT点／类型：
 所有角色均为原创角色，不模仿真人明星或受保护角色。
 ```
 
-提示词可以合并多个SHOT到一个SEG，但必须明确保留全部SHOT边界、CUT点和动作进度。
+提示词可以合并多个已通过数量规则的SHOT到一个SEG，但必须明确保留全部SHOT边界、CUT点和动作进度；camera_motion_phases留在所属SHOT内，不拆成伪SHOT。
 
 每个镜头只重复容易漂移的特征，不机械复读整份资产卡。负面约束只写当前最可能出错的3—8项。
 
@@ -179,6 +226,9 @@ CUT点／类型：
 检查：
 
 - 单个SEG是否包含过多SHOT、角色、并行动作或参考素材。
+- 是否把普通剧情误标为高速动作以绕过数量检查。
+- 是否把运镜阶段、景别变化或焦段提示误拆成SHOT。
+- 固定机位时间流逝是否被擅自改成多个机位。
 - 参考图职责是否冲突。
 - 提示词是否混入内部命令。
 - 上游空间、SHOT任务覆盖、资产或CUT是否已经错误。
