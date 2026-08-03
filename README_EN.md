@@ -290,16 +290,18 @@ then return the complete repaired prompt package and self-check report.
 
 ## Validation tools
 
-Four dependency-free Python validators are included:
+Six dependency-free Python validators support the production workflow:
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
+python3 scripts/validate_continuity.py continuity.json
+python3 scripts/validate_spatial_geometry.py spatial-geometry.json
+python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
-python3 scripts/validate_continuity.py continuity.json
 ```
 
-They validate timing and dialogue capacity, evidence for project-stage claims, prompt-package completeness and reference conflicts, and inherited state between adjacent production units.
+They validate timing and dialogue capacity, inherited state between adjacent SHOTs or SEGs, subject–target–movement–camera geometry, 30-degree applicability and visual-difference paths, evidence for project-stage claims, and prompt-package completeness or reference conflicts. `scripts/validate_rule_sources.py` is an internal CI contract check that prevents duplicated or contradictory rules across files.
 
 ## Repository structure
 
