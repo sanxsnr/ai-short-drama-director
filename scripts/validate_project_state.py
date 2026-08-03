@@ -9,13 +9,19 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-
 ALLOWED_STATUSES = {
     "completed",
     "in_progress",
     "not_started",
     "blocked",
     "rework",
+}
+SKILL_COMMAND_PREFIX = "使用 $ai-short-drama-director"
+ALLOWED_SHOT_RULES = {
+    "single_shot_per_segment",
+    "multiple_shots_per_segment",
+    "每个SEG单SHOT",
+    "允许SEG内多SHOT",
 }
 
 
@@ -33,13 +39,12 @@ def validate(payload: dict) -> dict:
     errors: list[str] = []
     warnings: list[str] = []
 
-    required_text = [
+    for field in (
         "project_name",
         "current_version",
         "current_stage",
         "next_milestone",
-    ]
-    for field in required_text:
+    ):
         if not nonempty_text(payload.get(field)):
             errors.append(f"缺少有效字段：{field}")
 
@@ -90,21 +95,47 @@ def validate(payload: dict) -> dict:
 
     slicing_active = any(
         isinstance(stage, dict)
-        and any(keyword in str(stage.get("name", "")).lower()
-                for keyword in ("切片", "分镜", "slicing", "storyboard"))
+        and any(
+            keyword in str(stage.get("name", "")).lower()
+            for keyword in ("切片", "分镜", "shot", "cut", "slicing", "storyboard")
+        )
         and stage.get("status") in {"completed", "in_progress", "rework"}
         for stage in stages
     )
     current_stage = str(payload.get("current_stage", "")).lower()
-    if any(keyword in current_stage for keyword in ("切片", "分镜", "slicing", "storyboard")):
+    if any(
+        keyword in current_stage
+        for keyword in ("切片", "分镜", "shot", "cut", "slicing", "storyboard")
+    ):
         slicing_active = True
-    if slicing_active and segment_duration_mode not in (10, 15, "10", "15"):
-        errors.append("进入视听切片或分镜阶段前，必须把 segment_duration_mode 设为10或15")
+
+    if slicing_active:
+        if segment_duration_mode not in (10, 15, "10", "15"):
+            errors.append("进入视听切片或分镜阶段前，必须设置10秒或15秒规格")
+        shot_rule = payload.get("shot_rule")
+        if shot_rule not in ALLOWED_SHOT_RULES:
+            errors.append(
+                "进入分镜阶段必须设置 shot_rule："
+                "single_shot_per_segment 或 multiple_shots_per_segment"
+            )
+        spatial_state = payload.get("spatial_state")
+        if not isinstance(spatial_state, dict) or not spatial_state:
+            errors.append("进入分镜阶段必须提供 spatial_state")
+        else:
+            resolution = str(spatial_state.get("resolution", "")).strip()
+            if resolution not in {"confirmed", "uniquely_derived", "critical_ambiguity"}:
+                errors.append(
+                    "spatial_state.resolution 必须是 confirmed、"
+                    "uniquely_derived 或 critical_ambiguity"
+                )
+        if not nonempty_text(payload.get("cut_rules_version")):
+            warnings.append("建议填写 cut_rules_version，记录CUT唯一真源版本")
 
     options = payload.get("next_options")
     if not isinstance(options, list) or len(options) != 3:
         errors.append("next_options 必须且只能包含3个可执行选项")
         options = options if isinstance(options, list) else []
+
     option_ids: set[str] = set()
     recommended_count = 0
     for index, option in enumerate(options, start=1):
@@ -118,9 +149,17 @@ def validate(payload: dict) -> dict:
             errors.append(f"下一步选项 id 重复：{option_id}")
         else:
             option_ids.add(option_id)
+
         for field in ("action", "deliverable", "reply_command"):
             if not nonempty_text(option.get(field)):
                 errors.append(f"选项{option_id or index}缺少 {field}")
+
+        reply_command = str(option.get("reply_command", "")).strip()
+        if reply_command and not reply_command.startswith(SKILL_COMMAND_PREFIX):
+            errors.append(
+                f"选项{option_id or index}的 reply_command 必须以 "
+                f"{SKILL_COMMAND_PREFIX!r} 开头"
+            )
         if option.get("recommended") is True:
             recommended_count += 1
 
@@ -131,7 +170,7 @@ def validate(payload: dict) -> dict:
 
     source_of_truth = payload.get("source_of_truth")
     if not isinstance(source_of_truth, dict) or not source_of_truth:
-        warnings.append("建议填写 source_of_truth，记录当前真源剧本和锁定资产版本")
+        warnings.append("建议填写 source_of_truth，记录真源剧本、空间和锁定资产版本")
 
     return {
         "ok": not errors,
@@ -140,6 +179,7 @@ def validate(payload: dict) -> dict:
         "status_counts": dict(status_counts),
         "next_option_count": len(options),
         "segment_duration_mode": segment_duration_mode,
+        "shot_rule": payload.get("shot_rule"),
         "errors": errors,
         "warnings": warnings,
     }
