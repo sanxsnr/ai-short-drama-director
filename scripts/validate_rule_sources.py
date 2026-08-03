@@ -11,8 +11,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 FILES = {
     "skill": ROOT / "SKILL.md",
+    "diagnosis": ROOT / "references/00-project-diagnosis.md",
     "script": ROOT / "references/01-script-slicing.md",
     "spatial": ROOT / "references/04-blocking-continuity.md",
+    "video": ROOT / "references/05-video-prompting.md",
+    "qc": ROOT / "references/06-qc-repair-post.md",
+    "storyboard": ROOT / "references/07-storyboard-image-prompts.md",
+    "output": ROOT / "references/12-output-format-and-choice-footer.md",
     "cut": ROOT / "references/13-cut-shot-geometry.md",
 }
 
@@ -54,6 +59,10 @@ REQUIRED_REFERENCES = {
     ],
     "script": ["04-blocking-continuity.md", "13-cut-shot-geometry.md"],
     "spatial": ["13-cut-shot-geometry.md"],
+    "video": ["04-blocking-continuity.md", "13-cut-shot-geometry.md"],
+    "qc": ["04-blocking-continuity.md", "13-cut-shot-geometry.md"],
+    "storyboard": ["04-blocking-continuity.md", "13-cut-shot-geometry.md"],
+    "output": ["04-blocking-continuity.md", "13-cut-shot-geometry.md"],
     "cut": ["04-blocking-continuity.md"],
 }
 
@@ -81,6 +90,40 @@ SKILL_GEOMETRY_CONTRACT = (
     "唯一方案锁",
     "validate_spatial_geometry.py",
 )
+
+CUT_VISUAL_DIFFERENCE_CONTRACT = (
+    "30度规则不是所有CUT的强制条件",
+    "180度轴线优先于30度",
+    "同轴大景别变化",
+    "标准两变量路径",
+    "主导变化路径",
+    "30度适用性",
+)
+
+SKILL_CUT_CONTRACT = (
+    "先判断30度是否适用",
+    "180度轴线与`04`空间事实始终高于30度",
+    "validate_cut_geometry.py",
+)
+
+CONFLICTING_DOWNSTREAM_PHRASES = {
+    "video": (
+        "相邻SHOT是否满足30度、景别差异、两变量和信息可见性",
+    ),
+    "storyboard": (
+        "相邻SHOT是否满足角度、景别、两变量和轴线规则",
+    ),
+    "output": (
+        "每次CUT至少改变两个有效视觉变量",
+        "无相邻机位、相邻景别或近似构图跳切",
+    ),
+    "qc": (
+        "前后是相邻机位、相邻景别或近似构图",
+    ),
+    "diagnosis": (
+        "相邻机位和相邻景别造成无效跳切",
+    ),
+}
 
 
 def appears_before(text: str, first: str, second: str) -> bool:
@@ -116,6 +159,14 @@ def validate(root: Path = ROOT) -> dict[str, object]:
             if ref not in text:
                 errors.append(f"{FILES[name].relative_to(ROOT)} 缺少唯一真源引用：{ref}")
 
+    for name, phrases in CONFLICTING_DOWNSTREAM_PHRASES.items():
+        text = texts.get(name, "")
+        for phrase in phrases:
+            if phrase in text:
+                errors.append(
+                    f"{FILES[name].relative_to(ROOT)} 含有与13视觉差异规则冲突的绝对表述：{phrase}"
+                )
+
     skill_text = texts.get("skill", "")
     if "其他文件只能引用这些真源，不得另写一套同类规则" not in skill_text:
         warnings.append("SKILL.md 未明确禁止其他文件重新定义同类规则。")
@@ -133,6 +184,10 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         if phrase not in skill_text:
             errors.append(f"SKILL.md 缺少空间几何入口合同：{phrase}")
 
+    for phrase in SKILL_CUT_CONTRACT:
+        if phrase not in skill_text:
+            errors.append(f"SKILL.md 缺少CUT视觉差异入口合同：{phrase}")
+
     spatial_text = texts.get("spatial", "")
     for phrase in SPATIAL_GEOMETRY_CONTRACT:
         if phrase not in spatial_text:
@@ -147,6 +202,12 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         "本文件的CUT和机位几何规则",
     ):
         errors.append("13-cut-shot-geometry.md 必须把04空间事实置于CUT决策规则之前。")
+
+    for phrase in CUT_VISUAL_DIFFERENCE_CONTRACT:
+        if phrase not in cut_text:
+            errors.append(
+                f"references/13-cut-shot-geometry.md 缺少视觉差异合同：{phrase}"
+            )
 
     for name in ("skill", "script", "cut"):
         text = texts.get(name, "")
@@ -167,6 +228,10 @@ def validate(root: Path = ROOT) -> dict[str, object]:
     geometry_validator = root / "scripts/validate_spatial_geometry.py"
     if not geometry_validator.exists():
         errors.append("缺少空间几何验证器：scripts/validate_spatial_geometry.py")
+
+    cut_validator = root / "scripts/validate_cut_geometry.py"
+    if not cut_validator.exists():
+        errors.append("缺少CUT视觉差异验证器：scripts/validate_cut_geometry.py")
 
     return {"ok": not errors, "errors": errors, "warnings": warnings}
 
