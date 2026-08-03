@@ -48,7 +48,7 @@ description: Guide beginners and experienced creators through AI short-drama pro
 | 声音与剪辑修复 | `references/10-voice-editing-repair.md` | 音色、逐句换音、声音桥和最终拼接 |
 | 新手模式 | `references/11-beginner-guided-mode.md` | 分阶段引导，不降低专业标准 |
 | 输出合同 | `references/12-output-format-and-choice-footer.md` | 回复结构、文档格式和ABC命令 |
-| CUT与镜头几何 | `references/13-cut-shot-geometry.md` | CUT触发、类型、相邻镜头和机位几何 |
+| CUT与镜头几何 | `references/13-cut-shot-geometry.md` | CUT触发、类型、30度适用性、同轴景别路径与相邻SHOT视觉差异 |
 
 其他文件只能引用这些真源，不得另写一套同类规则。
 
@@ -154,6 +154,7 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 python3 scripts/validate_timeline.py < timeline.json
 python3 scripts/validate_continuity.py < continuity.json
 python3 scripts/validate_spatial_geometry.py < spatial-geometry.json
+python3 scripts/validate_cut_geometry.py < cut-geometry.json
 python3 scripts/validate_project_state.py < project-state.json
 python3 scripts/validate_prompt_package.py < prompt-package.json
 ```
@@ -166,6 +167,8 @@ python3 scripts/validate_prompt_package.py < prompt-package.json
 - 不在多个文件中维护同一规则的不同版本。
 - 不把SEG、SHOT和CUT混为一谈。
 - 不用下游模型负载规则覆盖空间或CUT真源。
+- 不把30度、景别跨级和组合差异误写成所有CUT必须同时满足的累计门槛。
+- 不把“相邻SHOT”或“相邻景别”本身当成错误，只拦截缺乏有效视觉差异的无意近似跳切。
 - 不擅自修改用户锁定对白、剧情和资产。
 - 不先写正面／侧面结论再倒推摄影机方位。
 - 不让人物为露脸无理由转向摄影机。
