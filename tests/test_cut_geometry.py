@@ -479,6 +479,78 @@ class CutGeometryTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertTrue(any("180度轴线" in item for item in result["errors"]))
 
+    def test_15_reverse_direction_same_side_reverse_shot_passes(self):
+        before = shot(
+            shot_id="SHOT_A",
+            subject="dongsheng",
+            angle=0,
+            forward_angle=0,
+            primary_anchor="dongsheng",
+        )
+        task = dialogue_task(
+            subject="asuo",
+            camera_position=[-3, 3, 1.6],
+            camera_forward=direction(180),
+            primary_anchor="asuo",
+            visible_anchors=["asuo"],
+        )
+        after = shot(
+            shot_id="SHOT_B",
+            subject="asuo",
+            angle=180,
+            forward_angle=180,
+            camera_position=[-3, 3, 1.6],
+            primary_anchor="asuo",
+            visible_anchors=["asuo"],
+            task_contract=task,
+        )
+        result = CUT.validate(
+            payload(
+                from_shot=before,
+                to_shot=after,
+                claimed_path="subject_or_viewpoint",
+                axis_status="same_side",
+            )
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertEqual("same_side", result["axis_status"])
+
+    def test_16_reverse_direction_that_crosses_axis_fails(self):
+        before = shot(
+            shot_id="SHOT_A",
+            subject="dongsheng",
+            angle=0,
+            forward_angle=0,
+            primary_anchor="dongsheng",
+        )
+        task = dialogue_task(
+            subject="asuo",
+            camera_position=[-3, 3, 1.6],
+            camera_forward=direction(180),
+            primary_anchor="asuo",
+            visible_anchors=["asuo"],
+        )
+        after = shot(
+            shot_id="SHOT_B",
+            subject="asuo",
+            angle=180,
+            forward_angle=180,
+            camera_position=[-3, 3, 1.6],
+            primary_anchor="asuo",
+            visible_anchors=["asuo"],
+            task_contract=task,
+        )
+        result = CUT.validate(
+            payload(
+                from_shot=before,
+                to_shot=after,
+                claimed_path="subject_or_viewpoint",
+                axis_status="crossed_without_reestablish",
+            )
+        )
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("180度轴线" in item for item in result["errors"]))
+
     def test_intentional_jump_requires_purpose(self):
         result = CUT.validate(
             payload(editing_device="intentional_jump_cut", claimed_path="intentional_jump")

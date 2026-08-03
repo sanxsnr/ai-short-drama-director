@@ -33,34 +33,33 @@ class TimelineValidatorTests(unittest.TestCase):
                 "segment_mode": "10s",
                 "target_duration": 10,
                 "content_type": "mixed",
-                "shot_rule": "multiple_shots_per_segment",
+                "segment_content_type": "normal",
                 "segment_terminal": True,
                 "shots": [
                     {
                         "start": 0,
-                        "end": 3.2,
+                        "end": 5,
                         "cut_type": "EYELINE",
                         "cut_point": "沈渊抬眼锁定门口",
                     },
                     {
-                        "start": 3.2,
-                        "end": 7.4,
+                        "start": 5,
+                        "end": 10,
                         "dialogue": "醒了？月圆之夜，你这炉鼎的血，我要了。",
-                        "cut_type": "REACTION",
-                        "cut_point": "我要了最后一字落下",
+                        "cut_type": "END",
                     },
-                    {"start": 7.4, "end": 10, "cut_type": "END"},
                 ],
             }
         )
         self.assertTrue(result["ok"], result)
 
-    def test_single_shot_rule_rejects_multiple_shots(self):
+    def test_legacy_single_shot_rule_does_not_override_normal_policy(self):
         result = TIMELINE.validate(
             {
                 "segment_mode": "10s",
                 "target_duration": 10,
                 "content_type": "mixed",
+                "segment_content_type": "normal",
                 "shot_rule": "single_shot_per_segment",
                 "segment_terminal": True,
                 "shots": [
@@ -69,8 +68,8 @@ class TimelineValidatorTests(unittest.TestCase):
                 ],
             }
         )
-        self.assertFalse(result["ok"])
-        self.assertTrue(any("只能包含1个SHOT" in item for item in result["errors"]))
+        self.assertTrue(result["ok"], result)
+        self.assertTrue(any("legacy_shot_rule_ignored" in item for item in result["warnings"]))
 
     def test_nonterminal_segment_requires_last_cut_metadata(self):
         result = TIMELINE.validate(
@@ -78,7 +77,7 @@ class TimelineValidatorTests(unittest.TestCase):
                 "segment_mode": "10s",
                 "target_duration": 10,
                 "content_type": "mixed",
-                "shot_rule": "multiple_shots_per_segment",
+                "segment_content_type": "normal",
                 "segment_terminal": False,
                 "shots": [
                     {"start": 0, "end": 5, "cut_type": "CUT", "cut_point": "节点"},
@@ -148,7 +147,7 @@ class ProjectStateValidatorTests(unittest.TestCase):
                 "current_stage": "完整分镜",
                 "next_milestone": "完成CUT审核",
                 "segment_duration_mode": 10,
-                "shot_rule": "multiple_shots_per_segment",
+                "current_segment_content_type": "normal",
                 "spatial_state": {"resolution": "uniquely_derived"},
                 "shot_task_rules_version": "v1",
                 "cut_rules_version": "v1",
@@ -202,7 +201,7 @@ class PromptPackageValidatorTests(unittest.TestCase):
                 ),
                 "target_duration": 10,
                 "generation_mode": "standard",
-                "shot_rule": "multiple_shots_per_segment",
+                "segment_content_type": "normal",
                 "segment_terminal": True,
                 "references": [
                     {"id": "char1", "role": "character"},
@@ -267,6 +266,7 @@ class PromptPackageValidatorTests(unittest.TestCase):
                 "final_prompt": "使用 $ai-short-drama-director，按首帧生成。苏清月说：醒了？",
                 "target_duration": 10,
                 "generation_mode": "standard",
+                "segment_content_type": "normal",
                 "shot_rule": "single_shot_per_segment",
                 "segment_terminal": True,
                 "references": [{"id": "frame1", "role": "first_frame"}],
@@ -293,7 +293,8 @@ class PromptPackageValidatorTests(unittest.TestCase):
         errors = "\n".join(result["errors"])
         self.assertIn("使用 $ai-short-drama-director", errors)
         self.assertIn("普通多镜头流程不得默认加入首尾帧", errors)
-        self.assertIn("每个SEG必须且只能包含1个SHOT", errors)
+        self.assertNotIn("必须且只能包含1个SHOT", errors)
+        self.assertTrue(any("legacy_shot_rule_ignored" in item for item in result["warnings"]))
 
 
 if __name__ == "__main__":

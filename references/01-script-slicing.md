@@ -8,6 +8,8 @@
 - 可拍摄剧本、动作链、对白和OS／画外音。
 - 台词与动作读秒。
 - 10秒／15秒SEG规格选择。
+- SEG、SHOT、CUT与连续运镜的边界定义。
+- AI直接成片SEG的内容类型、SHOT数量上限与高速动作例外。
 - 将已经通过空间、SHOT任务覆盖与CUT审核的SHOT封装成SEG。
 
 本文件不负责：
@@ -122,16 +124,20 @@ C：使用 $ai-short-drama-director，选择C：先输出同一片段的10秒／
 
 ```text
 分镜切片规格：10秒版／15秒版
-SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
+当前SEG类型：normal／high_speed_action／fixed_camera_time_passage
+SHOT计数来源：仅显式SHOT边界
 ```
 
 定义：
 
-- `SEG`：一次交给视频模型生成的10秒或15秒单元。
-- `SHOT`：一次连续摄影机记录。
-- `CUT`：SHOT之间的切换。
+- `SEG`：一次交给视频模型直接生成的固定时长编号单元，通常为10秒或15秒；SEG可以包含一个连续SHOT，也可以包含多个由显式CUT连接的SHOT。
+- `SHOT`：两次CUT之间持续生成的连续观察。摄影机推近、后退、横移、跟拍、摇摄、升降、环绕，人物靠近／远离摄影机，景别自然改变，以及摄影机移动后锁定，都可以发生在同一SHOT内。
+- `CUT`：画面从一个连续观察切换到另一个连续观察。硬切、动作切、视线切、同侧反打、主观切以及完成遮挡后的真实镜头切换都属于CUT。
+- `运镜`：同一SHOT内摄影机位置、朝向或运动状态的连续变化。运镜本身不增加SHOT或CUT数量。
 
 本文件只负责SEG；空间事实由`04`决定，SHOT任务与动作覆盖由`14`验证，SHOT边界和CUT由`13`决定。
+
+不得根据编号时长、景别变化、焦段数值或运镜阶段自动推导SHOT边界。只有显式CUT或显式SHOT边界才增加数量。
 
 | 规格 | 常用范围 | 绝对上限 |
 |---|---:|---:|
@@ -139,6 +145,59 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 | 15秒版 | 13—17秒 | 18秒 |
 
 大场景变化、时间跳跃、完整动作保护或最后尾段可以短于目标时长，不为凑满塞入无关剧情。
+
+## AI直接成片SEG数量规则｜SEG_SHOT_COUNT_POLICY_V1
+
+本节是文档中唯一维护SEG数量上限的规则真源；其他文件只能引用，不得抄写另一套数值。
+
+### segment_content_type=normal｜普通剧情
+
+适用于普通对话、反应、起身、转身、进门、拿取道具等常规表演：
+
+```text
+shot_count <= 2
+cut_count <= 1
+```
+
+- 默认使用一个连续SHOT。
+- 只有两个确实独立的画面任务都通过`14`，且CUT通过`13`时，才使用两个SHOT和一次CUT。
+- 超出上限输出错误码`too_many_shots_for_normal_segment`。
+- 可以通过合法运镜完成的自然景别变化，优先保留在同一SHOT内；“优先”不等于强制，两个任务明显不同时CUT仍然合法。
+
+### segment_content_type=high_speed_action｜高速动作例外
+
+适用于打斗、追逐、高速奔跑、快速逃脱、连续闪避、灾难冲击和其他高速动作链。允许超过普通剧情的SHOT数量，但必须同时满足：
+
+1. 每个短SHOT推进不同动作阶段，并具有不同`action_signature`。
+2. 每次CUT落在刀锋、拳脚、身体运动、烟雾、遮挡或可见方向变化节点。
+3. 动作速度、进度与人物屏幕方向连续。
+4. 人物换位在画面中真实发生。
+5. 保持同一轴线侧；若改变轴线，必须在画面中重新建立空间。
+6. 相邻SHOT不得同时使用近似景别、近似角度和近似构图。
+7. 不重复同一攻防动作。
+8. 多SHOT确实提高动作节奏，而不是只为了展示更多景别。
+
+高速动作例外不得扩展到普通对话、普通进门或普通道具动作。
+
+### segment_content_type=fixed_camera_time_passage｜固定机位时间流逝
+
+标记`FIXED_CAMERA_TIME_PASSAGE`。适用于日夜交替、多日流逝、人物逐渐衰弱、光线与环境状态变化，以及固定构图内的时间压缩。
+
+```text
+shot_count = 1
+cut_count = 0
+```
+
+允许摄影机从开始即固定；也允许前段连续移动到目标构图后锁定。后续日夜、灯光与人物状态可以依次变化，但必须证明：
+
+```text
+camera_locked_after_move=true
+scene_geometry_unchanged=true
+character_screen_positions_stable=true
+time_transition_visible=true
+```
+
+可见的时间变化不是CUT、换机位或多SHOT蒙太奇。若确实切换连续观察，则不再属于本类型。
 
 ## 完整分镜生产顺序
 
@@ -155,7 +214,7 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 
 ## SEG封装规则
 
-多个已经通过`04`、`14`与`13`审核的SHOT可以装进同一SEG，但必须完整保留：
+先按本文件确定`segment_content_type`，再把已经通过`04`、`14`与`13`审核且未违反本节数量规则的SHOT装进同一SEG。必须完整保留：
 
 - 每个SHOT编号和起止时间。
 - 每个CUT点和CUT类型。
@@ -165,7 +224,56 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 
 模型负载过高时，把SHOT拆入更多SEG；不得删除、合并或重写已通过审核的CUT。
 
-用户明确“每10秒一镜”时，每个10秒SEG必须且只能包含1个SHOT；由于SHOT本身是一次连续摄影机记录，该SEG内部不包含CUT。“切至”“转到另一机位”等描述意味着产生新SHOT，必须移到下一个SEG。
+“每个编号段为10秒”只锁定SEG时长，不自动锁定SHOT数量。用户若另行明确要求单SHOT长镜头，才把单SHOT作为创作约束；该约束不得由“10秒一段”等表述自行推导。
+
+## SEG结构字段
+
+结构化SEG至少记录：
+
+```yaml
+segment_id:
+duration_seconds: 10
+segment_content_type: normal | high_speed_action | fixed_camera_time_passage
+shots:
+  - shot_id:
+    shot_task:
+    camera_zone:
+    camera_direction:
+    shot_size:
+    camera_motion:
+    cut_in:
+    cut_out:
+    focal_feel:
+    action_stage:
+shot_count:
+cut_count:
+camera_motion_phases:
+  - start_state:
+    movement:
+    end_state:
+    lock_after_move:
+time_passage:
+  enabled:
+  method:
+  camera_locked: # camera_locked_after_move的兼容别名
+  geometry_unchanged: # scene_geometry_unchanged的兼容别名
+  camera_locked_after_move:
+  scene_geometry_unchanged:
+  character_screen_positions_stable:
+  time_transition_visible:
+```
+
+`focal_feel`只保存广角空间感、标准透视、轻长焦压缩感或浅景深特写感等辅助视觉提示，不参与CUT、越轴、人物换位、动作可见性或SHOT数量硬判定。
+
+`shots`中的以下字段名必须原样存在，不能只用其他模块字段替代：
+
+- `shot_task`：当前SHOT的导演目标；`task_type`是14的任务分类，二者可以并存但不能互相省略。
+- `camera_zone`：可与04的`camera_zone_id`取相同值，但结构字段仍须保留。
+- `camera_direction`：可直接复制04的`camera_forward_world`，不能只提供后者。
+- `action_stage`：当前SHOT在动作链中的阶段；`phase_task`只描述运镜阶段任务，不能代替。
+- `shot_size`、`camera_motion`、`cut_in`、`cut_out`与`focal_feel`同样必须显式填写；无内部CUT时使用`null`，不得省略字段。
+
+输出“验证通过”前必须把实际结构原样输入`scripts/validate_segment_structure.py`，不能只凭人工判断宣称通过。
 
 ## SEG时间轴格式
 
@@ -175,7 +283,8 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 #### 基础信息
 - 剧情功能：
 - 场景：
-- SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
+- segment_content_type：normal／high_speed_action／fixed_camera_time_passage
+- shot_count／cut_count：
 - 空间状态引用：04中的场景／状态编号
 - CUT审核引用：13中的SHOT／CUT编号
 
@@ -217,9 +326,11 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 ### SEG封装
 
 - SEG与SHOT没有混淆。
+- SEG类型与显式SHOT／CUT计数已经通过`scripts/validate_segment_structure.py`。
+- 运镜、景别与焦段提示没有被误计为SHOT边界。
 - 所有已审核CUT均被完整保留。
 - 每个SHOT的时间码连续且无重叠冲突。
 - 每个SEG明确是否为终点。
-- 单SHOT模式下，SEG内只有一个连续机位且CUT数量为0。
+- `fixed_camera_time_passage`保持场景几何和屏幕位置稳定，摄影机前段移动后已经锁定。
 
 空间、轴线、状态继承和信息可见性不在本文件自判，必须引用`04`；SHOT任务与动作覆盖必须引用`14`；CUT合法性必须引用`13`。

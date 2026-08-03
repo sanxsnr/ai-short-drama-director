@@ -20,6 +20,7 @@ FILES = {
     "output": ROOT / "references/12-output-format-and-choice-footer.md",
     "cut": ROOT / "references/13-cut-shot-geometry.md",
     "task": ROOT / "references/14-shot-task-action-coverage.md",
+    "segment_validator": ROOT / "scripts/validate_segment_structure.py",
     "agent": ROOT / "agents/openai.yaml",
     "production_template": ROOT / "assets/production-document-template.md",
 }
@@ -77,6 +78,10 @@ REQUIRED_REFERENCES = {
     "spatial": ["14-shot-task-action-coverage.md", "13-cut-shot-geometry.md"],
     "task": ["04-blocking-continuity.md", "13-cut-shot-geometry.md"],
     "cut": ["04-blocking-continuity.md", "14-shot-task-action-coverage.md"],
+    "video": ["01-script-slicing.md"],
+    "qc": ["01-script-slicing.md"],
+    "storyboard": ["01-script-slicing.md"],
+    "output": ["01-script-slicing.md"],
 }
 
 AMBIGUOUS_SEG_SHOT_PHRASES = (
@@ -86,9 +91,25 @@ AMBIGUOUS_SEG_SHOT_PHRASES = (
     "SHOT内部不得再出现第二个CUT",
 )
 
-SINGLE_SHOT_SEG_CONTRACT = (
-    "每个10秒SEG必须且只能包含1个SHOT",
-    "SEG内部不包含CUT",
+SEGMENT_POLICY_CONTRACT = (
+    "SEG_SHOT_COUNT_POLICY_V1",
+    "segment_content_type=normal",
+    "shot_count <= 2",
+    "cut_count <= 1",
+    "too_many_shots_for_normal_segment",
+    "segment_content_type=high_speed_action",
+    "segment_content_type=fixed_camera_time_passage",
+    "FIXED_CAMERA_TIME_PASSAGE",
+    "camera_locked_after_move=true",
+    "scene_geometry_unchanged=true",
+)
+
+SEGMENT_COUNT_LIMIT_MARKERS = (
+    "shot_count <= 2",
+    "cut_count <= 1",
+    "shot_count = 1",
+    "cut_count = 0",
+    "too_many_shots_for_normal_segment",
 )
 
 SPATIAL_GEOMETRY_CONTRACT = (
@@ -133,6 +154,7 @@ SKILL_PIPELINE_CONTRACT = (
     "validate_spatial_geometry.py",
     "validate_shot_task.py",
     "validate_cut_geometry.py",
+    "validate_segment_structure.py",
 )
 
 STALE_GLOBAL_PHRASES = (
@@ -147,6 +169,14 @@ STALE_GLOBAL_PHRASES = (
     "主体改变自动通过",
     "viewpoint字符串不同即视为视角变化",
     "自然语言场景名称不同即视为换场",
+    "一个10秒编号镜只能有一个SHOT",
+    "每个10秒SEG必须且只能包含1个SHOT",
+    "景别改变就必须CUT",
+    "焦段变化代表运镜",
+    "焦段不同代表机位不同",
+    "反方向机位就是越轴",
+    "日夜交替必须使用多机位蒙太奇",
+    "普通10秒可以任意包含多个SHOT",
 )
 
 
@@ -218,6 +248,31 @@ def validate(root: Path = ROOT) -> dict[str, object]:
     if "不是相邻SHOT之间的30度剪辑规则" not in spatial_text:
         errors.append("04必须区分单机位可见面角度与相邻SHOT的30度剪辑规则。")
 
+    script_text = texts.get("script", "")
+    for phrase in SEGMENT_POLICY_CONTRACT:
+        if phrase not in script_text:
+            errors.append(f"references/01-script-slicing.md 缺少SEG结构合同：{phrase}")
+
+    video_text = texts.get("video", "")
+    for phrase in (
+        "ambiguous_focal_transition",
+        "广角空间感／标准透视／轻长焦压缩感／浅景深特写感",
+        "同一SHOT列出多个焦段",
+    ):
+        if phrase not in video_text:
+            errors.append(f"references/05-video-prompting.md 缺少焦段表达合同：{phrase}")
+
+    segment_validator_text = texts.get("segment_validator", "")
+    for phrase in (
+        "def validate_count_policy",
+        "too_many_shots_for_normal_segment",
+        "ambiguous_focal_transition",
+        "fixed_camera_time_passage_requires_single_shot",
+        '"count_source": "explicit_shot_boundaries_only"',
+    ):
+        if phrase not in segment_validator_text:
+            errors.append(f"scripts/validate_segment_structure.py 缺少可执行合同：{phrase}")
+
     for path in root.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in {".md", ".yaml", ".yml"}:
             continue
@@ -230,19 +285,19 @@ def validate(root: Path = ROOT) -> dict[str, object]:
                     f"{path.relative_to(root)} 保留了过时或自我证明式规则：{phrase}"
                 )
 
+        if path.relative_to(root) != Path("references/01-script-slicing.md"):
+            for marker in SEGMENT_COUNT_LIMIT_MARKERS:
+                if marker in value:
+                    errors.append(
+                        f"{path.relative_to(root)} 重复维护SEG数量上限：{marker}；"
+                        "数量规则只能存在于references/01-script-slicing.md"
+                    )
+
     for name in ("skill", "script", "cut"):
         current = texts.get(name, "")
         for phrase in AMBIGUOUS_SEG_SHOT_PHRASES:
             if phrase in current:
                 errors.append(f"{FILES[name].relative_to(ROOT)} 混淆了SEG／SHOT／CUT：{phrase}")
-
-    for name in ("script", "cut"):
-        current = texts.get(name, "")
-        for phrase in SINGLE_SHOT_SEG_CONTRACT:
-            if phrase not in current:
-                errors.append(
-                    f"{FILES[name].relative_to(ROOT)} 缺少单SHOT SEG明确合同：{phrase}"
-                )
 
     for path_name in ("README.md", "README_EN.md"):
         path = root / path_name
@@ -253,6 +308,7 @@ def validate(root: Path = ROOT) -> dict[str, object]:
             "validate_spatial_geometry.py",
             "validate_shot_task.py",
             "validate_cut_geometry.py",
+            "validate_segment_structure.py",
         ):
             if phrase not in current:
                 errors.append(f"{path_name} 缺少验证器说明：{phrase}")
@@ -261,6 +317,7 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         "scripts/validate_spatial_geometry.py",
         "scripts/validate_shot_task.py",
         "scripts/validate_cut_geometry.py",
+        "scripts/validate_segment_structure.py",
     )
     for relative in validators:
         if not (root / relative).exists():

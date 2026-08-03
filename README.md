@@ -59,7 +59,7 @@
 
 | 分镜区块 | 必须包含 |
 |---|---|
-| 基础信息 | 剧集、分镜段落编号、10秒／15秒规格、时长、剧情功能、场景 |
+| 基础信息 | 剧集、SEG编号、10秒／15秒规格、SEG类型、显式SHOT／CUT计数、剧情功能、场景 |
 | 资产与连续性 | 人物、服装、道具、站位、上一段继承、起始状态、尾帧、下一段继承 |
 | 时间轴执行表 | 时间码、段内镜头、画面动作、表演、台词声音、景别／机位／焦段／运镜 |
 | 生成与参考 | 全局风格、参考素材的唯一职责、故事板／图片／视频提示词 |
@@ -342,10 +342,11 @@ git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 
 ## 验证工具
 
-仓库内提供八个无第三方依赖的 Python 验证脚本：
+仓库内提供九个无第三方依赖的 Python 验证脚本：
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
+python3 scripts/validate_segment_structure.py segment-structure.json
 python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
 python3 scripts/validate_continuity.py continuity.json
@@ -355,7 +356,7 @@ python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_rule_sources.py
 ```
 
-它们分别检查时间码与对白容量、项目阶段证据、提示词输入包、跨镜状态继承、人物面向与摄影机可见面、SHOT任务与动作覆盖、相邻SHOT视觉差异路径，以及全仓库规则真源一致性。脚本不会取代导演对剧情、表演和美感的判断。
+它们分别检查时间码与对白容量、AI直接成片SEG的类型／显式SHOT／CUT／运镜阶段／固定机位时间流逝、项目阶段证据、提示词输入包、跨镜状态继承、人物面向与摄影机可见面、SHOT任务与动作覆盖、相邻SHOT视觉差异路径，以及全仓库规则真源一致性。脚本不会取代导演对剧情、表演和美感的判断。
 
 ## 目录结构
 
@@ -391,6 +392,7 @@ ai-short-drama-from-zero/
 │   └── 14-shot-task-action-coverage.md
 ├── scripts/
 │   ├── validate_timeline.py
+│   ├── validate_segment_structure.py
 │   ├── validate_project_state.py
 │   ├── validate_prompt_package.py
 │   ├── validate_continuity.py

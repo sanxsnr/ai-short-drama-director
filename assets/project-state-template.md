@@ -8,7 +8,8 @@
 - 目标平台／工具：
 - 画幅：
 - 分镜切片规格：未选择／10秒版／15秒版
-- SHOT规则：每段单镜／允许段内多SHOT
+- 当前SEG类型：normal／high_speed_action／fixed_camera_time_passage
+- SHOT计数来源：仅显式SHOT边界
 - 规格确认方式：用户明确选择／双版本样例后选择
 - 当前日期：
 
@@ -63,6 +64,9 @@
 ## 当前SEG与SHOT
 
 - SEG编号：
+- duration_seconds／shot_count／cut_count：
+- camera_motion_phases：
+- time_passage：
 - 源剧本：
 - 当前SHOT编号：
 - 上一SHOT结束状态：

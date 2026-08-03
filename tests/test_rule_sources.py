@@ -109,6 +109,55 @@ class RuleSourceTests(unittest.TestCase):
             self.assertFalse(result["ok"])
             self.assertTrue(any("过时或自我证明式规则" in item for item in result["errors"]))
 
+    def test_stale_seg_shot_focal_axis_and_time_phrases_are_rejected(self):
+        stale_phrases = (
+            "一个10秒编号镜只能有一个SHOT",
+            "景别改变就必须CUT",
+            "焦段变化代表运镜",
+            "焦段不同代表机位不同",
+            "反方向机位就是越轴",
+            "日夜交替必须使用多机位蒙太奇",
+            "普通10秒可以任意包含多个SHOT",
+        )
+        for phrase in stale_phrases:
+            with self.subTest(phrase=phrase), tempfile.TemporaryDirectory() as tmp:
+                root = self.copied_repo(tmp)
+                path = root / "references/05-video-prompting.md"
+                path.write_text(
+                    path.read_text(encoding="utf-8") + f"\n{phrase}\n",
+                    encoding="utf-8",
+                )
+                result = VALIDATOR.validate(root)
+                self.assertFalse(result["ok"])
+                self.assertTrue(
+                    any(phrase in item for item in result["errors"]),
+                    result,
+                )
+
+    def test_segment_count_limit_cannot_be_duplicated_outside_01(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.copied_repo(tmp)
+            path = root / "references/06-qc-repair-post.md"
+            path.write_text(
+                path.read_text(encoding="utf-8") + "\nshot_count <= 2\n",
+                encoding="utf-8",
+            )
+            result = VALIDATOR.validate(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("重复维护SEG数量上限" in item for item in result["errors"]))
+
+    def test_missing_segment_policy_contract_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.copied_repo(tmp)
+            path = root / "references/01-script-slicing.md"
+            value = path.read_text(encoding="utf-8").replace(
+                "SEG_SHOT_COUNT_POLICY_V1", "REMOVED_SEG_POLICY"
+            )
+            path.write_text(value, encoding="utf-8")
+            result = VALIDATOR.validate(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("缺少SEG结构合同" in item for item in result["errors"]))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

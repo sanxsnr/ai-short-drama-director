@@ -1,6 +1,6 @@
 ---
 name: ai-short-drama-director
-description: Guide beginners and experienced creators through AI short-drama production from idea to final film. Diagnose project state, create or repair production-ready scripts, spatial blocking, CUT-first shot lists, assets, storyboards, Seedance 2.0/I2V/FLF2V prompts, generation QA, voice repair, editing and complete document revisions. Every copyable A/B/C reply begins with `使用 $ai-short-drama-director`.
+description: Guide beginners and experienced creators through AI short-drama production from idea to final film. Diagnose project state, create or repair production-ready scripts, AI-direct SEG/SHOT/CUT structures, spatial blocking, camera-motion plans, assets, storyboards, Seedance 2.0/I2V/FLF2V prompts, generation QA, voice repair, editing and complete document revisions. Every copyable A/B/C reply begins with `使用 $ai-short-drama-director`.
 ---
 
 # AI短剧从0到1导演
@@ -36,20 +36,20 @@ description: Guide beginners and experienced creators through AI short-drama pro
 | 模块 | 唯一规则文件 | 负责内容 |
 |---|---|---|
 | 项目诊断 | `references/00-project-diagnosis.md` | 阶段、阻塞、唯一真源和波及范围 |
-| 剧本与SEG | `references/01-script-slicing.md` | 灵感、改编、剧本、对白、读秒、SEG封装 |
+| 剧本与SEG | `references/01-script-slicing.md` | 灵感、改编、剧本、对白、读秒、SEG类型、SHOT数量规则与SEG封装 |
 | 视觉风格 | `references/02-visual-style.md` | 全局画风、材质、色彩、光线 |
 | 资产设计 | `references/03-asset-design.md` | 人物、服装、场景、道具、群演、声线 |
-| 空间与连续性 | `references/04-blocking-continuity.md` | 坐标、站位、人物朝向、移动方向、摄影机可见面、轴线、状态继承、信息可见性 |
-| 视频提示词 | `references/05-video-prompting.md` | Seedance 2.0、I2V、FLF2V与视频延长 |
-| 质检与后期 | `references/06-qc-repair-post.md` | 生成审核、返修、声音、剪辑和成片检查 |
-| 故事板生图 | `references/07-storyboard-image-prompts.md` | 故事板结构与图片提示词 |
+| 空间与连续性 | `references/04-blocking-continuity.md` | 坐标、站位、人物朝向、连续摄影机路径、可见面、轴线、状态继承、信息可见性 |
+| 视频提示词 | `references/05-video-prompting.md` | Seedance 2.0、运镜／焦段／CUT表达、I2V、FLF2V与视频延长 |
+| 质检与后期 | `references/06-qc-repair-post.md` | SEG碎切审核、生成返修、声音、剪辑和成片检查 |
+| 故事板生图 | `references/07-storyboard-image-prompts.md` | 故事板结构、连续运镜阶段与图片提示词 |
 | 文件交付 | `references/08-document-revision-delivery.md` | DOCX、PDF等完整文件修改和交付 |
 | 输入包控制 | `references/09-generation-session-control.md` | 引用职责、最小输入包和上下文污染 |
 | 声音与剪辑修复 | `references/10-voice-editing-repair.md` | 音色、逐句换音、声音桥和最终拼接 |
 | 新手模式 | `references/11-beginner-guided-mode.md` | 分阶段引导，不降低专业标准 |
 | 输出合同 | `references/12-output-format-and-choice-footer.md` | 回复结构、文档格式和ABC命令 |
-| CUT与镜头几何 | `references/13-cut-shot-geometry.md` | CUT触发、类型、30度适用性、同轴景别路径与相邻SHOT视觉差异 |
-| SHOT任务与动作覆盖 | `references/14-shot-task-action-coverage.md` | 镜头任务证据、场景世界机位、进出场Gate、视角证据与动作状态机 |
+| CUT与镜头几何 | `references/13-cut-shot-geometry.md` | SHOT／CUT／运镜边界、CUT触发、30度适用性、同轴路径与相邻SHOT视觉差异 |
+| SHOT任务与动作覆盖 | `references/14-shot-task-action-coverage.md` | SHOT或连续运镜阶段的任务证据、场景世界机位、进出场Gate、视角证据与动作状态机 |
 
 其他文件只能引用这些真源，不得另写一套同类规则。
 
@@ -73,6 +73,8 @@ description: Guide beginners and experienced creators through AI short-drama pro
 5. 返回`01`封装成10秒或15秒SEG。
 
 提示词合并不等于镜头合并。后端生成规则不得删除已经通过`13`审核的CUT。
+
+SEG是一次固定时长生成单元，不等同于SHOT。SHOT只由显式SHOT边界划分；同一连续观察中的推、拉、摇、移、跟、升降、环绕、自然景别变化和焦段提示不自动产生CUT。普通、高速动作和固定机位时间流逝三类SEG的数量与例外规则只由`01-script-slicing.md`维护。
 
 `13`必须先读取`14`的任务覆盖结论，再判断30度是否适用并选择合法视觉差异路径；180度轴线、人物朝向与`04`空间事实始终高于30度经验规则。主体改变、视角标签、动作阶段和叙事变化都不能代替真实任务证据或视觉差异。
 
@@ -139,7 +141,10 @@ C：使用 $ai-short-drama-director，选择C：具体动作。
 目标成片与平台：
 当前阶段：
 分镜规格：未选择／10秒版／15秒版
-SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
+当前SEG类型：normal／high_speed_action／fixed_camera_time_passage
+SHOT计数来源：仅显式SHOT边界
+shot_count／cut_count：
+camera_motion_phases／time_passage：
 唯一真源：
 已完成／进行中／未完成／需返工：
 已锁定资产与空间：
@@ -159,6 +164,7 @@ SHOT任务类型／必要证据／动作状态机／derived_independent_task：
 
 ```bash
 python3 scripts/validate_timeline.py < timeline.json
+python3 scripts/validate_segment_structure.py < segment-structure.json
 python3 scripts/validate_continuity.py < continuity.json
 python3 scripts/validate_spatial_geometry.py < spatial-geometry.json
 python3 scripts/validate_shot_task.py < shot-task.json
@@ -174,6 +180,9 @@ python3 scripts/validate_prompt_package.py < prompt-package.json
 - 不只诊断而不修复。
 - 不在多个文件中维护同一规则的不同版本。
 - 不把SEG、SHOT和CUT混为一谈。
+- 不由10秒编号、景别变化、焦段数值或运镜阶段自动推导CUT或新增SHOT。
+- 不把高速动作的多段短SHOT误套普通剧情上限，也不把高速动作例外扩展到普通对话和普通动作。
+- 不把固定构图中的可见日夜变化自动拆成多机位蒙太奇。
 - 不用下游模型负载规则覆盖空间或CUT真源。
 - 不把30度、景别跨级和组合差异误写成所有CUT必须同时满足的累计门槛。
 - 不把“相邻SHOT”或“相邻景别”本身当成错误，只拦截缺乏有效视觉差异的无意近似跳切。

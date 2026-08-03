@@ -32,7 +32,7 @@ def base_payload(references: list[dict]) -> dict:
         "final_prompt": "沈渊站在门内观察苏清月。",
         "target_duration": 10,
         "generation_mode": "standard",
-        "shot_rule": "single_shot_per_segment",
+        "segment_content_type": "normal",
         "segment_terminal": True,
         "references": references,
         "required_assets": ["沈渊", "苏清月"],

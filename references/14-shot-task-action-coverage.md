@@ -6,6 +6,7 @@
 
 - 下一SHOT是否真正具有独立导演任务。
 - 镜头任务是否由画面证据完成，而不是由模型自行声明。
+- 同一SHOT的连续运镜阶段是否完成阶段任务，且没有被误报为独立SHOT。
 - 摄影机在统一场景世界坐标中的区域、朝向、主要场景锚点和可见锚点。
 - ENTER、EXIT、EYELINE_REVEAL、REACTION、CONTACT、PROP_ACTION、MOVEMENT、DIALOGUE、ESTABLISH等动作的覆盖Gate。
 - 人物或道具动作状态机，以及是否重复已经完成的动作。
@@ -38,6 +39,8 @@ space文字不同，所以已经换了场景
 → 状态机是否允许
 → derived_independent_task=true／false
 ```
+
+`derived_independent_task`只用于验证显式新SHOT是否成立。同一SHOT中的推、拉、摇、移、跟、升降、环绕或移动后锁定使用`motion_phase_task`验证，不得因为阶段任务变化自动创建SHOT边界。
 
 模型、用户或下游提示词不得直接指定`derived_independent_task=true`。task_contract也不得描述与实际SHOT不同的摄影机、场景锚点、主体、视角或状态；`13`必须交叉核对。
 
@@ -112,6 +115,32 @@ observation_signature：{}
 ```
 
 只有`derived_independent_task=true`，`13`才允许继续判断CUT。
+
+## 连续运镜阶段任务合同
+
+同一SHOT包含多个运镜阶段时，每个阶段记录：
+
+```text
+phase_id：
+shot_id：所属同一SHOT
+phase_task：
+start_state：
+movement：
+end_state：
+required_evidence：
+visible_evidence：
+lock_after_move：true／false
+```
+
+验证要求：
+
+1. 每个阶段的必要证据真实可见，动作与摄影机状态从前一阶段连续进入。
+2. `start_state → movement → end_state`没有摄影机瞬移、人物重置、左右镜像或场景突变。
+3. 阶段间没有显式CUT时，所有阶段保持同一`shot_id`。
+4. 景别或焦段感随连续运动变化，不自动产生独立任务或新SHOT。
+5. `lock_after_move=true`后摄影机保持目标构图，不漂移为另一机位。
+
+输出`phase_coverage_passed=true／false`。阶段覆盖通过只说明同一SHOT的内部执行完整，不等于`derived_independent_task=true`，也不能交给`13`伪造CUT。
 
 ## 通用任务证据Gate
 
@@ -339,6 +368,7 @@ seated → 无过程重新跌坐
 - required_evidence：
 - visible_evidence：
 - 动作状态转换：
+- 连续运镜阶段／phase_coverage_passed：
 - 视角证据：
 - derived_independent_task：通过／失败
 - 失败原因：
@@ -353,5 +383,6 @@ seated → 无过程重新跌坐
 - [ ] ENTER／EXIT显示边界、路径与跨越结果。
 - [ ] POV／OTS／INSERT有真实几何证据。
 - [ ] 人物和道具状态机转换合法，没有重复动作。
+- [ ] 连续运镜阶段保持同一shot_id，阶段任务有可见证据且没有状态重置。
 - [ ] 主体改变没有被自动当作强通过。
 - [ ] 只有本文件通过后才交给13。

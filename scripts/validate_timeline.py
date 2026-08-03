@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import re
@@ -22,12 +23,19 @@ ALLOWED_CUT_TYPES = {
     "POV",
     "END",
 }
-ALLOWED_SHOT_RULES = {
-    "single_shot_per_segment",
-    "multiple_shots_per_segment",
-    "每个SEG单SHOT",
-    "允许SEG内多SHOT",
-}
+
+
+def load_segment_validator():
+    path = Path(__file__).with_name("validate_segment_structure.py")
+    spec = importlib.util.spec_from_file_location("validate_segment_structure", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"无法加载SEG结构验证器：{path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+SEGMENT_VALIDATOR = load_segment_validator()
 
 
 def visible_char_count(text: str) -> int:
@@ -72,15 +80,15 @@ def validate(payload: dict) -> dict:
         errors.append("target_duration 必须是数字")
 
     content_type = str(payload.get("content_type", "mixed"))
+    segment_content_type = str(payload.get("segment_content_type", "")).strip()
     shots = payload.get("shots", [])
     enforce_cut_fields = payload.get("enforce_cut_fields", True) is not False
-    shot_rule = payload.get("shot_rule")
     segment_terminal = payload.get("segment_terminal")
 
-    if shot_rule is not None and shot_rule not in ALLOWED_SHOT_RULES:
-        errors.append(
-            "shot_rule 必须是 single_shot_per_segment 或 "
-            "multiple_shots_per_segment"
+    if payload.get("shot_rule") is not None:
+        warnings.append(
+            "legacy_shot_rule_ignored: shot_rule 已停用；SHOT数量由 "
+            "segment_content_type 与显式SHOT边界决定"
         )
     if enforce_cut_fields and not isinstance(segment_terminal, bool):
         errors.append(
@@ -101,11 +109,18 @@ def validate(payload: dict) -> dict:
         errors.append("shots 必须是非空数组")
         return {"ok": False, "errors": errors, "warnings": warnings}
 
-    if shot_rule in {"single_shot_per_segment", "每个SEG单SHOT"} and len(shots) != 1:
+    derived_cut_count = max(0, len(shots) - 1)
+    if "cut_count" in payload and payload.get("cut_count") != derived_cut_count:
         errors.append(
-            f"shot_rule={shot_rule} 时每个SEG必须且只能包含1个SHOT，"
-            f"当前为{len(shots)}个"
+            f"cut_count={payload.get('cut_count')!r}，但显式SHOT边界推导为"
+            f"{derived_cut_count}"
         )
+    count_result = SEGMENT_VALIDATOR.validate_count_policy(
+        segment_content_type,
+        len(shots),
+        derived_cut_count,
+    )
+    errors.extend(count_result["errors"])
 
     expected_start = 0.0
     total_dialogue_chars = 0
@@ -181,14 +196,16 @@ def validate(payload: dict) -> dict:
                 f"全SEG对白密度约{dialogue_rate:.1f}字/秒，需检查停顿和动作空间"
             )
 
-    # SHOT数量本身不构成错误；只有违反明确shot_rule时才报错。
+    # 运镜、景别或焦段变化不增加数量；只统计显式SHOT边界。
     return {
         "ok": not errors,
         "mode": mode,
         "target_duration": target,
         "content_type": content_type,
+        "segment_content_type": segment_content_type,
         "shot_count": len(shots),
-        "shot_rule": shot_rule,
+        "cut_count": derived_cut_count,
+        "count_source": "explicit_shot_boundaries_only",
         "segment_terminal": segment_terminal,
         "dialogue_char_count": total_dialogue_chars,
         "errors": errors,
@@ -203,7 +220,7 @@ def main() -> int:
     try:
         payload = load_payload(args.json_file)
         result = validate(payload)
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, RuntimeError) as exc:
         result = {"ok": False, "errors": [f"无法读取JSON：{exc}"], "warnings": []}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result.get("ok") else 1
