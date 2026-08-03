@@ -69,6 +69,19 @@ SINGLE_SHOT_SEG_CONTRACT = (
     "SEG内部不包含CUT",
 )
 
+SPATIAL_GEOMETRY_CONTRACT = (
+    "人物—剧情对象—运动—摄影机几何求解",
+    "推导可见面",
+    "唯一方案锁",
+    "无动机看镜头",
+)
+
+SKILL_GEOMETRY_CONTRACT = (
+    "只有`04`输出“几何结论：通过”后",
+    "唯一方案锁",
+    "validate_spatial_geometry.py",
+)
+
 
 def appears_before(text: str, first: str, second: str) -> bool:
     first_index = text.find(first)
@@ -107,10 +120,25 @@ def validate(root: Path = ROOT) -> dict[str, object]:
     if "其他文件只能引用这些真源，不得另写一套同类规则" not in skill_text:
         warnings.append("SKILL.md 未明确禁止其他文件重新定义同类规则。")
 
-    if not appears_before(skill_text, "2. `04`锁定", "3. `13`决定"):
+    skill_order_valid = (
+        appears_before(skill_text, "2. `04`锁定", "3. `13`决定")
+        or appears_before(skill_text, "2. `04`锁定", "`13`才能决定")
+    )
+    if not skill_order_valid:
         errors.append(
             "SKILL.md 的分镜职责顺序必须明确为：04先锁定空间事实，13再决定SHOT/CUT。"
         )
+
+    for phrase in SKILL_GEOMETRY_CONTRACT:
+        if phrase not in skill_text:
+            errors.append(f"SKILL.md 缺少空间几何入口合同：{phrase}")
+
+    spatial_text = texts.get("spatial", "")
+    for phrase in SPATIAL_GEOMETRY_CONTRACT:
+        if phrase not in spatial_text:
+            errors.append(
+                f"references/04-blocking-continuity.md 缺少空间几何合同：{phrase}"
+            )
 
     cut_text = texts.get("cut", "")
     if not appears_before(
@@ -135,6 +163,10 @@ def validate(root: Path = ROOT) -> dict[str, object]:
                 errors.append(
                     f"{FILES[name].relative_to(ROOT)} 缺少单SHOT SEG明确合同：{phrase}"
                 )
+
+    geometry_validator = root / "scripts/validate_spatial_geometry.py"
+    if not geometry_validator.exists():
+        errors.append("缺少空间几何验证器：scripts/validate_spatial_geometry.py")
 
     return {"ok": not errors, "errors": errors, "warnings": warnings}
 

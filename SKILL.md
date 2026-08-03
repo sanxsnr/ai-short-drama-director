@@ -39,7 +39,7 @@ description: Guide beginners and experienced creators through AI short-drama pro
 | 剧本与SEG | `references/01-script-slicing.md` | 灵感、改编、剧本、对白、读秒、SEG封装 |
 | 视觉风格 | `references/02-visual-style.md` | 全局画风、材质、色彩、光线 |
 | 资产设计 | `references/03-asset-design.md` | 人物、服装、场景、道具、群演、声线 |
-| 空间与连续性 | `references/04-blocking-continuity.md` | 坐标、站位、朝向、轴线、状态继承、信息可见性 |
+| 空间与连续性 | `references/04-blocking-continuity.md` | 坐标、站位、人物朝向、移动方向、摄影机可见面、轴线、状态继承、信息可见性 |
 | 视频提示词 | `references/05-video-prompting.md` | Seedance 2.0、I2V、FLF2V与视频延长 |
 | 质检与后期 | `references/06-qc-repair-post.md` | 生成审核、返修、声音、剪辑和成片检查 |
 | 故事板生图 | `references/07-storyboard-image-prompts.md` | 故事板结构与图片提示词 |
@@ -65,11 +65,13 @@ description: Guide beginners and experienced creators through AI short-drama pro
 职责顺序固定：
 
 1. `01`分析剧情、动作链、对白与时长。
-2. `04`锁定空间事实、轴线、状态继承和信息可见性。
-3. `13`决定SHOT边界、CUT类型和下一机位几何是否合法。
+2. `04`锁定剧情对象、人物正面方向、移动方向、摄影机方位、推导可见面、轴线、状态继承和信息可见性。
+3. 只有`04`输出“几何结论：通过”后，`13`才能决定SHOT边界、CUT类型和下一机位几何是否合法。
 4. 返回`01`封装成10秒或15秒SEG。
 
 提示词合并不等于镜头合并。后端生成规则不得删除已经通过`13`审核的CUT。
+
+当用户已经锁定剧情对象、人物朝向、移动方向和所需可见面，`04`必须开启唯一方案锁；不得额外提供理论上可拍但不符合原镜头目的的替代机位。
 
 ## 制作阶段
 
@@ -78,7 +80,7 @@ description: Guide beginners and experienced creators through AI short-drama pro
 2. 小说／素材分析与改编方案
 3. 分集大纲与单集结构
 4. 可拍摄剧本、动作和对白
-5. 空间确认、CUT拆镜、读秒和完整分镜
+5. 空间确认、可见面几何求解、CUT拆镜、读秒和完整分镜
 6. 视觉基调与人物、服装、场景、道具、群演、声线资产
 7. 故事板与图片提示词
 8. Seedance 2.0／I2V／FLF2V视频提示词
@@ -95,7 +97,7 @@ description: Guide beginners and experienced creators through AI short-drama pro
 - 完整剧本、分镜或文档一次完成约定范围，不用“同理”“后续略”。
 - 可编辑文件保留原版，创建修订版并完成内容和版面自检。
 - 内部诊断、Skill调用命令和ABC导航不得混入图片／视频模型提示词。
-- 生成结果通过剧情、资产、空间、CUT、声音和状态继承检查后才算完成。
+- 生成结果通过剧情、资产、空间几何、CUT、声音和状态继承检查后才算完成。
 - 不承诺绝对完美或保证过审；修正所有当前可检测错误。
 
 ## 固定回答合同
@@ -136,6 +138,8 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 唯一真源：
 已完成／进行中／未完成／需返工：
 已锁定资产与空间：
+剧情对象／人物正面／移动方向／摄影机方位／推导可见面：
+唯一方案锁：开启／关闭
 人物／道具当前状态：
 上一SHOT结束状态：
 当前阻塞：
@@ -149,6 +153,7 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 ```bash
 python3 scripts/validate_timeline.py < timeline.json
 python3 scripts/validate_continuity.py < continuity.json
+python3 scripts/validate_spatial_geometry.py < spatial-geometry.json
 python3 scripts/validate_project_state.py < project-state.json
 python3 scripts/validate_prompt_package.py < prompt-package.json
 ```
@@ -162,6 +167,8 @@ python3 scripts/validate_prompt_package.py < prompt-package.json
 - 不把SEG、SHOT和CUT混为一谈。
 - 不用下游模型负载规则覆盖空间或CUT真源。
 - 不擅自修改用户锁定对白、剧情和资产。
+- 不先写正面／侧面结论再倒推摄影机方位。
 - 不让人物为露脸无理由转向摄影机。
+- 不在唯一方案锁开启后混入侧拍、背拍或其他替代方案。
 - 不用首尾帧硬复制代替状态继承；仅在用户明确采用I2V、FLF2V或视频延长工作流时使用对应帧约束。
 - 不在生成提示词中泄露Skill调用命令、内部检查或ABC导航。
