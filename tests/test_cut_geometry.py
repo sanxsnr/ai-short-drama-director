@@ -1,133 +1,284 @@
 #!/usr/bin/env python3
-"""Regression tests for 30-degree applicability and visual-difference paths."""
+"""Regression tests for adjacent-shot visual-difference paths."""
 
 from __future__ import annotations
 
 import importlib.util
+import math
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_validator():
+def load_module():
     path = ROOT / "scripts/validate_cut_geometry.py"
     spec = importlib.util.spec_from_file_location("validate_cut_geometry", path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"无法加载：{path}")
+        raise RuntimeError(f"无法加载模块：{path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-VALIDATOR = load_validator()
+CUT = load_module()
 
 
-def base_payload() -> dict:
+def camera_vector(degrees: float) -> list[float]:
+    radians = math.radians(degrees)
+    return [math.sin(radians), math.cos(radians), 0]
+
+
+def payload(
+    *,
+    from_subject: str = "董生",
+    to_subject: str = "董生",
+    from_angle: float = 0,
+    to_angle: float = 0,
+    from_scale: str = "MS",
+    to_scale: str = "MS",
+    from_viewpoint: str = "objective",
+    to_viewpoint: str = "objective",
+    from_time: str = "night",
+    to_time: str = "night",
+    from_space: str = "bedroom",
+    to_space: str = "bedroom",
+    from_stage: str = "watching",
+    to_stage: str = "watching",
+    claimed_path: str = "",
+    editing_device: str = "none",
+    editing_device_purpose: str = "",
+    graphic_match_basis: str = "",
+    axis_status: str = "same_side",
+    axis_required: bool = True,
+    from_extra: dict | None = None,
+    to_extra: dict | None = None,
+) -> dict:
+    from_shot = {
+        "id": "SHOT_A",
+        "primary_subject": from_subject,
+        "subject_to_camera": camera_vector(from_angle),
+        "shot_scale": from_scale,
+        "viewpoint": from_viewpoint,
+        "time": from_time,
+        "space": from_space,
+        "action_stage": from_stage,
+    }
+    to_shot = {
+        "id": "SHOT_B",
+        "primary_subject": to_subject,
+        "subject_to_camera": camera_vector(to_angle),
+        "shot_scale": to_scale,
+        "viewpoint": to_viewpoint,
+        "time": to_time,
+        "space": to_space,
+        "action_stage": to_stage,
+    }
+    from_shot.update(from_extra or {})
+    to_shot.update(to_extra or {})
     return {
-        "transition_id": "CUT01-02",
+        "transition_id": "CUT_A_B",
+        "from_shot": from_shot,
+        "to_shot": to_shot,
         "independent_task": True,
-        "same_primary_subject": True,
-        "same_time": True,
-        "same_space": True,
-        "same_action_stage": True,
-        "same_observation_perspective": True,
-        "similar_composition": True,
-        "shot_scale_before": "MS",
-        "shot_scale_after": "MCU",
-        "camera_angle_degrees": 35,
-        "axis_status": "same_side",
-        "visual_difference_path": "standard",
-        "changed_dimensions": ["camera_angle", "shot_scale"],
-        "dominant_change": "",
-        "editing_device": "none",
-        "thirty_degree_status": "applies",
+        "axis_status": axis_status,
+        "axis_required": axis_required,
+        "editing_device": editing_device,
+        "editing_device_purpose": editing_device_purpose,
+        "graphic_match_basis": graphic_match_basis,
+        "claimed_difference_path": claimed_path,
     }
 
 
 class CutGeometryTests(unittest.TestCase):
-    def test_dongsheng_same_axis_large_scale_jump_passes(self):
-        payload = base_payload()
-        payload.update(
-            {
-                "transition_id": "DONGSHENG-08A-08B",
-                "same_action_stage": False,
-                "similar_composition": False,
-                "shot_scale_before": "眼部极近特写",
-                "shot_scale_after": "中景",
-                "camera_angle_degrees": 0,
-                "visual_difference_path": "dominant",
-                "changed_dimensions": ["shot_scale", "action_stage", "composition_center"],
-                "dominant_change": "same_axis_scale_jump",
-                "thirty_degree_status": "exempt",
-            }
+    def test_dongsheng_axial_extreme_close_to_medium_passes(self):
+        result = CUT.validate(
+            payload(
+                from_scale="ECU",
+                to_scale="MS",
+                from_stage="fear_in_eyes",
+                to_stage="retreat_and_fall",
+                claimed_path="同轴大景别",
+            )
         )
-        result = VALIDATOR.validate(payload)
         self.assertTrue(result["ok"], result)
-        self.assertEqual("exempt", result["derived_thirty_degree_status"])
-        self.assertGreaterEqual(result["scale_difference"], 2)
+        self.assertEqual("axial_scale", result["derived_difference_path"])
+        self.assertEqual(4, result["shot_scale_step_difference"])
+        self.assertAlmostEqual(0, result["camera_angle_degrees"], places=2)
+        self.assertFalse(result["thirty_degree_applicable"])
 
-    def test_near_duplicate_under_30_degrees_is_rejected(self):
-        payload = base_payload()
-        payload["camera_angle_degrees"] = 10
-        result = VALIDATOR.validate(payload)
+    def test_same_subject_thirty_five_degree_path_passes(self):
+        result = CUT.validate(payload(to_angle=35, claimed_path="angle"))
+        self.assertTrue(result["ok"], result)
+        self.assertEqual("angle", result["derived_difference_path"])
+        self.assertTrue(result["thirty_degree_applicable"])
+        self.assertEqual("met", result["thirty_degree_status"])
+
+    def test_ten_degree_and_one_scale_step_fails_as_near_jump(self):
+        result = CUT.validate(
+            payload(to_angle=10, from_scale="MS", to_scale="MCU")
+        )
         self.assertFalse(result["ok"])
-        self.assertTrue(any("30度规则适用" in item for item in result["errors"]))
+        self.assertEqual("invalid_near_jump", result["derived_difference_path"])
+        self.assertTrue(any("无意近似跳切" in item for item in result["errors"]))
 
-    def test_standard_path_over_30_degrees_passes(self):
-        result = VALIDATOR.validate(base_payload())
-        self.assertTrue(result["ok"], result)
-
-    def test_eyeline_new_subject_is_not_applicable(self):
-        payload = base_payload()
-        payload.update(
-            {
-                "same_primary_subject": False,
-                "same_action_stage": False,
-                "similar_composition": False,
-                "shot_scale_before": "CU",
-                "shot_scale_after": "CU",
-                "camera_angle_degrees": 0,
-                "visual_difference_path": "dominant",
-                "changed_dimensions": ["primary_subject", "new_information"],
-                "dominant_change": "new_primary_subject",
-                "thirty_degree_status": "not_applicable",
-            }
+    def test_action_stage_cannot_replace_visual_difference(self):
+        result = CUT.validate(
+            payload(to_angle=5, from_stage="watching", to_stage="retreating")
         )
-        result = VALIDATOR.validate(payload)
-        self.assertTrue(result["ok"], result)
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("不能代替画面差异" in item for item in result["errors"]))
 
-    def test_cross_axis_cannot_be_saved_by_30_degrees(self):
-        payload = base_payload()
-        payload["camera_angle_degrees"] = 45
-        payload["axis_status"] = "crossed_without_reestablish"
-        result = VALIDATOR.validate(payload)
+    def test_one_scale_step_plus_action_stage_is_not_enough(self):
+        result = CUT.validate(
+            payload(
+                from_scale="MS",
+                to_scale="MCU",
+                from_stage="watching",
+                to_stage="decision",
+            )
+        )
+        self.assertFalse(result["ok"])
+        self.assertEqual(["shot_scale_1"], result["moderate_visual_changes"])
+
+    def test_twenty_degree_plus_adjacent_scale_passes_combined(self):
+        result = CUT.validate(
+            payload(
+                to_angle=20,
+                from_scale="MS",
+                to_scale="MCU",
+                from_stage="listening",
+                to_stage="decision",
+                claimed_path="combined",
+            )
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertEqual("combined", result["derived_difference_path"])
+        self.assertTrue(result["thirty_degree_applicable"])
+        self.assertEqual(
+            "not_met_but_equivalent_visual_path", result["thirty_degree_status"]
+        )
+
+    def test_one_scale_step_plus_composition_change_passes_combined(self):
+        result = CUT.validate(
+            payload(
+                from_scale="MS",
+                to_scale="MCU",
+                from_extra={"composition_center": "two_shot_center"},
+                to_extra={"composition_center": "solo_left_third"},
+                claimed_path="combined",
+            )
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertIn("composition_center", result["moderate_visual_changes"])
+
+    def test_subject_change_makes_thirty_degree_not_applicable(self):
+        result = CUT.validate(
+            payload(
+                from_subject="董生",
+                to_subject="狐尾",
+                from_scale="CU",
+                to_scale="CU",
+                claimed_path="subject_or_viewpoint",
+                axis_status="not_applicable",
+                axis_required=False,
+            )
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertEqual("subject_or_viewpoint", result["derived_difference_path"])
+        self.assertFalse(result["thirty_degree_applicable"])
+
+    def test_viewpoint_change_makes_thirty_degree_not_applicable(self):
+        result = CUT.validate(
+            payload(
+                from_viewpoint="objective",
+                to_viewpoint="POV",
+                claimed_path="subject_or_viewpoint",
+            )
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertEqual("subject_or_viewpoint", result["derived_difference_path"])
+
+    def test_time_change_is_separate_from_space_change(self):
+        result = CUT.validate(
+            payload(to_time="morning", claimed_path="subject_or_viewpoint")
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertFalse(result["same_time"])
+        self.assertTrue(result["same_space"])
+
+    def test_space_change_is_separate_from_time_change(self):
+        result = CUT.validate(
+            payload(to_space="courtyard", claimed_path="subject_or_viewpoint")
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertTrue(result["same_time"])
+        self.assertFalse(result["same_space"])
+
+    def test_cross_axis_cannot_be_saved_by_large_angle(self):
+        result = CUT.validate(
+            payload(
+                to_angle=45,
+                claimed_path="angle",
+                axis_status="crossed_without_reestablish",
+            )
+        )
         self.assertFalse(result["ok"])
         self.assertTrue(any("180度轴线" in item for item in result["errors"]))
 
-    def test_one_level_same_axis_cannot_claim_scale_jump(self):
-        payload = base_payload()
-        payload.update(
-            {
-                "same_action_stage": False,
-                "similar_composition": False,
-                "camera_angle_degrees": 0,
-                "visual_difference_path": "dominant",
-                "changed_dimensions": ["shot_scale", "action_stage"],
-                "dominant_change": "same_axis_scale_jump",
-                "thirty_degree_status": "exempt",
-            }
-        )
-        result = VALIDATOR.validate(payload)
+    def test_axis_required_rejects_not_applicable(self):
+        result = CUT.validate(payload(axis_status="not_applicable", axis_required=True))
         self.assertFalse(result["ok"])
-        self.assertTrue(any("至少跨越两级" in item for item in result["errors"]))
+        self.assertTrue(any("axis_required=true" in item for item in result["errors"]))
 
-    def test_status_mismatch_is_rejected(self):
-        payload = base_payload()
-        payload["thirty_degree_status"] = "exempt"
-        result = VALIDATOR.validate(payload)
+    def test_intentional_jump_requires_purpose(self):
+        result = CUT.validate(
+            payload(
+                editing_device="intentional_jump_cut",
+                claimed_path="intentional_jump",
+            )
+        )
         self.assertFalse(result["ok"])
-        self.assertTrue(any("适用性声明错误" in item for item in result["errors"]))
+        self.assertTrue(any("editing_device_purpose" in item for item in result["errors"]))
+
+    def test_intentional_jump_with_purpose_passes(self):
+        result = CUT.validate(
+            payload(
+                editing_device="intentional_jump_cut",
+                editing_device_purpose="压缩等待时间并制造断裂感",
+                claimed_path="intentional_jump",
+            )
+        )
+        self.assertTrue(result["ok"], result)
+
+    def test_graphic_match_requires_basis(self):
+        result = CUT.validate(
+            payload(
+                editing_device="graphic_match",
+                editing_device_purpose="以圆形构图连接两处空间",
+                claimed_path="graphic_match",
+            )
+        )
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("graphic_match_basis" in item for item in result["errors"]))
+
+    def test_graphic_match_with_basis_passes(self):
+        result = CUT.validate(
+            payload(
+                editing_device="graphic_match",
+                editing_device_purpose="以圆形构图连接两处空间",
+                graphic_match_basis="圆窗与月亮保持相同画面位置和尺寸",
+                claimed_path="graphic_match",
+            )
+        )
+        self.assertTrue(result["ok"], result)
+
+    def test_claimed_path_mismatch_is_rejected(self):
+        result = CUT.validate(
+            payload(from_scale="ECU", to_scale="MS", claimed_path="angle")
+        )
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("声明的视觉差异路径" in item for item in result["errors"]))
 
 
 if __name__ == "__main__":

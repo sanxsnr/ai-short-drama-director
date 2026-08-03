@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -33,7 +34,6 @@ class RuleSourceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "references").mkdir(parents=True)
-            (root / "scripts").mkdir(parents=True)
 
             (root / "SKILL.md").write_text(
                 "references/01-script-slicing.md\n"
@@ -42,7 +42,6 @@ class RuleSourceTests(unittest.TestCase):
                 "其他文件只能引用这些真源，不得另写一套同类规则\n",
                 encoding="utf-8",
             )
-            (root / "references/00-project-diagnosis.md").write_text("", encoding="utf-8")
             (root / "references/01-script-slicing.md").write_text(
                 "04-blocking-continuity.md\n13-cut-shot-geometry.md\n## 30度规则\n",
                 encoding="utf-8",
@@ -51,45 +50,46 @@ class RuleSourceTests(unittest.TestCase):
                 "13-cut-shot-geometry.md\n",
                 encoding="utf-8",
             )
-            for name in (
-                "05-video-prompting.md",
-                "06-qc-repair-post.md",
-                "07-storyboard-image-prompts.md",
-                "12-output-format-and-choice-footer.md",
-            ):
-                (root / "references" / name).write_text(
-                    "04-blocking-continuity.md\n13-cut-shot-geometry.md\n",
-                    encoding="utf-8",
-                )
             (root / "references/13-cut-shot-geometry.md").write_text(
                 "04-blocking-continuity.md\n",
                 encoding="utf-8",
             )
-            (root / "scripts/validate_spatial_geometry.py").write_text("", encoding="utf-8")
-            (root / "scripts/validate_cut_geometry.py").write_text("", encoding="utf-8")
 
             result = VALIDATOR.validate(root)
             self.assertFalse(result["ok"])
             self.assertTrue(any("30度规则" in item for item in result["errors"]))
 
-    def test_downstream_absolute_two_visual_variables_is_rejected(self):
+    def test_stale_cumulative_cut_rule_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            for relative in VALIDATOR.FILES.values():
-                path = root / relative.relative_to(VALIDATOR.ROOT)
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text("", encoding="utf-8")
-            (root / "references/12-output-format-and-choice-footer.md").write_text(
-                "04-blocking-continuity.md\n13-cut-shot-geometry.md\n"
-                "每次CUT至少改变两个有效视觉变量\n",
+            root = Path(tmp) / "repo"
+            shutil.copytree(ROOT, root)
+            path = root / "references/05-video-prompting.md"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\n相邻SHOT是否满足30度、景别差异、两变量和信息可见性。\n",
                 encoding="utf-8",
             )
-            (root / "scripts").mkdir(exist_ok=True)
-            (root / "scripts/validate_spatial_geometry.py").write_text("", encoding="utf-8")
-            (root / "scripts/validate_cut_geometry.py").write_text("", encoding="utf-8")
             result = VALIDATOR.validate(root)
             self.assertFalse(result["ok"])
-            self.assertTrue(any("两个有效视觉变量" in item for item in result["errors"]))
+            self.assertTrue(
+                any("过时或累计式视觉差异规则" in item for item in result["errors"])
+            )
+
+    def test_narrative_dimension_cannot_return_as_visual_difference(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo"
+            shutil.copytree(ROOT, root)
+            path = root / "references/13-cut-shot-geometry.md"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\n第二项可以是另一视觉维度，也可以是动作阶段变化。\n",
+                encoding="utf-8",
+            )
+            result = VALIDATOR.validate(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(
+                any("过时或累计式视觉差异规则" in item for item in result["errors"])
+            )
 
 
 if __name__ == "__main__":
