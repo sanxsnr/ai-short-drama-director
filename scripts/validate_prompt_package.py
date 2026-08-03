@@ -9,7 +9,6 @@ import re
 import sys
 from pathlib import Path
 
-
 WHITESPACE_RE = re.compile(r"\s+")
 INTERNAL_MARKERS = (
     "<Asset_Setup>",
@@ -18,7 +17,16 @@ INTERNAL_MARKERS = (
     "<资产小结>",
     "Transparent Proxy",
     "底层数据透传代理",
+    "使用 $ai-short-drama-director",
 )
+FRAME_ROLES = {"first_frame", "last_frame", "首帧", "尾帧"}
+FRAME_MODES = {"i2v", "flf2v", "video_extension", "首帧", "首尾帧", "视频延长"}
+ALLOWED_SHOT_RULES = {
+    "single_shot_per_segment",
+    "multiple_shots_per_segment",
+    "每个SEG单SHOT",
+    "允许SEG内多SHOT",
+}
 
 
 def load_payload(path: str | None) -> dict:
@@ -62,11 +70,20 @@ def validate(payload: dict) -> dict:
         errors.append("target_duration 必须是大于0的数字")
         target_duration = 0
 
+    generation_mode = str(payload.get("generation_mode", "standard")).strip().lower()
+    shot_rule = payload.get("shot_rule")
+    segment_terminal = payload.get("segment_terminal")
+    if shot_rule is not None and shot_rule not in ALLOWED_SHOT_RULES:
+        errors.append(
+            "shot_rule 必须是 single_shot_per_segment 或 "
+            "multiple_shots_per_segment"
+        )
+
     final_prompt = str(payload.get("final_prompt", ""))
     compact_prompt = compact(final_prompt)
     for marker in INTERNAL_MARKERS:
         if marker.lower() in final_prompt.lower():
-            errors.append(f"生产版提示词包含内部标记：{marker}")
+            errors.append(f"生产版提示词包含内部标记或对话命令：{marker}")
 
     references = payload.get("references")
     if not isinstance(references, list):
@@ -79,6 +96,7 @@ def validate(payload: dict) -> dict:
             continue
         ref_id = str(ref.get("id", "")).strip()
         role = str(ref.get("role", "")).strip()
+        role_normalized = role.lower()
         if not ref_id:
             errors.append(f"references[{index}] 缺少 id")
         elif ref_id in reference_ids:
@@ -92,6 +110,11 @@ def validate(payload: dict) -> dict:
             errors.append(f"参考素材{ref_id or index}承担多个职责：{roles}")
         if ref.get("status") == "obsolete":
             errors.append(f"参考素材{ref_id or index}已作废，不得进入当前输入包")
+        if role_normalized in FRAME_ROLES and generation_mode not in FRAME_MODES:
+            errors.append(
+                f"参考素材{ref_id or index}使用{role}职责，但 generation_mode={generation_mode!r}；"
+                "普通多镜头流程不得默认加入首尾帧"
+            )
 
     required_assets = set(text_list(payload.get("required_assets"), "required_assets", errors))
     provided_assets = set(text_list(payload.get("provided_assets"), "provided_assets", errors))
@@ -127,25 +150,71 @@ def validate(payload: dict) -> dict:
         if compact(entity) in compact_prompt:
             errors.append(f"生产版提示词出现禁止实体：{entity}")
 
+    shots = payload.get("shots")
+    if shots is not None:
+        if not isinstance(shots, list) or not shots:
+            errors.append("shots 存在时必须是非空数组")
+        else:
+            if not isinstance(segment_terminal, bool):
+                errors.append("提供shots时必须明确 segment_terminal=true/false")
+            if shot_rule in {"single_shot_per_segment", "每个SEG单SHOT"} and len(shots) != 1:
+                errors.append(
+                    f"shot_rule={shot_rule} 时每个SEG必须且只能包含1个SHOT，"
+                    f"当前为{len(shots)}个"
+                )
+
+            shot_ids: set[str] = set()
+            for index, shot in enumerate(shots, start=1):
+                if not isinstance(shot, dict):
+                    errors.append(f"shots[{index}] 必须是对象")
+                    continue
+                shot_id = str(shot.get("id", "")).strip()
+                if not shot_id:
+                    errors.append(f"shots[{index}] 缺少 id")
+                elif shot_id in shot_ids:
+                    errors.append(f"SHOT id 重复：{shot_id}")
+                else:
+                    shot_ids.add(shot_id)
+
+                is_last = index == len(shots)
+                cut_point = str(shot.get("cut_point", "")).strip()
+                cut_type = str(shot.get("cut_type", "")).strip().upper()
+                if is_last and segment_terminal is True:
+                    if cut_type != "END":
+                        errors.append(f"终镜SHOT {shot_id or index}必须使用 cut_type=END")
+                else:
+                    if not cut_point:
+                        errors.append(f"SHOT {shot_id or index}缺少 cut_point")
+                    if not cut_type:
+                        errors.append(f"SHOT {shot_id or index}缺少 cut_type")
+                    elif cut_type == "END":
+                        errors.append(
+                            f"非终点SHOT {shot_id or index}不得使用 cut_type=END"
+                        )
+
     context_scope = payload.get("context_scope", {})
     if context_scope is not None and not isinstance(context_scope, dict):
         errors.append("context_scope 必须是对象")
         context_scope = {}
     segment_count = context_scope.get("segment_count")
     if isinstance(segment_count, int) and segment_count > 2:
-        warnings.append("当前输入包超过2个制片段；确认更早内容确实为当前任务必需")
+        warnings.append("当前输入包超过2个SEG；确认更早内容确实为当前任务必需")
     if context_scope.get("includes_obsolete_versions") is True:
         errors.append("当前输入包包含已作废版本")
     if context_scope.get("uses_concise_asset_summaries") is False:
-        warnings.append("建议使用精简资产小结，避免把完整长资产提示词塞入视频会话")
+        warnings.append("建议使用精简资产小结，避免完整长资产提示词污染视频会话")
 
     return {
         "ok": not errors,
         "segment_id": payload.get("segment_id"),
         "target_duration": target_duration,
+        "generation_mode": generation_mode,
         "reference_count": len(references),
         "missing_assets": missing_assets,
         "dialogue_line_count": len(dialogue_lines),
+        "shot_count": len(shots) if isinstance(shots, list) else 0,
+        "shot_rule": shot_rule,
+        "segment_terminal": segment_terminal,
         "errors": errors,
         "warnings": warnings,
     }
