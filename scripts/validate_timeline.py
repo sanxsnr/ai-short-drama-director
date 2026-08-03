@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate SEG timing, SHOT timing, dialogue capacity and optional CUT metadata."""
+"""Validate SEG timing, SHOT timing, dialogue capacity and CUT metadata."""
 
 from __future__ import annotations
 
@@ -21,6 +21,12 @@ ALLOWED_CUT_TYPES = {
     "TIME",
     "POV",
     "END",
+}
+ALLOWED_SHOT_RULES = {
+    "single_shot_per_segment",
+    "multiple_shots_per_segment",
+    "每个SEG单SHOT",
+    "允许SEG内多SHOT",
 }
 
 
@@ -68,6 +74,18 @@ def validate(payload: dict) -> dict:
     content_type = str(payload.get("content_type", "mixed"))
     shots = payload.get("shots", [])
     enforce_cut_fields = payload.get("enforce_cut_fields", True) is not False
+    shot_rule = payload.get("shot_rule")
+    segment_terminal = payload.get("segment_terminal")
+
+    if shot_rule is not None and shot_rule not in ALLOWED_SHOT_RULES:
+        errors.append(
+            "shot_rule 必须是 single_shot_per_segment 或 "
+            "multiple_shots_per_segment"
+        )
+    if enforce_cut_fields and not isinstance(segment_terminal, bool):
+        errors.append(
+            "enforce_cut_fields=true 时必须明确 segment_terminal=true/false"
+        )
 
     absolute_limit = 13.0 if mode == "10s" else 18.0 if mode == "15s" else None
     if absolute_limit is None:
@@ -82,6 +100,12 @@ def validate(payload: dict) -> dict:
     if not isinstance(shots, list) or not shots:
         errors.append("shots 必须是非空数组")
         return {"ok": False, "errors": errors, "warnings": warnings}
+
+    if shot_rule in {"single_shot_per_segment", "每个SEG单SHOT"} and len(shots) != 1:
+        errors.append(
+            f"shot_rule={shot_rule} 时每个SEG必须且只能包含1个SHOT，"
+            f"当前为{len(shots)}个"
+        )
 
     expected_start = 0.0
     total_dialogue_chars = 0
@@ -121,11 +145,9 @@ def validate(payload: dict) -> dict:
         cut_point = str(shot.get("cut_point", "")).strip()
 
         if enforce_cut_fields:
-            if is_last:
-                if cut_type and cut_type != "END":
-                    warnings.append(
-                        f"终镜SHOT {index}的 cut_type 为 {cut_type}；本场／本集结束时建议使用 END"
-                    )
+            if is_last and segment_terminal is True:
+                if cut_type != "END":
+                    errors.append(f"终镜SHOT {index}必须使用 cut_type=END")
             else:
                 if not cut_type:
                     errors.append(f"SHOT {index}缺少 cut_type")
@@ -159,13 +181,15 @@ def validate(payload: dict) -> dict:
                 f"全SEG对白密度约{dialogue_rate:.1f}字/秒，需检查停顿和动作空间"
             )
 
-    # SHOT数量本身不构成错误或警告。镜头密度必须根据CUT动机、机位几何和时长判断。
+    # SHOT数量本身不构成错误；只有违反明确shot_rule时才报错。
     return {
         "ok": not errors,
         "mode": mode,
         "target_duration": target,
         "content_type": content_type,
         "shot_count": len(shots),
+        "shot_rule": shot_rule,
+        "segment_terminal": segment_terminal,
         "dialogue_char_count": total_dialogue_chars,
         "errors": errors,
         "warnings": warnings,
