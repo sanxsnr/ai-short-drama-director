@@ -75,6 +75,22 @@ class RuleSourceTests(unittest.TestCase):
                 any("过时或累计式视觉差异规则" in item for item in result["errors"])
             )
 
+    def test_narrative_dimension_cannot_return_as_visual_difference(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo"
+            shutil.copytree(ROOT, root)
+            path = root / "references/13-cut-shot-geometry.md"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\n第二项可以是另一视觉维度，也可以是动作阶段变化。\n",
+                encoding="utf-8",
+            )
+            result = VALIDATOR.validate(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(
+                any("过时或累计式视觉差异规则" in item for item in result["errors"])
+            )
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
