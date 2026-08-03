@@ -90,6 +90,8 @@ SPATIAL_GEOMETRY_CONTRACT = (
 SKILL_GEOMETRY_CONTRACT = (
     "只有`04`输出“几何结论：通过”后",
     "唯一方案锁",
+    "180度轴线、人物朝向与`04`空间事实始终高于30度经验规则",
+    "叙事变化不能代替视觉差异",
     "validate_spatial_geometry.py",
 )
 
@@ -98,6 +100,9 @@ CUT_DIFFERENCE_CONTRACT = (
     "30度规则只在以下条件同时成立时重点适用",
     "同轴大景别路径",
     "角度路径与同轴大景别路径是替代关系",
+    "组合路径必须至少包含两项**视觉变化**",
+    "叙事变化不计入视觉变化数量",
+    "180度轴线与`04`空间事实是硬约束",
     "## 视觉差异充分性",
     "无意的近似机位跳切",
 )
@@ -110,6 +115,8 @@ STALE_GLOBAL_PHRASES = (
     "前后是相邻机位、相邻景别或近似构图",
     "相邻机位和相邻景别造成无效跳切",
     "满足30度和两变量规则",
+    "标准两变量路径要求每次CUT至少改变两个有效维度",
+    "第二项可以是另一视觉维度，也可以是",
 )
 
 
@@ -182,17 +189,14 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         if phrase not in cut_text:
             errors.append(f"references/13-cut-shot-geometry.md 缺少视觉差异合同：{phrase}")
 
-    spatial_text = texts.get("spatial", "")
     if "不是相邻SHOT之间的30度剪辑规则" not in spatial_text:
         errors.append("04必须明确区分单机位可见面角度与相邻SHOT的30度剪辑规则。")
 
-    scanned_paths: set[Path] = set()
     for path in root.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in {".md", ".yaml", ".yml"}:
             continue
         if any(part in {".git", "tests", "__pycache__"} for part in path.parts):
             continue
-        scanned_paths.add(path)
         text_value = path.read_text(encoding="utf-8")
         for phrase in STALE_GLOBAL_PHRASES:
             if phrase in text_value:
