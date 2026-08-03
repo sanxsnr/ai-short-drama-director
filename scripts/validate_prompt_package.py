@@ -220,6 +220,31 @@ def validate(payload: dict) -> dict:
                 else:
                     shot_ids.add(shot_id)
 
+                for field in (
+                    "scene_id",
+                    "time_id",
+                    "camera_zone_id",
+                    "camera_forward_world",
+                    "primary_scene_anchor_id",
+                ):
+                    if shot.get(field) in (None, "", []):
+                        errors.append(f"SHOT {shot_id or index}缺少世界空间字段：{field}")
+
+                task_validation = shot.get("task_validation")
+                if not isinstance(task_validation, dict):
+                    errors.append(f"SHOT {shot_id or index}缺少 task_validation")
+                else:
+                    if task_validation.get("derived_independent_task") is not True:
+                        errors.append(
+                            f"SHOT {shot_id or index}未取得 derived_independent_task=true"
+                        )
+                    if not str(task_validation.get("task_type", "")).strip():
+                        errors.append(f"SHOT {shot_id or index}缺少 task_validation.task_type")
+                    if task_validation.get("validator") != "validate_shot_task.py":
+                        errors.append(
+                            f"SHOT {shot_id or index}的task_validation必须来自validate_shot_task.py"
+                        )
+
                 is_last = index == len(shots)
                 cut_point = str(shot.get("cut_point", "")).strip()
                 cut_type = str(shot.get("cut_type", "")).strip().upper()

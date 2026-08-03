@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Validate visual-difference paths between adjacent camera shots."""
+"""Validate CUT geometry only after the next SHOT passes task coverage."""
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import sys
@@ -94,10 +95,34 @@ OPTIONAL_VISUAL_FIELDS = {
 }
 
 
+def load_task_validator():
+    path = Path(__file__).with_name("validate_shot_task.py")
+    spec = importlib.util.spec_from_file_location("validate_shot_task", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"无法加载任务验证器：{path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+TASK_VALIDATOR = load_task_validator()
+
+
 def load_payload(path: str | None) -> dict:
     if path:
         return json.loads(Path(path).read_text(encoding="utf-8"))
     return json.load(sys.stdin)
+
+
+def text(value: object) -> str:
+    return str(value or "").strip()
+
+
+def string_list(value: object, field: str, errors: list[str]) -> list[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        errors.append(f"{field} 必须是字符串数组")
+        return []
+    return list(dict.fromkeys(item.strip() for item in value if item.strip()))
 
 
 def vector(value: object, field: str, errors: list[str]) -> tuple[float, float, float] | None:
@@ -133,7 +158,7 @@ def angle_degrees(
 
 
 def scale_level(value: object, field: str, errors: list[str]) -> int | None:
-    key = str(value or "").strip()
+    key = text(value)
     if key in SCALE_LEVELS:
         return SCALE_LEVELS[key]
     upper = key.upper()
@@ -144,7 +169,7 @@ def scale_level(value: object, field: str, errors: list[str]) -> int | None:
 
 
 def canonical_path(value: object) -> str:
-    return PATH_ALIASES.get(str(value or "").strip(), "")
+    return PATH_ALIASES.get(text(value), "")
 
 
 def canonical_axis(value: object) -> str:
@@ -153,7 +178,7 @@ def canonical_axis(value: object) -> str:
         "已重新建立": "reestablished",
         "不适用": "not_applicable",
         "越轴未重建": "crossed_without_reestablish",
-    }.get(str(value or "").strip(), str(value or "").strip())
+    }.get(text(value), text(value))
 
 
 def canonical_device(value: object) -> str:
@@ -161,21 +186,7 @@ def canonical_device(value: object) -> str:
         "无": "none",
         "有意跳切": "intentional_jump_cut",
         "图形匹配": "graphic_match",
-    }.get(str(value or "").strip(), str(value or "").strip())
-
-
-def time_value(shot: dict) -> str:
-    explicit = str(shot.get("time", "")).strip()
-    if explicit:
-        return explicit
-    return str(shot.get("time_space", "")).strip()
-
-
-def space_value(shot: dict) -> str:
-    explicit = str(shot.get("space", "")).strip()
-    if explicit:
-        return explicit
-    return str(shot.get("time_space", "")).strip()
+    }.get(text(value), text(value))
 
 
 def changed_optional_visual_fields(from_shot: dict, to_shot: dict) -> list[str]:
@@ -191,18 +202,37 @@ def changed_optional_visual_fields(from_shot: dict, to_shot: dict) -> list[str]:
                     changed.append(label)
             except (TypeError, ValueError):
                 continue
-        elif str(before).strip() != str(after).strip():
+        elif text(before) != text(after):
             changed.append(label)
     return changed
+
+
+MISSING = object()
+
+
+def get_path(data: object, dotted_path: str):
+    current = data
+    for part in dotted_path.split("."):
+        if not isinstance(current, dict) or part not in current:
+            return MISSING
+        current = current[part]
+    return current
+
+
+def anchor_overlap(first: list[str], second: list[str]) -> float:
+    a, b = set(first), set(second)
+    if not a and not b:
+        return 1.0
+    union = a | b
+    return len(a & b) / len(union) if union else 0.0
 
 
 def validate(payload: dict) -> dict:
     errors: list[str] = []
     warnings: list[str] = []
 
-    transition_id = str(payload.get("transition_id", "")).strip()
-    if not transition_id:
-        transition_id = "unnamed-transition"
+    transition_id = text(payload.get("transition_id")) or "unnamed-transition"
+    if transition_id == "unnamed-transition":
         warnings.append("缺少 transition_id，已使用临时标识")
 
     from_shot = payload.get("from_shot")
@@ -214,41 +244,116 @@ def validate(payload: dict) -> dict:
         errors.append("to_shot 必须是对象")
         to_shot = {}
 
+    required_fields = (
+        "id",
+        "primary_subject",
+        "viewpoint",
+        "action_stage",
+        "scene_id",
+        "time_id",
+        "camera_zone_id",
+        "primary_scene_anchor_id",
+    )
     for name, shot in (("from_shot", from_shot), ("to_shot", to_shot)):
-        for field in ("id", "primary_subject", "viewpoint", "action_stage"):
-            if not str(shot.get(field, "")).strip():
+        for field in required_fields:
+            if not text(shot.get(field)):
                 errors.append(f"{name}.{field} 不能为空")
-        if not time_value(shot):
-            errors.append(f"{name}.time 或 time_space 不能为空")
-        if not space_value(shot):
-            errors.append(f"{name}.space 或 time_space 不能为空")
-        if "camera_height" in shot:
-            try:
-                float(shot["camera_height"])
-            except (TypeError, ValueError):
-                errors.append(f"{name}.camera_height 必须是数字")
 
-    from_vector = vector(
+    from_subject_camera = vector(
         from_shot.get("subject_to_camera"),
         "from_shot.subject_to_camera",
         errors,
     )
-    to_vector = vector(
+    to_subject_camera = vector(
         to_shot.get("subject_to_camera"),
         "to_shot.subject_to_camera",
         errors,
     )
+    from_camera_position = vector(
+        from_shot.get("camera_position_world"),
+        "from_shot.camera_position_world",
+        errors,
+    )
+    to_camera_position = vector(
+        to_shot.get("camera_position_world"),
+        "to_shot.camera_position_world",
+        errors,
+    )
+    from_camera_forward = vector(
+        from_shot.get("camera_forward_world"),
+        "from_shot.camera_forward_world",
+        errors,
+    )
+    to_camera_forward = vector(
+        to_shot.get("camera_forward_world"),
+        "to_shot.camera_forward_world",
+        errors,
+    )
     from_scale = scale_level(from_shot.get("shot_scale"), "from_shot.shot_scale", errors)
     to_scale = scale_level(to_shot.get("shot_scale"), "to_shot.shot_scale", errors)
+    from_visible_anchors = string_list(
+        from_shot.get("visible_anchor_ids"), "from_shot.visible_anchor_ids", errors
+    )
+    to_visible_anchors = string_list(
+        to_shot.get("visible_anchor_ids"), "to_shot.visible_anchor_ids", errors
+    )
 
-    independent_task = payload.get("independent_task")
-    if not isinstance(independent_task, bool):
-        errors.append("independent_task 必须是布尔值")
-        independent_task = False
-    if not independent_task:
-        errors.append("下一SHOT没有独立叙事任务，CUT不成立")
+    task_contract = to_shot.get("task_contract")
+    if not isinstance(task_contract, dict):
+        errors.append("to_shot.task_contract 必须是对象，并由14任务覆盖规则验证")
+        task_result = {
+            "ok": False,
+            "derived_independent_task": False,
+            "viewpoint_evidence_passed": False,
+            "task_type": "",
+            "errors": ["缺少task_contract"],
+        }
+    else:
+        task_result = TASK_VALIDATOR.validate(task_contract)
+        if not task_result.get("ok"):
+            errors.append("下一SHOT未通过14任务覆盖Gate")
+            errors.extend(f"任务覆盖：{item}" for item in task_result.get("errors", []))
 
-    axis_status_raw = str(payload.get("axis_status", "")).strip()
+    task_observation = task_result.get("observation_signature", {})
+    task_contract_matches_shot = True
+    if task_result.get("scene_id") and text(to_shot.get("scene_id")) != text(task_result.get("scene_id")):
+        errors.append("to_shot.scene_id 与 task_contract.scene_id 不一致")
+        task_contract_matches_shot = False
+    if task_result.get("time_id") and text(to_shot.get("time_id")) != text(task_result.get("time_id")):
+        errors.append("to_shot.time_id 与 task_contract.time_id 不一致")
+        task_contract_matches_shot = False
+    if task_result.get("primary_subject_id") and text(to_shot.get("primary_subject")) != text(task_result.get("primary_subject_id")):
+        errors.append("to_shot.primary_subject 与 task_contract.primary_subject_id 不一致")
+        task_contract_matches_shot = False
+    if isinstance(task_observation, dict):
+        if text(to_shot.get("camera_zone_id")) != text(task_observation.get("camera_zone_id")):
+            errors.append("to_shot.camera_zone_id 与 task_contract.camera.zone_id 不一致")
+            task_contract_matches_shot = False
+        if text(to_shot.get("primary_scene_anchor_id")) != text(task_observation.get("primary_scene_anchor_id")):
+            errors.append("to_shot.primary_scene_anchor_id 与 task_contract不一致")
+            task_contract_matches_shot = False
+        task_anchor_ids = set(task_observation.get("visible_anchor_ids") or [])
+        if task_anchor_ids != set(to_visible_anchors):
+            errors.append("to_shot.visible_anchor_ids 与 task_contract不一致")
+            task_contract_matches_shot = False
+        task_position_raw = task_observation.get("camera_position_world")
+        task_forward_raw = task_observation.get("camera_forward_world")
+        task_position = vector(task_position_raw, "task_contract.camera.position_world", errors)
+        task_forward = vector(task_forward_raw, "task_contract.camera.forward_world", errors)
+        if task_position is not None and to_camera_position is not None:
+            if magnitude := math.sqrt(sum((a - b) ** 2 for a, b in zip(task_position, to_camera_position))):
+                if magnitude > 0.01:
+                    errors.append("to_shot.camera_position_world 与 task_contract不一致")
+                    task_contract_matches_shot = False
+        if task_forward is not None and to_camera_forward is not None:
+            if angle_degrees(task_forward, to_camera_forward) > 1.0:
+                errors.append("to_shot.camera_forward_world 与 task_contract不一致")
+                task_contract_matches_shot = False
+    if text(to_shot.get("viewpoint")) != text(task_contract.get("viewpoint") if isinstance(task_contract, dict) else ""):
+        errors.append("to_shot.viewpoint 与 task_contract.viewpoint 不一致")
+        task_contract_matches_shot = False
+
+    axis_status_raw = text(payload.get("axis_status"))
     if axis_status_raw not in AXIS_STATUSES:
         errors.append(
             "axis_status 必须是 same_side/reestablished/not_applicable/"
@@ -256,16 +361,16 @@ def validate(payload: dict) -> dict:
         )
     axis_status = canonical_axis(axis_status_raw)
     if axis_status == "crossed_without_reestablish":
-        errors.append("180度轴线被无理由跨越；任何30度或景别变化都不能覆盖越轴错误")
+        errors.append("180度轴线被无理由跨越；任何视觉变化都不能覆盖越轴错误")
 
-    editing_device_raw = str(payload.get("editing_device", "none")).strip()
+    editing_device_raw = text(payload.get("editing_device")) or "none"
     if editing_device_raw not in EDITING_DEVICES:
         errors.append(
             "editing_device 必须是 none/intentional_jump_cut/graphic_match 或中文对应值"
         )
     editing_device = canonical_device(editing_device_raw)
 
-    claimed_path_raw = str(payload.get("claimed_difference_path", "")).strip()
+    claimed_path_raw = text(payload.get("claimed_difference_path"))
     claimed_path = canonical_path(claimed_path_raw)
     if claimed_path_raw and not claimed_path:
         errors.append(
@@ -273,50 +378,101 @@ def validate(payload: dict) -> dict:
             "combined/intentional_jump/graphic_match 或中文对应值"
         )
 
-    angle = None
+    camera_angle = None
+    observation_angle = None
     scale_steps = None
-    if from_vector is not None and to_vector is not None:
-        angle = angle_degrees(from_vector, to_vector)
+    if from_subject_camera is not None and to_subject_camera is not None:
+        camera_angle = angle_degrees(from_subject_camera, to_subject_camera)
+    if from_camera_forward is not None and to_camera_forward is not None:
+        observation_angle = angle_degrees(from_camera_forward, to_camera_forward)
     if from_scale is not None and to_scale is not None:
         scale_steps = abs(from_scale - to_scale)
 
-    same_subject = (
-        str(from_shot.get("primary_subject", "")).strip()
-        == str(to_shot.get("primary_subject", "")).strip()
+    same_subject = text(from_shot.get("primary_subject")) == text(
+        to_shot.get("primary_subject")
     )
-    same_time = time_value(from_shot) == time_value(to_shot)
-    same_space = space_value(from_shot) == space_value(to_shot)
-    viewpoint_changed = (
-        str(from_shot.get("viewpoint", "")).strip()
-        != str(to_shot.get("viewpoint", "")).strip()
+    same_scene = text(from_shot.get("scene_id")) == text(to_shot.get("scene_id"))
+    same_time = text(from_shot.get("time_id")) == text(to_shot.get("time_id"))
+    viewpoint_changed = text(from_shot.get("viewpoint")) != text(to_shot.get("viewpoint"))
+    action_stage_changed = text(from_shot.get("action_stage")) != text(
+        to_shot.get("action_stage")
     )
-    action_stage_changed = (
-        str(from_shot.get("action_stage", "")).strip()
-        != str(to_shot.get("action_stage", "")).strip()
+    same_camera_zone = text(from_shot.get("camera_zone_id")) == text(
+        to_shot.get("camera_zone_id")
     )
+    same_scene_anchor = text(from_shot.get("primary_scene_anchor_id")) == text(
+        to_shot.get("primary_scene_anchor_id")
+    )
+    visible_anchor_overlap = anchor_overlap(from_visible_anchors, to_visible_anchors)
+    observation_equivalent = bool(
+        observation_angle is not None
+        and observation_angle < 10.0
+        and same_camera_zone
+        and same_scene_anchor
+        and visible_anchor_overlap >= 0.8
+    )
+
+    task_passed = bool(task_result.get("derived_independent_task")) and task_contract_matches_shot
+    viewpoint_evidence_passed = bool(task_result.get("viewpoint_evidence_passed"))
+    task_type = text(task_result.get("task_type"))
+
+    if task_type in {"ENTER", "EXIT"} and isinstance(task_contract, dict):
+        action = task_contract.get("action", {})
+        state_path = text(action.get("state_path")) if isinstance(action, dict) else ""
+        start_state = to_shot.get("start_state")
+        end_state = to_shot.get("end_state")
+        if not isinstance(start_state, dict) or not isinstance(end_state, dict):
+            errors.append(f"{task_type}的to_shot必须提供 start_state 与 end_state")
+            task_passed = False
+        elif state_path:
+            before = get_path(start_state, state_path)
+            after = get_path(end_state, state_path)
+            if before is MISSING or after is MISSING:
+                errors.append(f"{task_type}的to_shot状态缺少路径：{state_path}")
+                task_passed = False
+            else:
+                if before != action.get("state_before"):
+                    errors.append(
+                        f"{task_type}的实际起始状态{before!r}与task_contract.state_before不一致"
+                    )
+                    task_passed = False
+                if after != action.get("state_after"):
+                    errors.append(
+                        f"{task_type}的实际结束状态{after!r}与task_contract.state_after不一致"
+                    )
+                    task_passed = False
+
+    if viewpoint_changed and not viewpoint_evidence_passed:
+        errors.append("观察视角名称虽然改变，但14未验证真实POV／OTS／INSERT几何证据")
 
     optional_visual_changes = changed_optional_visual_fields(from_shot, to_shot)
     moderate_visual_changes: list[str] = []
     strong_visual_changes: list[str] = []
 
-    if not same_subject:
-        strong_visual_changes.append("primary_subject")
     if not same_time:
-        strong_visual_changes.append("time")
-    if not same_space:
-        strong_visual_changes.append("space")
-    if viewpoint_changed:
-        strong_visual_changes.append("viewpoint")
-    if angle is not None:
-        if angle >= 30.0:
+        strong_visual_changes.append("time_id")
+    if not same_scene:
+        strong_visual_changes.append("scene_id")
+    if viewpoint_changed and viewpoint_evidence_passed:
+        strong_visual_changes.append("verified_viewpoint")
+    if not same_subject and task_passed:
+        strong_visual_changes.append("task_verified_primary_subject")
+    if camera_angle is not None:
+        if camera_angle >= 30.0:
             strong_visual_changes.append("camera_angle_30_plus")
-        elif 15.0 <= angle < 30.0:
+        elif 15.0 <= camera_angle < 30.0:
             moderate_visual_changes.append("camera_angle_15_29")
     if scale_steps is not None:
         if scale_steps >= 2:
             strong_visual_changes.append("shot_scale_2_plus")
         elif scale_steps == 1:
             moderate_visual_changes.append("shot_scale_1")
+    if observation_angle is not None and 15.0 <= observation_angle < 30.0:
+        moderate_visual_changes.append("scene_observation_15_29")
+    if not same_camera_zone:
+        moderate_visual_changes.append("camera_zone")
+    if not same_scene_anchor:
+        moderate_visual_changes.append("scene_anchor")
     moderate_visual_changes.extend(optional_visual_changes)
     moderate_visual_changes = list(dict.fromkeys(moderate_visual_changes))
 
@@ -326,19 +482,25 @@ def validate(payload: dict) -> dict:
     if editing_device == "intentional_jump_cut":
         derived_path = "intentional_jump"
         difference_strength = "intentional"
-        if not str(payload.get("editing_device_purpose", "")).strip():
+        if not text(payload.get("editing_device_purpose")):
             errors.append("有意跳切必须填写 editing_device_purpose")
     elif editing_device == "graphic_match":
         derived_path = "graphic_match"
         difference_strength = "intentional"
-        if not str(payload.get("editing_device_purpose", "")).strip():
+        if not text(payload.get("editing_device_purpose")):
             errors.append("图形匹配必须填写 editing_device_purpose")
-        if not str(payload.get("graphic_match_basis", "")).strip():
+        if not text(payload.get("graphic_match_basis")):
             errors.append("图形匹配必须填写 graphic_match_basis")
-    elif not same_subject or not same_time or not same_space or viewpoint_changed:
+    elif not same_scene or not same_time:
         derived_path = "subject_or_viewpoint"
         difference_strength = "strong"
-    elif angle is not None and angle >= 30.0:
+    elif viewpoint_changed and viewpoint_evidence_passed and task_passed:
+        derived_path = "subject_or_viewpoint"
+        difference_strength = "strong"
+    elif not same_subject and task_passed:
+        derived_path = "subject_or_viewpoint"
+        difference_strength = "strong"
+    elif camera_angle is not None and camera_angle >= 30.0:
         derived_path = "angle"
         difference_strength = "strong"
     elif scale_steps is not None and scale_steps >= 2:
@@ -349,19 +511,22 @@ def validate(payload: dict) -> dict:
         difference_strength = "combined"
     else:
         errors.append(
-            "相邻SHOT缺少合法视觉差异：需要一项强视觉变化，或至少两项中等视觉变化；"
-            "动作阶段、新信息和情绪重点只能证明CUT任务，不能代替画面差异"
+            "相邻SHOT缺少合法视觉差异：需要一项强视觉变化，或至少两项中等视觉变化"
         )
-        if angle is not None and angle < 15.0 and (scale_steps or 0) <= 1:
-            errors.append(
-                "前后SHOT为同一主体与连续时空，摄影机夹角小于15度，"
-                "景别相同或只差一级，且缺少其他中等视觉变化；属于无意近似跳切"
-            )
+
+    if not task_passed:
+        derived_path = "invalid_task_coverage"
+        difference_strength = "insufficient"
+
+    if observation_equivalent and not same_subject:
+        warnings.append(
+            "前后主体虽改变，但场景观察签名近似；CUT只有在14任务覆盖证据真实成立时才允许"
+        )
 
     thirty_degree_applicable = bool(
         same_subject
         and same_time
-        and same_space
+        and same_scene
         and not viewpoint_changed
         and (scale_steps is not None and scale_steps <= 1)
         and editing_device == "none"
@@ -379,27 +544,35 @@ def validate(payload: dict) -> dict:
 
     if claimed_path and claimed_path != derived_path:
         errors.append(
-            f"声明的视觉差异路径为{claimed_path}，但几何推导结果为{derived_path}"
+            f"声明的视觉差异路径为{claimed_path}，但推导结果为{derived_path}"
         )
 
     if axis_status == "not_applicable" and bool(payload.get("axis_required", False)):
         errors.append("axis_required=true 时，axis_status 不能为 not_applicable")
 
-    if action_stage_changed and derived_path == "invalid_near_jump":
-        warnings.append("动作阶段已经变化，但视觉差异仍不足；叙事变化不能自动豁免近似机位")
+    if action_stage_changed and derived_path in {"invalid_near_jump", "invalid_task_coverage"}:
+        warnings.append("动作阶段已经变化，但任务覆盖或视觉差异仍不足")
 
     return {
         "ok": not errors,
         "transition_id": transition_id,
         "from_shot": from_shot.get("id"),
         "to_shot": to_shot.get("id"),
-        "camera_angle_degrees": round(angle, 2) if angle is not None else None,
+        "task_type": task_type,
+        "task_coverage_passed": task_passed,
+        "task_validation": task_result,
+        "camera_angle_degrees": round(camera_angle, 2) if camera_angle is not None else None,
+        "scene_observation_angle_degrees": (
+            round(observation_angle, 2) if observation_angle is not None else None
+        ),
         "shot_scale_step_difference": scale_steps,
         "same_primary_subject": same_subject,
-        "same_time": same_time,
-        "same_space": same_space,
+        "same_scene_id": same_scene,
+        "same_time_id": same_time,
         "viewpoint_changed": viewpoint_changed,
         "action_stage_changed": action_stage_changed,
+        "observation_equivalent": observation_equivalent,
+        "visible_anchor_overlap": round(visible_anchor_overlap, 3),
         "axis_status": axis_status,
         "thirty_degree_applicable": thirty_degree_applicable,
         "thirty_degree_status": thirty_degree_status,
@@ -417,10 +590,9 @@ def main() -> int:
     parser.add_argument("json_file", nargs="?", help="JSON file; omit to read stdin")
     args = parser.parse_args()
     try:
-        payload = load_payload(args.json_file)
-        result = validate(payload)
-    except (OSError, json.JSONDecodeError) as exc:
-        result = {"ok": False, "errors": [f"无法读取JSON：{exc}"], "warnings": []}
+        result = validate(load_payload(args.json_file))
+    except (OSError, json.JSONDecodeError, RuntimeError) as exc:
+        result = {"ok": False, "errors": [f"无法验证JSON：{exc}"], "warnings": []}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result.get("ok") else 1
 

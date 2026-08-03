@@ -342,7 +342,7 @@ git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 
 ## 验证工具
 
-仓库内提供七个无第三方依赖的 Python 验证脚本：
+仓库内提供八个无第三方依赖的 Python 验证脚本：
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
@@ -350,11 +350,12 @@ python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
 python3 scripts/validate_continuity.py continuity.json
 python3 scripts/validate_spatial_geometry.py spatial-geometry.json
+python3 scripts/validate_shot_task.py shot-task.json
 python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_rule_sources.py
 ```
 
-它们分别检查时间码与对白容量、项目阶段证据、提示词输入包、跨镜状态继承、人物面向与摄影机可见面、相邻SHOT视觉差异路径，以及全仓库规则真源一致性。脚本不会取代导演对剧情、表演和美感的判断。
+它们分别检查时间码与对白容量、项目阶段证据、提示词输入包、跨镜状态继承、人物面向与摄影机可见面、SHOT任务与动作覆盖、相邻SHOT视觉差异路径，以及全仓库规则真源一致性。脚本不会取代导演对剧情、表演和美感的判断。
 
 ## 目录结构
 
@@ -386,13 +387,15 @@ ai-short-drama-from-zero/
 │   ├── 10-voice-editing-repair.md
 │   ├── 11-beginner-guided-mode.md
 │   ├── 12-output-format-and-choice-footer.md
-│   └── 13-cut-shot-geometry.md
+│   ├── 13-cut-shot-geometry.md
+│   └── 14-shot-task-action-coverage.md
 ├── scripts/
 │   ├── validate_timeline.py
 │   ├── validate_project_state.py
 │   ├── validate_prompt_package.py
 │   ├── validate_continuity.py
 │   ├── validate_spatial_geometry.py
+│   ├── validate_shot_task.py
 │   ├── validate_cut_geometry.py
 │   └── validate_rule_sources.py
 ├── docs/

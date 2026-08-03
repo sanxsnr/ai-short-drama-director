@@ -38,7 +38,22 @@ def base_payload(references: list[dict]) -> dict:
         "required_assets": ["沈渊", "苏清月"],
         "provided_assets": ["沈渊", "苏清月"],
         "dialogue_lines": [],
-        "shots": [{"id": "SHOT01", "cut_type": "END"}],
+        "shots": [
+            {
+                "id": "SHOT01",
+                "scene_id": "torture_room",
+                "time_id": "night_01",
+                "camera_zone_id": "inside_center",
+                "camera_forward_world": [1, 0, 0],
+                "primary_scene_anchor_id": "shen_yuan",
+                "task_validation": {
+                    "validator": "validate_shot_task.py",
+                    "task_type": "DIALOGUE",
+                    "derived_independent_task": True,
+                },
+                "cut_type": "END",
+            }
+        ],
         "context_scope": {
             "segment_count": 1,
             "uses_concise_asset_summaries": True,

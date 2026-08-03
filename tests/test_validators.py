@@ -150,6 +150,7 @@ class ProjectStateValidatorTests(unittest.TestCase):
                 "segment_duration_mode": 10,
                 "shot_rule": "multiple_shots_per_segment",
                 "spatial_state": {"resolution": "uniquely_derived"},
+                "shot_task_rules_version": "v1",
                 "cut_rules_version": "v1",
                 "stages": [
                     {"name": "完整分镜", "status": "in_progress", "deliverables": []}
@@ -220,10 +221,33 @@ class PromptPackageValidatorTests(unittest.TestCase):
                 "shots": [
                     {
                         "id": "SHOT02",
+                        "scene_id": "torture_room",
+                        "time_id": "night_01",
+                        "camera_zone_id": "post_front",
+                        "camera_forward_world": [1, 0, 0],
+                        "primary_scene_anchor_id": "shen_yuan",
+                        "task_validation": {
+                            "validator": "validate_shot_task.py",
+                            "task_type": "REACTION",
+                            "derived_independent_task": True,
+                        },
                         "cut_point": "沈渊视线锁定门口",
                         "cut_type": "EYELINE",
                     },
-                    {"id": "SHOT03", "cut_type": "END"},
+                    {
+                        "id": "SHOT03",
+                        "scene_id": "torture_room",
+                        "time_id": "night_01",
+                        "camera_zone_id": "east_door_inside",
+                        "camera_forward_world": [1, 0, 0],
+                        "primary_scene_anchor_id": "east_door_threshold",
+                        "task_validation": {
+                            "validator": "validate_shot_task.py",
+                            "task_type": "ENTER",
+                            "derived_independent_task": True,
+                        },
+                        "cut_type": "END",
+                    },
                 ],
                 "context_scope": {
                     "segment_count": 1,

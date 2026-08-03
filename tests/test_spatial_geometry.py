@@ -25,7 +25,12 @@ GEOMETRY = load_module("validate_spatial_geometry", "scripts/validate_spatial_ge
 
 def dongsheng_payload() -> dict:
     return {
-        "scene_id": "董生卧房-第08镜",
+        "scene_id": "dongsheng_bedroom",
+        "time_id": "night_08",
+        "scene_anchors": {
+            "bed": {"position": [0, 5, 0]},
+            "room_center": {"position": [0, -3, 0]},
+        },
         "subject": {
             "id": "董生",
             "position": [0, 0, 0],
@@ -43,7 +48,11 @@ def dongsheng_payload() -> dict:
         },
         "camera": {
             "id": "D",
-            "position": [0, 4, 1.5],
+            "zone_id": "bed_front",
+            "position_world": [0, 4, 1.5],
+            "forward_world": [0, 1, -1.5],
+            "primary_scene_anchor_id": "bed",
+            "visible_anchor_ids": ["bed"],
             "claimed_visible_face": "front_or_near_front",
             "same_direction_as_story_target": True,
             "subject_appears_to_look_toward_lens": True,
@@ -64,7 +73,8 @@ class SpatialGeometryTests(unittest.TestCase):
 
     def test_side_camera_cannot_claim_front(self):
         payload = dongsheng_payload()
-        payload["camera"]["position"] = [5, 0, 1.5]
+        payload["camera"]["position_world"] = [5, 0, 1.5]
+        payload["camera"]["forward_world"] = [-5, 5, -1.5]
         payload["camera"]["same_direction_as_story_target"] = False
         payload["camera"]["subject_appears_to_look_toward_lens"] = False
         result = GEOMETRY.validate(payload)
@@ -82,13 +92,21 @@ class SpatialGeometryTests(unittest.TestCase):
 
     def test_unmotivated_lens_gaze_is_rejected(self):
         payload = dongsheng_payload()
-        payload["camera"]["position"] = [5, 0, 1.5]
+        payload["camera"]["position_world"] = [5, 0, 1.5]
+        payload["camera"]["forward_world"] = [-5, 5, -1.5]
         payload["camera"]["claimed_visible_face"] = "side"
         payload["camera"]["same_direction_as_story_target"] = False
         payload["camera"]["subject_appears_to_look_toward_lens"] = True
         result = GEOMETRY.validate(payload)
         self.assertFalse(result["ok"])
         self.assertTrue(any("无动机看镜头" in item for item in result["errors"]))
+
+    def test_camera_forward_must_face_primary_scene_anchor(self):
+        payload = dongsheng_payload()
+        payload["camera"]["forward_world"] = [0, -1, 0]
+        result = GEOMETRY.validate(payload)
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("主要场景锚点" in item for item in result["errors"]))
 
     def test_locked_solution_rejects_alternative_camera(self):
         payload = dongsheng_payload()

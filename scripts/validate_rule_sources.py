@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate unique rule-source ownership and cross-file rule contracts."""
+"""Validate unique rule-source ownership and cross-file production contracts."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ FILES = {
     "beginner": ROOT / "references/11-beginner-guided-mode.md",
     "output": ROOT / "references/12-output-format-and-choice-footer.md",
     "cut": ROOT / "references/13-cut-shot-geometry.md",
+    "task": ROOT / "references/14-shot-task-action-coverage.md",
     "agent": ROOT / "agents/openai.yaml",
     "production_template": ROOT / "assets/production-document-template.md",
 }
@@ -28,32 +29,36 @@ FORBIDDEN = {
         "## CUT优先分镜规则",
         "### 禁止相邻镜头",
         "## 空间确认Gate",
-        "## 信息可见性检查",
+        "## ENTER／EXIT进出场Gate",
     ],
     "script": [
         "## 30度规则",
-        "## 两变量规则",
         "## 相邻SHOT视觉差异闸门",
-        "## 视觉差异充分性",
-        "## 禁止切到相邻镜头",
+        "## ENTER／EXIT进出场Gate",
         "## 跨SHOT状态继承",
         "## 信息可见性",
     ],
     "spatial": [
         "## 有效CUT触发条件",
         "## CUT类型",
-        "## 30度规则",
         "## 相邻SHOT视觉差异闸门",
-        "## 视觉差异充分性",
-        "## 景别跨级规则",
-        "## 两变量规则",
+        "## ENTER／EXIT进出场Gate",
+        "## SHOT任务合同",
     ],
     "cut": [
         "## 场景方向与坐标",
         "## 人物空间状态",
         "## 道具空间状态",
-        "## 跨SHOT状态继承",
-        "## 信息可见性\n",
+        "## ENTER／EXIT进出场Gate",
+        "## SHOT任务合同",
+    ],
+    "task": [
+        "## 场景方向与坐标",
+        "## 人物空间状态",
+        "## 有效CUT触发条件",
+        "## CUT类型",
+        "## 相邻SHOT视觉差异闸门",
+        "## 30度角度路径",
     ],
 }
 
@@ -61,11 +66,17 @@ REQUIRED_REFERENCES = {
     "skill": [
         "references/01-script-slicing.md",
         "references/04-blocking-continuity.md",
+        "references/14-shot-task-action-coverage.md",
         "references/13-cut-shot-geometry.md",
     ],
-    "script": ["04-blocking-continuity.md", "13-cut-shot-geometry.md"],
-    "spatial": ["13-cut-shot-geometry.md"],
-    "cut": ["04-blocking-continuity.md"],
+    "script": [
+        "04-blocking-continuity.md",
+        "14-shot-task-action-coverage.md",
+        "13-cut-shot-geometry.md",
+    ],
+    "spatial": ["14-shot-task-action-coverage.md", "13-cut-shot-geometry.md"],
+    "task": ["04-blocking-continuity.md", "13-cut-shot-geometry.md"],
+    "cut": ["04-blocking-continuity.md", "14-shot-task-action-coverage.md"],
 }
 
 AMBIGUOUS_SEG_SHOT_PHRASES = (
@@ -85,26 +96,43 @@ SPATIAL_GEOMETRY_CONTRACT = (
     "推导可见面",
     "唯一方案锁",
     "无动机看镜头",
+    "camera_position_world",
+    "camera_forward_world",
+    "场景观察签名",
+    "标准空间ID与动作状态机",
 )
 
-SKILL_GEOMETRY_CONTRACT = (
-    "只有`04`输出“几何结论：通过”后",
-    "唯一方案锁",
-    "180度轴线、人物朝向与`04`空间事实始终高于30度经验规则",
-    "叙事变化不能代替视觉差异",
-    "validate_spatial_geometry.py",
+TASK_COVERAGE_CONTRACT = (
+    "## SHOT任务合同",
+    "derived_independent_task",
+    "## ENTER／EXIT进出场Gate",
+    "## EYELINE_REVEAL视线揭示Gate",
+    "## DIALOGUE对白任务Gate",
+    "## 视角标签证据",
+    "## 状态机与重复动作",
+    "主体改变只表示“可能需要新镜头”",
+    "camera_forward_world",
 )
 
 CUT_DIFFERENCE_CONTRACT = (
     "## 相邻SHOT视觉差异闸门",
-    "30度规则只在以下条件同时成立时重点适用",
-    "同轴大景别路径",
-    "角度路径与同轴大景别路径是替代关系",
-    "组合路径必须至少包含两项**视觉变化**",
-    "叙事变化不计入视觉变化数量",
-    "180度轴线与`04`空间事实是硬约束",
+    "`14`任务覆盖通过",
+    "主体名称改变不能自动证明新镜头成立",
+    "scene_id",
+    "time_id",
     "## 视觉差异充分性",
     "无意的近似机位跳切",
+)
+
+SKILL_PIPELINE_CONTRACT = (
+    "01-script-slicing.md",
+    "04-blocking-continuity.md",
+    "14-shot-task-action-coverage.md",
+    "13-cut-shot-geometry.md",
+    "derived_independent_task=true",
+    "validate_spatial_geometry.py",
+    "validate_shot_task.py",
+    "validate_cut_geometry.py",
 )
 
 STALE_GLOBAL_PHRASES = (
@@ -112,11 +140,13 @@ STALE_GLOBAL_PHRASES = (
     "每次CUT至少改变两个有效视觉变量",
     "禁止相邻机位和相邻景别",
     "无相邻机位、相邻景别或近似构图",
-    "前后是相邻机位、相邻景别或近似构图",
-    "相邻机位和相邻景别造成无效跳切",
     "满足30度和两变量规则",
     "标准两变量路径要求每次CUT至少改变两个有效维度",
     "第二项可以是另一视觉维度，也可以是",
+    "主要主体改变即为强视觉差异",
+    "主体改变自动通过",
+    "viewpoint字符串不同即视为视角变化",
+    "自然语言场景名称不同即视为换场",
 )
 
 
@@ -139,107 +169,102 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         texts[name] = path.read_text(encoding="utf-8")
 
     for name, phrases in FORBIDDEN.items():
-        text = texts.get(name, "")
+        current = texts.get(name, "")
         for phrase in phrases:
-            if phrase in text:
+            if phrase in current:
                 errors.append(
-                    f"{FILES[name].relative_to(ROOT)} 重复定义了不属于本文件的规则标题："
-                    f"{phrase.strip()}"
+                    f"{FILES[name].relative_to(ROOT)} 重复定义了不属于本文件的规则标题：{phrase}"
                 )
 
     for name, refs in REQUIRED_REFERENCES.items():
-        text = texts.get(name, "")
+        current = texts.get(name, "")
         for ref in refs:
-            if ref not in text:
+            if ref not in current:
                 errors.append(f"{FILES[name].relative_to(ROOT)} 缺少唯一真源引用：{ref}")
 
     skill_text = texts.get("skill", "")
-    if "其他文件只能引用这些真源，不得另写一套同类规则" not in skill_text:
-        warnings.append("SKILL.md 未明确禁止其他文件重新定义同类规则。")
-
-    skill_order_valid = (
-        appears_before(skill_text, "2. `04`锁定", "3. `13`决定")
-        or appears_before(skill_text, "2. `04`锁定", "`13`才能决定")
-    )
-    if not skill_order_valid:
-        errors.append(
-            "SKILL.md 的分镜职责顺序必须明确为：04先锁定空间事实，13再决定SHOT/CUT。"
-        )
-
-    for phrase in SKILL_GEOMETRY_CONTRACT:
+    for phrase in SKILL_PIPELINE_CONTRACT:
         if phrase not in skill_text:
-            errors.append(f"SKILL.md 缺少空间几何入口合同：{phrase}")
+            errors.append(f"SKILL.md 缺少分镜流水线合同：{phrase}")
+
+    if not (
+        appears_before(skill_text, "2. `04`锁定", "3. 只有`04`")
+        and appears_before(skill_text, "3. 只有`04`", "4. 只有`14`")
+        and appears_before(skill_text, "4. 只有`14`", "5. 返回`01`")
+    ):
+        errors.append("SKILL.md 的分镜职责顺序必须明确为01→04→14→13→01。")
 
     spatial_text = texts.get("spatial", "")
     for phrase in SPATIAL_GEOMETRY_CONTRACT:
         if phrase not in spatial_text:
-            errors.append(
-                f"references/04-blocking-continuity.md 缺少空间几何合同：{phrase}"
-            )
+            errors.append(f"references/04-blocking-continuity.md 缺少空间合同：{phrase}")
+
+    task_text = texts.get("task", "")
+    for phrase in TASK_COVERAGE_CONTRACT:
+        if phrase not in task_text:
+            errors.append(f"references/14-shot-task-action-coverage.md 缺少任务合同：{phrase}")
 
     cut_text = texts.get("cut", "")
-    if not appears_before(
-        cut_text,
-        "`04`已确认的空间状态与上一SHOT结束状态",
-        "本文件的CUT和机位几何规则",
-    ):
-        errors.append("13-cut-shot-geometry.md 必须把04空间事实置于CUT决策规则之前。")
-
     for phrase in CUT_DIFFERENCE_CONTRACT:
         if phrase not in cut_text:
-            errors.append(f"references/13-cut-shot-geometry.md 缺少视觉差异合同：{phrase}")
+            errors.append(f"references/13-cut-shot-geometry.md 缺少CUT合同：{phrase}")
+
+    if not (
+        appears_before(cut_text, "`04`已确认的空间状态", "`14`已验证的SHOT任务")
+        and appears_before(cut_text, "`14`已验证的SHOT任务", "本文件的CUT和机位几何规则")
+    ):
+        errors.append("13必须把04空间事实和14任务覆盖置于CUT决策之前。")
 
     if "不是相邻SHOT之间的30度剪辑规则" not in spatial_text:
-        errors.append("04必须明确区分单机位可见面角度与相邻SHOT的30度剪辑规则。")
+        errors.append("04必须区分单机位可见面角度与相邻SHOT的30度剪辑规则。")
 
     for path in root.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in {".md", ".yaml", ".yml"}:
             continue
         if any(part in {".git", "tests", "__pycache__"} for part in path.parts):
             continue
-        text_value = path.read_text(encoding="utf-8")
+        value = path.read_text(encoding="utf-8")
         for phrase in STALE_GLOBAL_PHRASES:
-            if phrase in text_value:
+            if phrase in value:
                 errors.append(
-                    f"{path.relative_to(root)} 保留了过时或累计式视觉差异规则：{phrase}"
+                    f"{path.relative_to(root)} 保留了过时或自我证明式规则：{phrase}"
                 )
 
     for name in ("skill", "script", "cut"):
-        text = texts.get(name, "")
+        current = texts.get(name, "")
         for phrase in AMBIGUOUS_SEG_SHOT_PHRASES:
-            if phrase in text:
-                errors.append(
-                    f"{FILES[name].relative_to(ROOT)} 混淆了SEG／SHOT／CUT：{phrase}"
-                )
+            if phrase in current:
+                errors.append(f"{FILES[name].relative_to(ROOT)} 混淆了SEG／SHOT／CUT：{phrase}")
 
     for name in ("script", "cut"):
-        text = texts.get(name, "")
+        current = texts.get(name, "")
         for phrase in SINGLE_SHOT_SEG_CONTRACT:
-            if phrase not in text:
+            if phrase not in current:
                 errors.append(
                     f"{FILES[name].relative_to(ROOT)} 缺少单SHOT SEG明确合同：{phrase}"
                 )
 
-    readme = root / "README.md"
-    if readme.exists():
-        readme_text = readme.read_text(encoding="utf-8")
-        for phrase in ("validate_cut_geometry.py", "13-cut-shot-geometry.md"):
-            if phrase not in readme_text:
-                errors.append(f"README.md 缺少当前仓库结构或验证器说明：{phrase}")
+    for path_name in ("README.md", "README_EN.md"):
+        path = root / path_name
+        if not path.exists():
+            continue
+        current = path.read_text(encoding="utf-8")
+        for phrase in (
+            "validate_spatial_geometry.py",
+            "validate_shot_task.py",
+            "validate_cut_geometry.py",
+        ):
+            if phrase not in current:
+                errors.append(f"{path_name} 缺少验证器说明：{phrase}")
 
-    readme_en = root / "README_EN.md"
-    if readme_en.exists() and "validate_cut_geometry.py" not in readme_en.read_text(encoding="utf-8"):
-        errors.append("README_EN.md 缺少CUT视觉差异验证器说明：validate_cut_geometry.py")
-
-    geometry_validator = root / "scripts/validate_spatial_geometry.py"
-    if not geometry_validator.exists():
-        errors.append("缺少空间几何验证器：scripts/validate_spatial_geometry.py")
-
-    cut_geometry_validator = root / "scripts/validate_cut_geometry.py"
-    if not cut_geometry_validator.exists():
-        errors.append("缺少CUT视觉差异验证器：scripts/validate_cut_geometry.py")
-    if "validate_cut_geometry.py" not in skill_text:
-        errors.append("SKILL.md 缺少CUT视觉差异验证器入口：validate_cut_geometry.py")
+    validators = (
+        "scripts/validate_spatial_geometry.py",
+        "scripts/validate_shot_task.py",
+        "scripts/validate_cut_geometry.py",
+    )
+    for relative in validators:
+        if not (root / relative).exists():
+            errors.append(f"缺少验证器：{relative}")
 
     return {"ok": not errors, "errors": errors, "warnings": warnings}
 
