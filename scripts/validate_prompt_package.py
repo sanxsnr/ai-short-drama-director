@@ -48,6 +48,52 @@ def text_list(value: object, field: str, errors: list[str]) -> list[str]:
     return [item.strip() for item in value if item.strip()]
 
 
+def clean_role_items(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def validate_reference_role(ref: dict, label: str, errors: list[str]) -> str:
+    """Return the canonical single role, rejecting plural or multi-value schemas."""
+
+    if "roles" in ref:
+        raw_roles = ref.get("roles")
+        if isinstance(raw_roles, list):
+            role_items = clean_role_items(raw_roles)
+            if len(role_items) > 1:
+                errors.append(f"参考素材{label}承担多个职责：{role_items}")
+            errors.append(
+                f"参考素材{label}使用了未定义字段 roles；"
+                "职责字段必须使用单数 role，且值为非空字符串"
+            )
+        else:
+            errors.append(
+                f"参考素材{label}的 roles 字段无效；"
+                "职责字段必须使用单数 role，且值为非空字符串"
+            )
+
+    raw_role = ref.get("role")
+    if isinstance(raw_role, str):
+        role = raw_role.strip()
+        if not role:
+            errors.append(f"参考素材{label}缺少唯一 role")
+        return role
+
+    if isinstance(raw_role, list):
+        role_items = clean_role_items(raw_role)
+        if len(role_items) > 1:
+            errors.append(f"参考素材{label}承担多个职责：{role_items}")
+        errors.append(f"参考素材{label}的 role 必须是非空字符串，不能是数组")
+        return ""
+
+    if raw_role is None:
+        errors.append(f"参考素材{label}缺少唯一 role")
+    else:
+        errors.append(f"参考素材{label}的 role 必须是非空字符串")
+    return ""
+
+
 def validate(payload: dict) -> dict:
     errors: list[str] = []
     warnings: list[str] = []
@@ -95,24 +141,22 @@ def validate(payload: dict) -> dict:
             errors.append(f"references[{index}] 必须是对象")
             continue
         ref_id = str(ref.get("id", "")).strip()
-        role = str(ref.get("role", "")).strip()
-        role_normalized = role.lower()
+        label = ref_id or str(index)
         if not ref_id:
             errors.append(f"references[{index}] 缺少 id")
         elif ref_id in reference_ids:
             errors.append(f"参考素材 id 重复：{ref_id}")
         else:
             reference_ids.add(ref_id)
-        if not role:
-            errors.append(f"参考素材{ref_id or index}缺少唯一 role")
-        roles = ref.get("roles")
-        if isinstance(roles, list) and len(roles) > 1:
-            errors.append(f"参考素材{ref_id or index}承担多个职责：{roles}")
+
+        role = validate_reference_role(ref, label, errors)
+        role_normalized = role.lower()
+
         if ref.get("status") == "obsolete":
-            errors.append(f"参考素材{ref_id or index}已作废，不得进入当前输入包")
+            errors.append(f"参考素材{label}已作废，不得进入当前输入包")
         if role_normalized in FRAME_ROLES and generation_mode not in FRAME_MODES:
             errors.append(
-                f"参考素材{ref_id or index}使用{role}职责，但 generation_mode={generation_mode!r}；"
+                f"参考素材{label}使用{role}职责，但 generation_mode={generation_mode!r}；"
                 "普通多镜头流程不得默认加入首尾帧"
             )
 

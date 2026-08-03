@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate unique rule-source ownership across the core Skill markdown files."""
+"""Validate unique rule-source ownership and cross-file rule contracts."""
 
 from __future__ import annotations
 
@@ -57,6 +57,24 @@ REQUIRED_REFERENCES = {
     "cut": ["04-blocking-continuity.md"],
 }
 
+AMBIGUOUS_SEG_SHOT_PHRASES = (
+    "一个10秒SHOT内部不得再出现第二个CUT",
+    "一个10秒SHOT内部不得出现第二次CUT",
+    "同一SHOT内不得再出现",
+    "SHOT内部不得再出现第二个CUT",
+)
+
+SINGLE_SHOT_SEG_CONTRACT = (
+    "每个10秒SEG必须且只能包含1个SHOT",
+    "SEG内部不包含CUT",
+)
+
+
+def appears_before(text: str, first: str, second: str) -> bool:
+    first_index = text.find(first)
+    second_index = text.find(second)
+    return first_index >= 0 and second_index >= 0 and first_index < second_index
+
 
 def validate(root: Path = ROOT) -> dict[str, object]:
     errors: list[str] = []
@@ -74,7 +92,10 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         text = texts.get(name, "")
         for phrase in phrases:
             if phrase in text:
-                errors.append(f"{FILES[name].relative_to(ROOT)} 重复定义了不属于本文件的规则标题：{phrase.strip()}")
+                errors.append(
+                    f"{FILES[name].relative_to(ROOT)} 重复定义了不属于本文件的规则标题："
+                    f"{phrase.strip()}"
+                )
 
     for name, refs in REQUIRED_REFERENCES.items():
         text = texts.get(name, "")
@@ -85,6 +106,35 @@ def validate(root: Path = ROOT) -> dict[str, object]:
     skill_text = texts.get("skill", "")
     if "其他文件只能引用这些真源，不得另写一套同类规则" not in skill_text:
         warnings.append("SKILL.md 未明确禁止其他文件重新定义同类规则。")
+
+    if not appears_before(skill_text, "2. `04`锁定", "3. `13`决定"):
+        errors.append(
+            "SKILL.md 的分镜职责顺序必须明确为：04先锁定空间事实，13再决定SHOT/CUT。"
+        )
+
+    cut_text = texts.get("cut", "")
+    if not appears_before(
+        cut_text,
+        "`04`已确认的空间状态与上一SHOT结束状态",
+        "本文件的CUT和机位几何规则",
+    ):
+        errors.append("13-cut-shot-geometry.md 必须把04空间事实置于CUT决策规则之前。")
+
+    for name in ("skill", "script", "cut"):
+        text = texts.get(name, "")
+        for phrase in AMBIGUOUS_SEG_SHOT_PHRASES:
+            if phrase in text:
+                errors.append(
+                    f"{FILES[name].relative_to(ROOT)} 混淆了SEG／SHOT／CUT：{phrase}"
+                )
+
+    for name in ("script", "cut"):
+        text = texts.get(name, "")
+        for phrase in SINGLE_SHOT_SEG_CONTRACT:
+            if phrase not in text:
+                errors.append(
+                    f"{FILES[name].relative_to(ROOT)} 缺少单SHOT SEG明确合同：{phrase}"
+                )
 
     return {"ok": not errors, "errors": errors, "warnings": warnings}
 
