@@ -156,57 +156,61 @@ Most prompt assistants solve only the last sentence a creator typed. Real AI vid
 - Supports cinematic live action, stylized 3D, game CG, 2D animation, and custom visual systems.
 - Creates character, crowd, costume, scene, prop, and voice assets.
 - Separates permanent identity from temporary story state.
-- Tracks draft, candidate, locked, and obsolete versions.
+- Uses stable asset IDs and versions with draft, candidate, locked, and deprecated states.
 
-### 7. Storyboards and image prompts
+### 7. Storyboard and image prompts
 
-- Chooses 6, 9, 12, or custom panels from information density instead of habit.
-- Treats storyboard panels as continuity keys, not automatically as separate cuts.
-- Locks the first frame, last frame, screen direction, held object, hand, scene anchor, and motion path.
-- Assigns one responsibility to each layout, character, scene, prop, or transition reference.
+- Chooses 6, 9, 12, or another panel count from content density.
+- Separates storyboard panels from camera-shot count.
+- Preserves shot identity, screen direction, prop hand, opening state, final state, and motion direction.
+- Assigns one clear responsibility to every layout, character, scene, prop, or frame reference.
 
 ### 8. Blocking, screen direction, and physical contact
 
-- Selects the correct forward or reverse scene view.
-- Establishes foreground, midground, background, left/right camps, and the 180-degree line.
-- Describes start point, path, destination, and fixed obstacles.
-- Verifies the generated blocking image before it becomes a production reference.
+- Selects the correct front or reverse view of the scene.
+- Establishes depth layers, screen sides, dedicated backgrounds, and the 180-degree axis.
+- Records start position, movement path, end position, and obstacles.
+- Describes physical interaction as actor, body part or prop, target, contact point, force direction, and result.
+- Checks the generated blocking image instead of treating generation as success.
 
-### 9. Seedance 2.0 and multimodal video prompts
+### 9. Seedance 2.0 and video prompting
 
-- Separates internal directing logic from the clean prompt sent to the video model.
-- Supports Seedance 2.0, I2V, FLF2V, first/last frame, video extension, action reference, and camera reference workflows.
-- Adapts prompt structure to the target platform.
-- Controls reference priority, action complexity, dialogue, sound, lighting, and the final hold.
+- Separates the internal director plan from the external copyable prompt.
+- Supports Seedance 2.0, I2V, FLF2V, extension, action, and camera references.
+- Keeps or removes timecodes, IDs, and production notes according to the target model.
+- Controls action density, asset roles, lighting, dialogue, audio, and end-state holds.
+- Keeps the final prompt compact, natural, and free of internal navigation or self-check logs.
 
-### 10. Generation-failure diagnosis
+### 10. Generation failure diagnosis
 
-- Distinguishes submission rejection, model noncompliance, wrong visual result, and audio failure.
-- Checks cast overload, parallel actions, reference conflicts, prompt complexity, and contaminated context.
-- Replaces misleading references, creates clean crops, or resets the generation session when necessary.
-- Uses minimal safety rewrites without promising bypasses or guaranteed approval.
+- Distinguishes submission failure, ignored instructions, wrong output, and dialogue/audio failure.
+- Checks subject overload, parallel actions, scene complexity, reference conflicts, and stale context.
+- Replaces contaminated references or starts a clean generation session when necessary.
+- Performs the smallest compliant rewrite and never claims a moderation bypass or guaranteed success.
 
-### 11. Repair propagation and regression checks
+### 11. Repair and global propagation
 
-- Logs prompt versions, references, outputs, defects, and selection reasons.
-- Rejects attractive outputs that change plot, identity, space, or critical props.
-- Traces errors to the source of truth and updates all affected shots, storyboards, frames, and prompts.
-- Delivers the complete revised document with a self-check report.
+- Logs prompt version, references, visible defects, and adoption reason for each attempt.
+- Rejects attractive frames that change story, identity, space, or a critical prop.
+- Traces character, costume, prop, scene, dialogue, and blocking errors to the source of truth.
+- Updates every affected shot, storyboard, frame, and video prompt.
+- Searches the full document for stale errors before delivering the revised version.
 
-### 12. Voice, editing, and final-film QC
+### 12. Voice repair, editing, and final QC
 
-- Creates reusable voice profiles for original or authorized characters.
-- Supports timbre anchors, emotion references, and line-by-line replacement.
-- Checks intelligibility, timing, emphasis, lip sync, ambience, music, and reverb.
-- Repairs repeated openings, broken motion, audio bridges, and edit handles.
-- Performs episode-wide character, prop, scene, dialogue, audio, and continuity review.
+- Creates stable voice assets for original or authorized characters.
+- Supports per-line voice replacement with neutral voice anchors and emotion references.
+- Checks waveform, duration, stress, lip movement, room tone, music, and ambience.
+- Removes repeated starts, repairs sound bridges, and preserves motion direction across joins.
+- Uses slow motion and optical flow cautiously and inspects interpolation artifacts frame by frame.
+- Performs a full-film pass for identity, props, background, dialogue, audio, and continuity.
 
 ## Workflow
 
 ```mermaid
 flowchart TD
-    A["Idea or novel"] --> B["Story and screenplay"]
-    B --> C["Dialogue and production units"]
+    A["Idea or source story"] --> B["Story and screenplay"]
+    B --> C["Dialogue and production slicing"]
     C --> D["Complete shot script"]
     D --> E["Visual system and assets"]
     E --> F["Storyboards and images"]
@@ -290,7 +294,7 @@ then return the complete repaired prompt package and self-check report.
 
 ## Validation tools
 
-Seven dependency-free Python validators are included:
+Eight dependency-free Python validators are included:
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
@@ -298,11 +302,12 @@ python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
 python3 scripts/validate_continuity.py continuity.json
 python3 scripts/validate_spatial_geometry.py spatial-geometry.json
+python3 scripts/validate_shot_task.py shot-task.json
 python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_rule_sources.py
 ```
 
-They validate timing and dialogue capacity, project-stage evidence, prompt-package completeness, inherited state, subject-facing and camera visibility, adjacent-shot visual-difference paths, and repository-wide rule-source consistency.
+They validate timing and dialogue capacity, project-stage evidence, prompt-package completeness, inherited state, subject-facing and camera visibility, SHOT task/action coverage, adjacent-shot visual-difference paths, and repository-wide rule-source consistency.
 
 ## Repository structure
 

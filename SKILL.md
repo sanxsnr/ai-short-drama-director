@@ -49,6 +49,7 @@ description: Guide beginners and experienced creators through AI short-drama pro
 | 新手模式 | `references/11-beginner-guided-mode.md` | 分阶段引导，不降低专业标准 |
 | 输出合同 | `references/12-output-format-and-choice-footer.md` | 回复结构、文档格式和ABC命令 |
 | CUT与镜头几何 | `references/13-cut-shot-geometry.md` | CUT触发、类型、30度适用性、同轴景别路径与相邻SHOT视觉差异 |
+| SHOT任务与动作覆盖 | `references/14-shot-task-action-coverage.md` | 镜头任务证据、场景世界机位、进出场Gate、视角证据与动作状态机 |
 
 其他文件只能引用这些真源，不得另写一套同类规则。
 
@@ -59,19 +60,21 @@ description: Guide beginners and experienced creators through AI short-drama pro
 ```text
 01-script-slicing.md
 → 04-blocking-continuity.md
+→ 14-shot-task-action-coverage.md
 → 13-cut-shot-geometry.md
 ```
 
 职责顺序固定：
 
 1. `01`分析剧情、动作链、对白与时长。
-2. `04`锁定剧情对象、人物正面方向、移动方向、摄影机方位、推导可见面、轴线、状态继承和信息可见性。
-3. 只有`04`输出“几何结论：通过”后，`13`才能决定SHOT边界、CUT类型和下一机位几何是否合法。
-4. 返回`01`封装成10秒或15秒SEG。
+2. `04`锁定scene_id／zone_id／anchor_id、人物朝向、移动方向、摄影机世界坐标与世界朝向、可见面、轴线、状态继承和信息可见性。
+3. 只有`04`输出“几何结论：通过”后，`14`才能验证SHOT任务、动作覆盖、场景观察签名、POV／OTS／INSERT证据与动作状态机。
+4. 只有`14`输出`derived_independent_task=true`后，`13`才能决定SHOT边界、CUT类型、30度适用性和相邻SHOT视觉差异。
+5. 返回`01`封装成10秒或15秒SEG。
 
 提示词合并不等于镜头合并。后端生成规则不得删除已经通过`13`审核的CUT。
 
-`13`必须先判断30度是否适用，再选择合法视觉差异路径；180度轴线、人物朝向与`04`空间事实始终高于30度经验规则。叙事变化不能代替视觉差异。
+`13`必须先读取`14`的任务覆盖结论，再判断30度是否适用并选择合法视觉差异路径；180度轴线、人物朝向与`04`空间事实始终高于30度经验规则。主体改变、视角标签、动作阶段和叙事变化都不能代替真实任务证据或视觉差异。
 
 当用户已经锁定剧情对象、人物朝向、移动方向和所需可见面，`04`必须开启唯一方案锁；不得额外提供理论上可拍但不符合原镜头目的的替代机位。
 
@@ -82,7 +85,7 @@ description: Guide beginners and experienced creators through AI short-drama pro
 2. 小说／素材分析与改编方案
 3. 分集大纲与单集结构
 4. 可拍摄剧本、动作和对白
-5. 空间确认、可见面几何求解、CUT拆镜、读秒和完整分镜
+5. 空间确认、场景世界机位、SHOT任务与动作覆盖、CUT拆镜、读秒和完整分镜
 6. 视觉基调与人物、服装、场景、道具、群演、声线资产
 7. 故事板与图片提示词
 8. Seedance 2.0／I2V／FLF2V视频提示词
@@ -141,6 +144,8 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 已完成／进行中／未完成／需返工：
 已锁定资产与空间：
 剧情对象／人物正面／移动方向／摄影机方位／推导可见面：
+scene_id／time_id／camera_zone_id／camera_forward_world／scene anchor：
+SHOT任务类型／必要证据／动作状态机／derived_independent_task：
 唯一方案锁：开启／关闭
 人物／道具当前状态：
 上一SHOT结束状态：
@@ -156,6 +161,7 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 python3 scripts/validate_timeline.py < timeline.json
 python3 scripts/validate_continuity.py < continuity.json
 python3 scripts/validate_spatial_geometry.py < spatial-geometry.json
+python3 scripts/validate_shot_task.py < shot-task.json
 python3 scripts/validate_cut_geometry.py < cut-geometry.json
 python3 scripts/validate_project_state.py < project-state.json
 python3 scripts/validate_prompt_package.py < prompt-package.json
@@ -171,6 +177,9 @@ python3 scripts/validate_prompt_package.py < prompt-package.json
 - 不用下游模型负载规则覆盖空间或CUT真源。
 - 不把30度、景别跨级和组合差异误写成所有CUT必须同时满足的累计门槛。
 - 不把“相邻SHOT”或“相邻景别”本身当成错误，只拦截缺乏有效视觉差异的无意近似跳切。
+- 不读取模型自报的`independent_task=true`，必须由`14`从画面证据推导。
+- 不把主体名称改变、换说话人、viewpoint字符串变化或自然语言场景名称变化自动当作强通过。
+- 不写人物进场却看不到边界、跨越路径和进入后的落点。
 - 不擅自修改用户锁定对白、剧情和资产。
 - 不先写正面／侧面结论再倒推摄影机方位。
 - 不让人物为露脸无理由转向摄影机。

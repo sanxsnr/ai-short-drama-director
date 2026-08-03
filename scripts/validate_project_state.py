@@ -128,8 +128,10 @@ def validate(payload: dict) -> dict:
                     "spatial_state.resolution 必须是 confirmed、"
                     "uniquely_derived 或 critical_ambiguity"
                 )
+        if not nonempty_text(payload.get("shot_task_rules_version")):
+            errors.append("进入分镜阶段必须填写 shot_task_rules_version，记录14任务覆盖真源版本")
         if not nonempty_text(payload.get("cut_rules_version")):
-            warnings.append("建议填写 cut_rules_version，记录CUT唯一真源版本")
+            errors.append("进入分镜阶段必须填写 cut_rules_version，记录13 CUT真源版本")
 
     options = payload.get("next_options")
     if not isinstance(options, list) or len(options) != 3:

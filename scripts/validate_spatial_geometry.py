@@ -71,6 +71,13 @@ def vector(value: object, field: str, errors: list[str]) -> tuple[float, float, 
     return numbers[0], numbers[1], numbers[2]
 
 
+def string_list(value: object, field: str, errors: list[str]) -> list[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        errors.append(f"{field} 必须是字符串数组")
+        return []
+    return list(dict.fromkeys(item.strip() for item in value if item.strip()))
+
+
 def subtract(a: tuple[float, float, float], b: tuple[float, float, float]) -> tuple[float, float, float]:
     return a[0] - b[0], a[1] - b[1], a[2] - b[2]
 
@@ -156,8 +163,16 @@ def validate(payload: dict) -> dict:
     warnings: list[str] = []
 
     scene_id = str(payload.get("scene_id", "")).strip()
+    time_id = str(payload.get("time_id", "")).strip()
     if not scene_id:
         errors.append("缺少 scene_id")
+    if not time_id:
+        errors.append("缺少 time_id")
+
+    scene_anchors = payload.get("scene_anchors")
+    if not isinstance(scene_anchors, dict) or not scene_anchors:
+        errors.append("scene_anchors 必须是非空对象")
+        scene_anchors = {}
 
     subject = payload.get("subject")
     if not isinstance(subject, dict):
@@ -205,7 +220,56 @@ def validate(payload: dict) -> dict:
     camera_id = str(camera.get("id", "")).strip()
     if not camera_id:
         errors.append("camera.id 不能为空")
-    camera_position = vector(camera.get("position"), "camera.position", errors)
+    camera_zone_id = str(camera.get("zone_id", "")).strip()
+    if not camera_zone_id:
+        errors.append("camera.zone_id 不能为空")
+    camera_position = vector(
+        camera.get("position_world"), "camera.position_world", errors
+    )
+    camera_forward = vector(
+        camera.get("forward_world"), "camera.forward_world", errors
+    )
+    primary_scene_anchor_id = str(
+        camera.get("primary_scene_anchor_id", "")
+    ).strip()
+    if not primary_scene_anchor_id:
+        errors.append("camera.primary_scene_anchor_id 不能为空")
+    elif primary_scene_anchor_id not in scene_anchors:
+        errors.append(
+            f"camera.primary_scene_anchor_id 引用未知锚点：{primary_scene_anchor_id}"
+        )
+    visible_anchor_ids = string_list(
+        camera.get("visible_anchor_ids"), "camera.visible_anchor_ids", errors
+    )
+    for anchor_id in visible_anchor_ids:
+        if anchor_id not in scene_anchors:
+            errors.append(f"camera.visible_anchor_ids 引用未知锚点：{anchor_id}")
+    if primary_scene_anchor_id and primary_scene_anchor_id not in visible_anchor_ids:
+        errors.append("主要场景锚点必须同时存在于 visible_anchor_ids")
+
+    primary_anchor_position = None
+    if primary_scene_anchor_id in scene_anchors and isinstance(
+        scene_anchors.get(primary_scene_anchor_id), dict
+    ):
+        primary_anchor_position = vector(
+            scene_anchors[primary_scene_anchor_id].get("position"),
+            f"scene_anchors.{primary_scene_anchor_id}.position",
+            errors,
+        )
+
+    if all(item is not None for item in (camera_position, camera_forward, primary_anchor_position)):
+        assert camera_position is not None
+        assert camera_forward is not None
+        assert primary_anchor_position is not None
+        normalized_forward = normalize(camera_forward, "camera.forward_world", errors)
+        anchor_direction = normalize(
+            subtract(primary_anchor_position, camera_position),
+            f"camera→scene_anchors.{primary_scene_anchor_id}",
+            errors,
+        )
+        if normalized_forward is not None and anchor_direction is not None:
+            if dot(normalized_forward, anchor_direction) < 0.5:
+                errors.append("camera.forward_world 没有朝向主要场景锚点")
 
     movement_mode_raw = str(subject.get("movement_mode", "")).strip()
     if movement_mode_raw not in MOVEMENT_MODES:
@@ -348,8 +412,16 @@ def validate(payload: dict) -> dict:
     return {
         "ok": not errors,
         "scene_id": scene_id,
+        "time_id": time_id,
         "subject_id": subject_id,
         "camera_id": camera_id,
+        "camera_zone_id": camera_zone_id,
+        "observation_signature": {
+            "camera_position_world": list(camera_position) if camera_position else None,
+            "camera_forward_world": list(camera_forward) if camera_forward else None,
+            "primary_scene_anchor_id": primary_scene_anchor_id,
+            "visible_anchor_ids": sorted(visible_anchor_ids),
+        },
         "locked_solution": locked_solution,
         "derived": derived,
         "errors": errors,
