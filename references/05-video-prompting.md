@@ -53,7 +53,7 @@ SHOT数量由合法CUT点决定：
 - 出场资产及当前物理状态。
 - 已确认空间、人物位置、轴线侧和固定锚点。
 - 每个SHOT的景别、机位、动作和CUT点。
-- 相邻SHOT是否满足30度、景别差异、两变量和信息可见性。
+- 相邻SHOT是否已按`13`完成视觉差异路径与30度适用性判断，并通过信息可见性审核。
 - CUT前结束状态与下一SHOT起始状态。
 - 原始对白是否完整，OS、画外音和实际对白是否区分。
 - 语速和动作时长是否可实现。
@@ -73,7 +73,7 @@ CUT点／类型：
 ……
 ```
 
-三个以上时间码时运行 `scripts/validate_timeline.py`。
+三个以上时间码时运行 `scripts/validate_timeline.py`；涉及相邻SHOT机位差异时运行 `scripts/validate_cut_geometry.py`。
 
 ## Seedance可复制提示词
 

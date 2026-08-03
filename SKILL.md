@@ -71,6 +71,8 @@ description: Guide beginners and experienced creators through AI short-drama pro
 
 提示词合并不等于镜头合并。后端生成规则不得删除已经通过`13`审核的CUT。
 
+`13`必须先判断30度是否适用，再选择标准两变量或主导变化路径；180度轴线与`04`空间事实始终高于30度经验规则。
+
 当用户已经锁定剧情对象、人物朝向、移动方向和所需可见面，`04`必须开启唯一方案锁；不得额外提供理论上可拍但不符合原镜头目的的替代机位。
 
 ## 制作阶段
@@ -154,6 +156,7 @@ SHOT规则：每个SEG单SHOT／允许SEG内多SHOT
 python3 scripts/validate_timeline.py < timeline.json
 python3 scripts/validate_continuity.py < continuity.json
 python3 scripts/validate_spatial_geometry.py < spatial-geometry.json
+python3 scripts/validate_cut_geometry.py < cut-geometry.json
 python3 scripts/validate_project_state.py < project-state.json
 python3 scripts/validate_prompt_package.py < prompt-package.json
 ```
