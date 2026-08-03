@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - agent/cut-spatial-skill-rules
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
