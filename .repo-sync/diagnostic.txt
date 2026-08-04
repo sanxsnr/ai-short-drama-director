@@ -1,0 +1,23 @@
+chunk files:
+ 8000 .repo-sync/skill-v25/chunk_00
+ 2000 .repo-sync/skill-v25/chunk_01
+ 8000 .repo-sync/skill-v25/chunk_02
+16000 .repo-sync/skill-v25/chunk_03
+16001 .repo-sync/skill-v25/chunk_04
+ 6552 .repo-sync/skill-v25/chunk_05
+56553 total
+base64 bytes: 56553
+base64: invalid input
+base64 status: 1
+gzip bytes: 42413
+5e630c8e87e6f850ba2820eb51967537dc92b38405003d16215c4ec5826167b1  /tmp/skill-v25.patch.gz
+
+gzip: /tmp/skill-v25.patch.gz: unexpected end of file
+gzip test status: 1
+
+gzip: /tmp/skill-v25.patch.gz: unexpected end of file
+gzip decode status: 1
+patch bytes: 158147
+dc2772b8d8f642bd6d4004b21fb97dbc073ff620db8141bcc28588c29fdddede  /tmp/skill-v25.patch
+error: corrupt patch at /tmp/skill-v25.patch:249
+git apply check status: 128
