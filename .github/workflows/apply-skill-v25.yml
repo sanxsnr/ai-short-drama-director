@@ -1,4 +1,4 @@
-name: Diagnose Skill V2.5 Patch
+name: Apply Skill V2.5 Patch
 
 on:
   push:
@@ -9,45 +9,44 @@ permissions:
   contents: write
 
 jobs:
-  diagnose:
+  apply:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Check out branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Diagnose patch payload
+      - name: Reconstruct and apply patch
         shell: bash
         run: |
-          set +e
-          out=.repo-sync/diagnostic.txt
-          : > "$out"
-          echo "chunk files:" >> "$out"
-          wc -c .repo-sync/skill-v25/chunk_* >> "$out" 2>&1
+          set -euo pipefail
           cat .repo-sync/skill-v25/chunk_* > /tmp/skill-v25.patch.gz.b64
-          echo "base64 bytes: $(wc -c < /tmp/skill-v25.patch.gz.b64)" >> "$out"
-          base64 --decode /tmp/skill-v25.patch.gz.b64 > /tmp/skill-v25.patch.gz 2>> "$out"
-          echo "base64 status: $?" >> "$out"
-          echo "gzip bytes: $(wc -c < /tmp/skill-v25.patch.gz)" >> "$out"
-          sha256sum /tmp/skill-v25.patch.gz >> "$out" 2>&1
-          gzip --test /tmp/skill-v25.patch.gz >> "$out" 2>&1
-          echo "gzip test status: $?" >> "$out"
-          gzip --decompress --stdout /tmp/skill-v25.patch.gz > /tmp/skill-v25.patch 2>> "$out"
-          echo "gzip decode status: $?" >> "$out"
-          echo "patch bytes: $(wc -c < /tmp/skill-v25.patch)" >> "$out"
-          sha256sum /tmp/skill-v25.patch >> "$out" 2>&1
-          git apply --check /tmp/skill-v25.patch >> "$out" 2>&1
-          echo "git apply check status: $?" >> "$out"
-          cat "$out"
+          test "$(wc -c < /tmp/skill-v25.patch.gz.b64)" -eq 62553
+          base64 --decode --ignore-garbage /tmp/skill-v25.patch.gz.b64 > /tmp/skill-v25.patch.gz
+          echo "b0be31b01a183115991b59edab44eeb491dc3dabd3355cecafad189d458becaa  /tmp/skill-v25.patch.gz" | sha256sum --check
+          gzip --decompress --stdout /tmp/skill-v25.patch.gz > /tmp/skill-v25.patch
+          echo "44cd6690a5ad4327fe1fcdaf43e03dc6ec182ea47f3cbd22a9bbc83ea708eb6f  /tmp/skill-v25.patch" | sha256sum --check
+          git apply --check /tmp/skill-v25.patch
+          git apply /tmp/skill-v25.patch
+          rm -rf .repo-sync
+          rm -f .github/workflows/apply-skill-v25.yml
 
-      - name: Commit diagnostic
+      - name: Validate updated Skill
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q scripts tests
+          python -m unittest discover -s tests -p 'test_*.py' -q
+          python scripts/validate_rule_sources.py
+
+      - name: Commit synchronized files
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .repo-sync/diagnostic.txt
-          git commit -m "Record Skill V2.5 patch diagnostics"
+          git add -A
+          git commit -m "Add scene camera coverage and remove fixed angle thresholds"
           git push origin "HEAD:${GITHUB_REF_NAME}"
