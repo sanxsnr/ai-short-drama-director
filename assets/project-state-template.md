@@ -65,13 +65,19 @@
 
 - SEG编号：
 - duration_seconds／shot_count／cut_count：
+- directorial_camera_plan_id：
+- director_read／camera_trajectory_intent／cut_out_intent：
+- director_cut_intent／cut_type_intent／transition_mechanism：
+- scene_space_basis：
+- spatial_solution.status：
+- camera_keyframes／actor_keyframes：
 - camera_motion_phases：
 - time_passage：
 - 源剧本：
 - 当前SHOT编号：
 - 上一SHOT结束状态：
 - 当前SHOT起始状态：
-- 当前SHOT摄影机位置与轴线侧：
+- 当前SHOT摄影机XYZ轨迹与轴线侧：
 - 当前CUT点／类型：
 - 下一SHOT起始状态：
 - 本SEG结束状态：

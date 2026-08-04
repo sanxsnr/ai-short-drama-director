@@ -2,19 +2,21 @@
 
 ## 适用范围与规则优先级
 
-视频提示词只能封装已经通过空间、SHOT任务覆盖与CUT审核的镜头，不负责重新决定镜头数量。
+视频提示词只能封装已经通过15导演方案、04空间求解、14任务覆盖与13 CUT审核的镜头，不负责重新设计拍法。
 
 涉及机位变化时必须同时读取：
 
+- `15-directorial-camera-plan.md`
 - `04-blocking-continuity.md`
 - `14-shot-task-action-coverage.md`
 - `13-cut-shot-geometry.md`
 
 规则优先级：
 
-1. 用户锁定的剧情、SHOT任务与CUT。
-2. 已确认空间、动作覆盖和状态继承。
-3. 本文件的模型负载与提示词表达规则。
+1. 用户锁定的剧情与最新确认。
+2. 15统一导演镜头方案。
+3. 04B空间解、14动作覆盖、13 CUT审核与状态继承。
+4. 本文件的模型负载与提示词表达规则。
 
 模型负载规则只能拆分或调整SEG，不能删除、合并或改写已经成立的CUT。
 
@@ -22,7 +24,7 @@
 
 始终分成两层：
 
-1. 内部导演计划：核对资产、空间、时长、SHOT、CUT、光线、表演和对白。
+1. 内部导演计划：直接读取15的`directorial_camera_plan`及04B的`spatial_solution`，核对资产、时长、SHOT、轨迹、CUT、光线、表演和对白。
 2. 外部视频提示词：只保留目标模型真正需要的内容，短、清楚、可复制。
 
 不要把XML、自检日志、教学说明、ABC导航或Skill调用命令塞进最终视频提示词。
@@ -31,7 +33,7 @@
 
 先读取`01-script-slicing.md`并锁定`segment_content_type`。普通剧情、高速动作和固定机位时间流逝使用不同的SHOT数量策略，本文件不得另写一套数量上限。
 
-SHOT数量由合法CUT点决定：
+SHOT数量由15统一镜头方案中的显式边界决定，并由14与13审核：
 
 - 没有成立的新画面任务时，可以保持一个SHOT。
 - 自然切点和下一SHOT任务成立时，必须保留CUT。
@@ -49,7 +51,7 @@ SHOT数量由合法CUT点决定：
 
 ## 运镜、景别、焦段与CUT表达
 
-在同一SHOT内按连续时间写运镜：
+按15的统一摄影机程序表达；每个SHOT内按连续时间写摄影机轨迹：
 
 ```text
 起始构图 → 推／拉／摇／移／跟／升降／环绕 → 目标构图 → 是否锁定
@@ -59,6 +61,7 @@ SHOT数量由合法CUT点决定：
 - 人物靠近或远离摄影机、景别自然改变、摄影机先移动后固定，都可保持同一SHOT。
 - 只有显式写出CUT或进入新的SHOT块，才表示连续观察发生切换。
 - 运镜不得替代人物换位过程、轴线交代、动作进度和空间连续性。
+- 不再读取`camera_decision.mode`三选一字段；固定、运镜和CUT必须从15的SHOT时间区间、摄影机关键帧和CUT边界自然导出。
 
 精确焦段只能作为辅助视觉提示。最终提示词优先使用：
 
@@ -86,19 +89,20 @@ SHOT数量由合法CUT点决定：
 
 摄影机也可从开始即固定。日夜、灯光和人物衰弱状态的可见变化不写CUT；只有画面真正切换到另一连续观察时才建立新SHOT。
 
-## 内部导演计划
+## 内部导演镜头方案封装
 
 逐段检查：
 
 - 全局风格、时代、地域和天气。
 - 出场资产及当前物理状态。
-- 已确认scene_id／time_id、摄影机世界坐标与朝向、人物位置、轴线侧和固定锚点。
+- 15的director_read、视觉节拍、SHOT序列、camera_trajectory_intent与cut_out_intent。
+- 04B已确认scene_id／time_id、摄影机XYZ关键帧与朝向、人物XYZ关键帧、轴线侧和固定锚点。
 - 每个SHOT的task_type、必要画面证据、动作状态转换、景别、机位和CUT点。
 - segment_content_type、shot_count、cut_count与显式SHOT边界。
-- 同一SHOT的camera_motion_phases、景别变化方法和`lock_after_move`。
+- 同一SHOT的camera_keyframes、连续景别变化、到达时刻和终点停稳时间。
 - time_passage启用时的摄影机锁定、场景几何、人物屏幕位置与可见时间变化。
 - SEG结构中的`shot_task`、`camera_zone`、`camera_direction`和`action_stage`已经显式填写；04／14的相近字段只提供值来源，不能替代结构字段名。
-- 每个SHOT是否已按`14`取得`derived_independent_task=true`，进出场边界、路径、视角证据和动作结果是否真实可见。
+- 对每个显式新SHOT，14是否已取得`derived_independent_task=true`；同一SHOT的轨迹阶段是否通过`phase_coverage_passed`。
 - 相邻SHOT是否已按`13`标明视觉差异路径、30度适用性／不适用原因、景别差异和信息可见性。
 - CUT前结束状态与下一SHOT起始状态。
 - 原始对白是否完整，OS、画外音和实际对白是否区分。

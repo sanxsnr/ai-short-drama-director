@@ -1,6 +1,6 @@
 ---
 name: ai-short-drama-director
-description: Guide beginners and experienced creators through AI short-drama production from idea to final film. Diagnose project state, create or repair production-ready scripts, AI-direct SEG/SHOT/CUT structures, spatial blocking, camera-motion plans, assets, storyboards, Seedance 2.0/I2V/FLF2V prompts, generation QA, voice repair, editing and complete document revisions. Every copyable A/B/C reply begins with `使用 $ai-short-drama-director`.
+description: Guide beginners and experienced creators through AI short-drama production from idea to final film. Diagnose project state, create or repair production-ready scripts, unified directorial camera plans, spatially solved SEG/SHOT/CUT structures, assets, storyboards, Seedance 2.0/I2V/FLF2V prompts, generation QA, voice repair, editing and complete document revisions. Every copyable A/B/C reply begins with `使用 $ai-short-drama-director`.
 ---
 
 # AI短剧从0到1导演
@@ -50,39 +50,43 @@ description: Guide beginners and experienced creators through AI short-drama pro
 | 输出合同 | `references/12-output-format-and-choice-footer.md` | 回复结构、文档格式和ABC命令 |
 | CUT与镜头几何 | `references/13-cut-shot-geometry.md` | SHOT／CUT／运镜边界、CUT触发、30度适用性、同轴路径与相邻SHOT视觉差异 |
 | SHOT任务与动作覆盖 | `references/14-shot-task-action-coverage.md` | SHOT或连续运镜阶段的任务证据、场景世界机位、进出场Gate、视角证据与动作状态机 |
-| 运镜导演决策 | `references/15-camera-movement-directing.md` | 主动选择固定／连续运镜／CUT候选，定义运镜动机、起点、路径、速度、终点、锁定与多轴冲突 |
+| 导演镜头方案 | `references/15-directorial-camera-plan.md` | 导演读解、统一SHOT序列、摄影机轨迹意图、CUT意图，以及空间求解失败后的重设计 |
 
 其他文件只能引用这些真源，不得另写一套同类规则。
 
 ## 分镜任务强制加载顺序
 
-涉及完整分镜、镜头复审、故事板格序或视频中的机位变化时，必须同时加载：
+涉及完整分镜、镜头复审、故事板格序或视频中的机位变化时，必须按以下闭环工作：
 
 ```text
 01-script-slicing.md
-→ 04-blocking-continuity.md
-→ 15-camera-movement-directing.md
+→ 02／03 视觉风格与场景资产锁定
+→ 04A 场景基础空间模型
+→ 15-directorial-camera-plan.md
+→ 04B 人物与摄影机XYZ轨迹求解
 → 14-shot-task-action-coverage.md
 → 13-cut-shot-geometry.md
+→ 返回01封装SEG
 ```
 
 职责顺序固定：
 
-1. `01`分析剧情、动作链、对白与时长。
-2. `04`锁定scene_id／zone_id／anchor_id、人物朝向、移动方向、摄影机世界坐标与世界朝向、可见面、轴线、状态继承、障碍物和信息可见性。
-在进入任务覆盖前，`15`必须基于`04`的合法空间主动比较固定机位、连续运镜与CUT候选，并定义运镜动机、起点、路径、速度、终点和锁定。
-3. 只有`04`输出“几何结论：通过”后，`14`才能验证SHOT任务、动作覆盖、场景观察签名、POV／OTS／INSERT证据与动作状态机。
-   `14`必须先读取`15`的可执行摄影机决策，并同时验证连续运镜阶段。
-4. 只有`14`输出`derived_independent_task=true`后，`13`才能对显式CUT候选决定CUT类型、30度适用性和相邻SHOT视觉差异。
-5. 返回`01`封装成10秒或15秒SEG。
+1. `01`把灵感或小说整理为改编方案、可拍摄剧本、对白、动作链和视听节拍，并确定SEG时长。
+2. `02／03`先锁定视觉风格、人物／服装／道具资产以及场景布局资产；没有可确认的场景结构，就不能进入摄影机坐标求解。已有锁定资产时直接继承，不重复设计。
+3. `04A`根据锁定场景资产建立尺寸、固定锚点、可通行区、人物初始区和不可穿越物，不提前决定镜头怎么拍。
+4. `15`读取剧本和基础空间，由导演思维主动给出一份统一镜头方案：每个SHOT怎么拍、摄影机在SHOT内怎么走、在哪里停、在哪里CUT。不得把固定／运镜／CUT拆成三套模式，也不得让用户先替导演选择。
+5. `04B`把15的概念方案求解为人物与摄影机的XYZ、世界朝向和连续关键帧轨迹；若穿墙、穿床、穿人、越轴、动作不可见或时长不可执行，必须返回15重做，不能私自改镜头目的或把选择推给用户。
+6. `14`验证每个SHOT和轨迹阶段是否真正拍到主体、锚点、动作过程和结果，并推导`derived_independent_task`。
+7. `13`只审核15已经设计、14已经证明的新SHOT边界：CUT点、CUT类型、MATCH-ON-ACTION、30度适用性、轴线和视觉差异。
+8. 返回`01`按10秒或15秒封装SEG并读秒。
+
+统一摄影机程序定义：一个SHOT内的摄影机状态`C(t)`连续；若`C(t)`不变，结果是固定机位；若`C(t)`连续变化，结果是运镜；相邻两个连续区间之间的边界是CUT。固定、运镜和CUT是同一导演方案的结果，不是三套独立计算方法。
 
 提示词合并不等于镜头合并。后端生成规则不得删除已经通过`13`审核的CUT。
 
-SEG是一次固定时长生成单元，不等同于SHOT。SHOT只由显式SHOT边界划分；同一连续观察中的推、拉、摇、移、跟、升降、环绕、自然景别变化和焦段提示不自动产生CUT。普通、高速动作和固定机位时间流逝三类SEG的数量与例外规则只由`01-script-slicing.md`维护。
+SEG是一次固定时长生成单元，不等同于SHOT。SHOT只由导演方案中的显式边界划分；同一SHOT内的推、拉、摇、移、跟、升降、环绕、自然景别变化和焦段提示不自动产生CUT。普通、高速动作和固定机位时间流逝三类SEG的数量与例外规则只由`01-script-slicing.md`维护。
 
-`13`必须先读取`14`的任务覆盖结论，再判断30度是否适用并选择合法视觉差异路径；180度轴线、人物朝向与`04`空间事实始终高于30度经验规则。主体改变、视角标签、动作阶段和叙事变化都不能代替真实任务证据或视觉差异。
-
-当用户已经锁定剧情对象、人物朝向、移动方向和所需可见面，`04`必须开启唯一方案锁；不得额外提供理论上可拍但不符合原镜头目的的替代机位。`15`只能在该合法空间内选择固定、运镜或CUT候选，不能用复杂运镜绕开唯一方案锁。
+用户提供锁定意图时必须继承；用户没有指定拍法时，Skill仍须主动给出专业镜头方案。用户不满意可以要求修改，但默认不把“怎么拍、怎么运、怎么切”的决策反问给用户。
 
 ## 制作阶段
 
@@ -90,9 +94,9 @@ SEG是一次固定时长生成单元，不等同于SHOT。SHOT只由显式SHOT�
 1. 故事核心、受众、卖点和一句话梗概
 2. 小说／素材分析与改编方案
 3. 分集大纲与单集结构
-4. 可拍摄剧本、动作和对白
-5. 空间确认、场景世界机位、SHOT任务与动作覆盖、CUT拆镜、读秒和完整分镜
-6. 视觉基调与人物、服装、场景、道具、群演、声线资产
+4. 可拍摄剧本、动作、对白和视听节拍
+5. 视觉基调与人物、服装、场景、道具、群演、声线资产；先锁场景布局与固定锚点
+6. 场景基础空间模型、导演统一镜头方案、人物／摄影机XYZ轨迹求解、任务覆盖、CUT审核、读秒和完整分镜
 7. 故事板与图片提示词
 8. Seedance 2.0／I2V／FLF2V视频提示词
 9. 图片或视频质检与返修
@@ -148,12 +152,12 @@ C：使用 $ai-short-drama-director，选择C：具体动作。
 当前SEG类型：normal／high_speed_action／fixed_camera_time_passage
 SHOT计数来源：仅显式SHOT边界
 shot_count／cut_count：
-camera_decision_contract／camera_motion_phases／time_passage：
+directorial_camera_plan／spatial_solution／camera_motion_phases／time_passage：
 唯一真源：
 已完成／进行中／未完成／需返工：
 已锁定资产与空间：
 剧情对象／人物正面／移动方向／摄影机方位／推导可见面：
-scene_id／time_id／camera_zone_id／camera_forward_world／scene anchor：
+scene_id／time_id／scene_space_basis／camera_zone_id／camera_position_world／camera_forward_world／scene anchor：
 SHOT任务类型／必要证据／动作状态机／derived_independent_task：
 唯一方案锁：开启／关闭
 人物／道具当前状态：
@@ -170,8 +174,8 @@ SHOT任务类型／必要证据／动作状态机／derived_independent_task：
 python3 scripts/validate_timeline.py < timeline.json
 python3 scripts/validate_segment_structure.py < segment-structure.json
 python3 scripts/validate_continuity.py < continuity.json
+python3 scripts/validate_directorial_camera_plan.py < directorial-camera-plan.json
 python3 scripts/validate_spatial_geometry.py < spatial-geometry.json
-python3 scripts/validate_camera_movement.py < camera-decision.json
 python3 scripts/validate_shot_task.py < shot-task.json
 python3 scripts/validate_cut_geometry.py < cut-geometry.json
 python3 scripts/validate_project_state.py < project-state.json
@@ -185,9 +189,9 @@ python3 scripts/validate_prompt_package.py < prompt-package.json
 - 不只诊断而不修复。
 - 不在多个文件中维护同一规则的不同版本。
 - 不把SEG、SHOT和CUT混为一谈。
+- 不把固定、运镜和CUT做成三套独立模式或上游三选一；必须由一份统一导演镜头方案同时设计SHOT轨迹和CUT边界。
+- 不把“怎么拍、怎么运、怎么切”的默认导演责任推给用户；空间求解失败时由Skill回退重做方案。
 - 不由10秒编号、景别变化、焦段数值或运镜阶段自动推导CUT或新增SHOT。
-- 不把运镜当作装饰词；必须主动比较固定、连续运镜和CUT候选，并说明运镜动机、起点、路径、速度、终点与锁定。
-- 不为了“电影感”堆叠推进、环绕、升降、横移和手持晃动；普通SEG默认最多一个主运动轴和一个辅助运动轴。
 - 不把高速动作的多段短SHOT误套普通剧情上限，也不把高速动作例外扩展到普通对话和普通动作。
 - 不把固定构图中的可见日夜变化自动拆成多机位蒙太奇。
 - 不用下游模型负载规则覆盖空间或CUT真源。

@@ -26,7 +26,7 @@
 
 ## 正文
 
-> 分镜文档先锁世界空间，再验证每个SHOT的任务与动作覆盖，然后按CUT规则拆SHOT，最后封装SEG。状态继承不等于复制尾帧或保持同一机位。
+> 分镜文档先建立04A场景基础空间，再由15统一决定每个SHOT怎么拍、摄影机怎么运和在哪里CUT；04B把方案求解为人物与摄影机XYZ关键帧，14验证任务证据，13审核CUT，最后封装SEG。状态继承不等于复制尾帧或保持同一机位。
 
 ### EP{集数}｜SEG{编号}｜{10秒版／15秒版}
 
@@ -41,10 +41,12 @@
 | shot_count／cut_count | 仅按显式SHOT边界统计 |
 | 剧情功能 |  |
 | scene_id／time_id |  |
+| directorial_camera_plan_id |  |
+| spatial_solution.status | solved／return_to_director_plan |
 | 场景标签 |  |
 | 已确认位置 | 是／可唯一推导／关键歧义待确认 |
 
-#### 2. 空间、资产与状态
+#### 2. 04A场景基础空间、15导演方案与04B空间解
 
 | 类型 | 编号／名称 | 当前状态 | 坐标／朝向／使用方式 |
 |---|---|---|---|
@@ -52,6 +54,9 @@
 | 道具 |  |  | 表面、高度、持物手、归属 |
 | 摄影机 | C1／C2… |  | camera_zone_id、世界坐标、世界朝向、scene anchor、轴线侧、屏幕关系 |
 
+- 04A scene_space_basis：尺寸、锚点、可通行区、障碍、人物初始区。
+- 15 directorial_camera_plan：导演读解、视觉节拍、SHOT序列、camera_trajectory_intent，以及包含cut_type_intent／transition_mechanism的cut_out_intent。
+- 04B spatial_solution：status、camera_keyframes、actor_keyframes、轴线与障碍结果。
 - 本场方向定义：
 - 固定anchor_id：
 - 摄影机世界坐标／forward／场景观察签名：
@@ -70,6 +75,8 @@
 
 每个SHOT补充：
 
+- directorial_camera_plan_id／camera_trajectory_intent／cut_out_intent：
+- director_cut_intent：from_shot_id／to_shot_id／cut_type_intent／transition_mechanism／reason；MATCH-ON-ACTION补action_match。
 - shot_task／camera_zone／camera_direction／shot_size／camera_motion／cut_in／cut_out／focal_feel／action_stage：
 - SHOT任务合同／derived_independent_task：
 - required_evidence／visible_evidence：
@@ -85,11 +92,11 @@
 
 终镜CUT类型写 `END`；下一SHOT起始状态可写“无／已知下一集状态”，不得擅自续写剧情。
 
-#### 4. 同一SHOT运镜阶段／时间流逝
+#### 4. 同一SHOT摄影机XYZ轨迹／时间流逝
 
-| SHOT | start_state | movement | end_state | lock_after_move |
-|---|---|---|---|---|
-| SHOT 01 |  |  |  | true／false |
+| SHOT | camera_keyframes（时间／XYZ／forward／framing） | actor_keyframes | 到达后停稳 |
+|---|---|---|---|
+| SHOT 01 |  |  |  |
 
 - focal_feel：广角空间感／标准透视／轻长焦压缩感／浅景深特写感。
 - time_passage：enabled、method、camera_locked_after_move、scene_geometry_unchanged、character_screen_positions_stable、time_transition_visible。
