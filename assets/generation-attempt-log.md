@@ -32,7 +32,9 @@
 - POV／OTS／INSERT是否有真实证据：
 - 是否丢失或错误合并CUT：
 - 是否出现无意近似机位跳切：
-- 相邻SHOT视觉差异路径与30度适用性：
+- 当前SHOT camera_station_id／observation_signature：
+- 相邻SHOT摄影点／观察关系与视觉差异路径：
+- 三镜以上重复观察检查：
 - 是否重复上一SHOT动作：
 - 当前机位是否能展示关键信息：
 - 本次修改：

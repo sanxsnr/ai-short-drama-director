@@ -306,7 +306,8 @@ def validate(payload: dict) -> dict[str, object]:
 
         for field in (
             "shot_task",
-            "camera_zone",
+            "camera_region",
+            "camera_station",
             "camera_direction",
             "shot_size",
             "camera_motion",

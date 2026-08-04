@@ -41,7 +41,7 @@
 下一SEG需要继承的状态：
 精简全局风格：
 本段人物／服装／声线简述：
-已确认scene_space_basis、spatial_solution、scene_id／time_id、camera_zone_id、camera_position_world、camera_forward_world、固定anchor_id和摄影机轴线侧：
+已确认scene_space_basis、spatial_solution、scene_id／time_id、camera_region_id／camera_station_id、camera_position_world、camera_forward_world、observation_signature、固定anchor_id和摄影机轴线侧：
 关键道具、表面、持物手和状态：
 参考图／视频／音频唯一职责：
 禁止新增、删除或改变的内容：

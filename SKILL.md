@@ -48,9 +48,9 @@ description: Guide beginners and experienced creators through AI short-drama pro
 | 声音与剪辑修复 | `references/10-voice-editing-repair.md` | 音色、逐句换音、声音桥和最终拼接 |
 | 新手模式 | `references/11-beginner-guided-mode.md` | 分阶段引导，不降低专业标准 |
 | 输出合同 | `references/12-output-format-and-choice-footer.md` | 回复结构、文档格式和ABC命令 |
-| CUT与镜头几何 | `references/13-cut-shot-geometry.md` | SHOT／CUT／运镜边界、CUT触发、30度适用性、同轴路径与相邻SHOT视觉差异 |
-| SHOT任务与动作覆盖 | `references/14-shot-task-action-coverage.md` | SHOT或连续运镜阶段的任务证据、场景世界机位、进出场Gate、视角证据与动作状态机 |
-| 导演镜头方案 | `references/15-directorial-camera-plan.md` | 导演读解、统一SHOT序列、摄影机轨迹意图、CUT意图，以及空间求解失败后的重设计 |
+| CUT与镜头几何 | `references/13-cut-shot-geometry.md` | SHOT／CUT／运镜边界、CUT触发、摄影点／观察关系、同轴大景别、轴线与相邻SHOT视觉差异 |
+| SHOT任务与动作覆盖 | `references/14-shot-task-action-coverage.md` | SHOT或连续运镜阶段的任务证据、摄影点与任务适配、进出场Gate、视角证据与动作状态机 |
+| 导演镜头方案 | `references/15-directorial-camera-plan.md` | 15A整场摄影覆盖语法、15B逐SHOT摄影机程序、CUT意图，以及空间求解失败后的重设计 |
 
 其他文件只能引用这些真源，不得另写一套同类规则。
 
@@ -62,10 +62,12 @@ description: Guide beginners and experienced creators through AI short-drama pro
 01-script-slicing.md
 → 02／03 视觉风格与场景资产锁定
 → 04A 场景基础空间模型
-→ 15-directorial-camera-plan.md
+→ 15A 场景摄影覆盖与机位调度
+→ 15B 逐SHOT摄影机程序与CUT意图
 → 04B 人物与摄影机XYZ轨迹求解
 → 14-shot-task-action-coverage.md
 → 13-cut-shot-geometry.md
+→ 场景级摄影覆盖重复检查
 → 返回01封装SEG
 ```
 
@@ -73,14 +75,18 @@ description: Guide beginners and experienced creators through AI short-drama pro
 
 1. `01`把灵感或小说整理为改编方案、可拍摄剧本、对白、动作链和视听节拍，并确定SEG时长。
 2. `02／03`先锁定视觉风格、人物／服装／道具资产以及场景布局资产；没有可确认的场景结构，就不能进入摄影机坐标求解。已有锁定资产时直接继承，不重复设计。
-3. `04A`根据锁定场景资产建立尺寸、固定锚点、可通行区、人物初始区和不可穿越物，不提前决定镜头怎么拍。
-4. `15`读取剧本和基础空间，由导演思维主动给出一份统一镜头方案：每个SHOT怎么拍、摄影机在SHOT内怎么走、在哪里停、在哪里CUT。不得把固定／运镜／CUT拆成三套模式，也不得让用户先替导演选择。
-5. `04B`把15的概念方案求解为人物与摄影机的XYZ、世界朝向和连续关键帧轨迹；若穿墙、穿床、穿人、越轴、动作不可见或时长不可执行，必须返回15重做，不能私自改镜头目的或把选择推给用户。
-6. `14`验证每个SHOT和轨迹阶段是否真正拍到主体、锚点、动作过程和结果，并推导`derived_independent_task`。
-7. `13`只审核15已经设计、14已经证明的新SHOT边界：CUT点、CUT类型、MATCH-ON-ACTION、30度适用性、轴线和视觉差异。
-8. 返回`01`按10秒或15秒封装SEG并读秒。
+3. `04A`根据锁定场景资产建立尺寸、固定锚点、可通行区、人物初始区、不可穿越物、合法摄影区域和摄影点候选库，不提前决定最终采用哪个摄影点。
+4. `15A`先完成整场摄影覆盖设计：戏剧推进、摄影点库、计划机位序列、景别曲线、心理距离曲线和重复意图；相同中景可以连续使用，但不得把同一摄影点复制成全场默认视角。
+5. `15B`再为每个SHOT选择唯一摄影点，设计起始构图、连续轨迹、终点停稳和CUT意图。当前SHOT方案锁的scope只能是`shot`，不能扩张成场景机位锁。
+6. `04B`把15B方案求解为人物与摄影机的XYZ、世界朝向和连续关键帧轨迹；若穿墙、穿床、穿人、越轴、动作不可见或时长不可执行，必须返回15重做，不能私自改镜头目的或把选择推给用户。
+7. `14`验证每个SHOT和轨迹阶段是否真正拍到主体、锚点、动作过程和结果，并检查所选`camera_station_id`是否服务任务，推导`derived_independent_task`。
+8. `13`只审核15已经设计、14已经证明的新SHOT边界：CUT点、CUT类型、MATCH-ON-ACTION、轴线与视觉差异路径。固定角度阈值不参与CUT通过。
+9. `validate_camera_coverage_sequence.py`以三镜以上滚动窗口检查整场摄影覆盖，允许多方位中景，拦截同一XYZ、高度、前景和背景透视的连续复制。
+10. 返回`01`按10秒或15秒封装SEG并读秒。
 
 统一摄影机程序定义：一个SHOT内的摄影机状态`C(t)`连续；若`C(t)`不变，结果是固定机位；若`C(t)`连续变化，结果是运镜；相邻两个连续区间之间的边界是CUT。固定、运镜和CUT是同一导演方案的结果，不是三套独立计算方法。
+
+CUT后必须继承人物位置、朝向、动作进度、道具归属和轴线状态；摄影点、景别、前景关系、背景透视和心理距离默认重新设计。只有同一连续SHOT，或15明确提供摄影点重复意图与收益时，才允许继承摄影机状态。
 
 提示词合并不等于镜头合并。后端生成规则不得删除已经通过`13`审核的CUT。
 
@@ -157,9 +163,11 @@ directorial_camera_plan／spatial_solution／camera_motion_phases／time_passage
 已完成／进行中／未完成／需返工：
 已锁定资产与空间：
 剧情对象／人物正面／移动方向／摄影机方位／推导可见面：
-scene_id／time_id／scene_space_basis／camera_zone_id／camera_position_world／camera_forward_world／scene anchor：
-SHOT任务类型／必要证据／动作状态机／derived_independent_task：
-唯一方案锁：开启／关闭
+scene_id／time_id／scene_space_basis／camera_allowed_regions／camera_station_candidates：
+scene_camera_grammar／planned_station_sequence／shot_scale_curve／psychological_distance_curve：
+camera_region_id／camera_station_id／camera_position_world／camera_forward_world／observation_signature：
+SHOT任务类型／必要证据／viewpoint_fitness／动作状态机／derived_independent_task：
+当前SHOT方案锁：scope=shot／locked_camera_station_id
 人物／道具当前状态：
 上一SHOT结束状态：
 当前阻塞：
@@ -178,6 +186,7 @@ python3 scripts/validate_directorial_camera_plan.py < directorial-camera-plan.js
 python3 scripts/validate_spatial_geometry.py < spatial-geometry.json
 python3 scripts/validate_shot_task.py < shot-task.json
 python3 scripts/validate_cut_geometry.py < cut-geometry.json
+python3 scripts/validate_camera_coverage_sequence.py < camera-coverage-sequence.json
 python3 scripts/validate_project_state.py < project-state.json
 python3 scripts/validate_prompt_package.py < prompt-package.json
 ```
@@ -195,7 +204,7 @@ python3 scripts/validate_prompt_package.py < prompt-package.json
 - 不把高速动作的多段短SHOT误套普通剧情上限，也不把高速动作例外扩展到普通对话和普通动作。
 - 不把固定构图中的可见日夜变化自动拆成多机位蒙太奇。
 - 不用下游模型负载规则覆盖空间或CUT真源。
-- 不把30度、景别跨级和组合差异误写成所有CUT必须同时满足的累计门槛。
+- 不使用固定摄影机角度阈值决定CUT是否成立；CUT必须依据任务、摄影点／观察关系、景别、主体／视角、组合差异或明确剪辑装置审核。
 - 不把“相邻SHOT”或“相邻景别”本身当成错误，只拦截缺乏有效视觉差异的无意近似跳切。
 - 不读取模型自报的`independent_task=true`，必须由`14`从画面证据推导。
 - 不把主体名称改变、换说话人、viewpoint字符串变化或自然语言场景名称变化自动当作强通过。
@@ -203,6 +212,6 @@ python3 scripts/validate_prompt_package.py < prompt-package.json
 - 不擅自修改用户锁定对白、剧情和资产。
 - 不先写正面／侧面结论再倒推摄影机方位。
 - 不让人物为露脸无理由转向摄影机。
-- 不在唯一方案锁开启后混入侧拍、背拍或其他替代方案。
+- 不把当前SHOT方案锁扩张成场景机位锁；同一场景可在合法轴线侧使用多个世界坐标不同的摄影点。
 - 不用首尾帧硬复制代替状态继承；仅在用户明确采用I2V、FLF2V或视频延长工作流时使用对应帧约束。
 - 不在生成提示词中泄露Skill调用命令、内部检查或ABC导航。

@@ -4,7 +4,7 @@
 
 > 你不需要先学会编剧、分镜、运镜或提示词。这个 Skill 会先判断你已经做到哪里，再一次只带你完成一步：从一句灵感、小说或半成品开始，逐步做到剧本、分镜、资产、图片、Seedance 2.0 视频、声音剪辑和最终成片。
 
-![Version](https://img.shields.io/badge/version-2.4.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.5.0-2563eb)
 ![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-中文%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
@@ -305,6 +305,15 @@ git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 | 多段成片 | 声线统一、拼接、声音桥、节奏和最终巡检方案 |
 | DOCX／PDF／表格 | 完整修订文件和自检报告 |
 
+## V2.5 新增｜场景摄影覆盖与多机位中景
+
+- 04A除合法摄影区域外，必须建立`camera_station_candidates`摄影点候选库。
+- 15拆成15A整场摄影覆盖设计与15B逐SHOT摄影机程序；先规划机位序列、景别曲线和心理距离，再逐镜求解。
+- “当前SHOT方案锁”只锁一个SHOT，不再把同一轴线侧误写成整场只能使用同一摄影点。
+- CUT后继承人物、道具、动作和轴线状态；摄影点、景别、前景关系和背景透视默认重新设计。
+- 新增完整`observation_signature`和`validate_camera_coverage_sequence.py`，允许不同方位连续中景，拦截同一XYZ、高度、前景和背景透视的全线复制。
+- CUT审核不再使用固定摄影机角度阈值；摄影机角度只作为诊断信息。
+
 ## V2.4 新增｜统一导演镜头方案
 
 - 不再把固定、运镜和CUT作为三套独立模式或上游三选一。
@@ -357,7 +366,7 @@ git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 
 ## 验证工具
 
-仓库内提供十个无第三方依赖的 Python 验证脚本：
+仓库内提供十二个无第三方依赖的 Python 验证脚本：
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
@@ -366,13 +375,15 @@ python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
 python3 scripts/validate_continuity.py continuity.json
 python3 scripts/validate_directorial_camera_plan.py directorial-camera-plan.json
+python3 scripts/validate_camera_coverage_sequence.py camera-coverage-sequence.json
 python3 scripts/validate_spatial_geometry.py spatial-geometry.json
 python3 scripts/validate_shot_task.py shot-task.json
+python3 scripts/validate_director_cut_intent.py director-cut-intent.json
 python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_rule_sources.py
 ```
 
-它们分别检查时间码与对白容量、AI直接成片SEG结构、统一导演镜头方案及其人物／摄影机XYZ空间解、项目阶段证据、提示词输入包、跨镜状态继承、人物面向与摄影机可见面、SHOT任务与动作覆盖、导演提出的CUT类型／转接机制及相邻SHOT视觉差异路径，以及全仓库规则真源一致性。脚本不会取代导演对剧情、表演和美感的判断。
+它们分别检查时间码与对白容量、AI直接成片SEG结构、统一导演镜头方案及其人物／摄影机XYZ空间解、整场摄影覆盖重复、项目阶段证据、提示词输入包、跨镜状态继承、人物面向与摄影机可见面、SHOT任务与视角适配、导演提出的CUT类型／转接机制及相邻SHOT视觉差异路径，以及全仓库规则真源一致性。脚本不会取代导演对剧情、表演和美感的判断。
 
 ## 目录结构
 
@@ -414,8 +425,10 @@ ai-short-drama-from-zero/
 │   ├── validate_prompt_package.py
 │   ├── validate_continuity.py
 │   ├── validate_directorial_camera_plan.py
+│   ├── validate_camera_coverage_sequence.py
 │   ├── validate_spatial_geometry.py
 │   ├── validate_shot_task.py
+│   ├── validate_director_cut_intent.py
 │   ├── validate_cut_geometry.py
 │   └── validate_rule_sources.py
 ├── docs/

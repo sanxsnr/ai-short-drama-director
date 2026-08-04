@@ -36,11 +36,16 @@ def dialogue_task(
     scene_id: str = "bedroom",
     time_id: str = "night_01",
     viewpoint: str = "objective",
-    camera_zone: str = "bed_side",
+    camera_region: str = "bed_side",
+    camera_station: str = "STATION_A",
     camera_position: list[float] | None = None,
     camera_forward: list[float] | None = None,
     primary_anchor: str = "dongsheng",
     visible_anchors: list[str] | None = None,
+    shot_scale: str = "MS",
+    foreground_subject: str = "none",
+    background_anchor: str | None = None,
+    psychological_distance: str = "relationship",
     viewpoint_evidence: dict | None = None,
 ) -> dict:
     contract = {
@@ -51,11 +56,26 @@ def dialogue_task(
         "primary_subject_id": subject,
         "viewpoint": viewpoint,
         "camera": {
-            "zone_id": camera_zone,
+            "region_id": camera_region,
+            "station_id": camera_station,
             "position_world": camera_position or [3, 3, 1.6],
             "forward_world": camera_forward or [0, 1, 0],
+            "height": 1.6,
+            "shot_scale": shot_scale,
+            "foreground_subject_id": foreground_subject,
+            "background_anchor_id": background_anchor or primary_anchor,
+            "motion_mode": "locked",
+            "psychological_distance": psychological_distance,
             "primary_scene_anchor_id": primary_anchor,
             "visible_anchor_ids": visible_anchors or [primary_anchor],
+        },
+        "viewpoint_fitness": {
+            "task_requires_new_observation": True,
+            "selected_station_serves_task": True,
+            "observation_signature_changed": True,
+            "foreground_relation_changed": False,
+            "psychological_distance_changed": False,
+            "same_station_repetition_intent": "",
         },
         "required_evidence": ["focus_subject_visible", "new_visual_task_visible"],
         "visible_evidence": ["focus_subject_visible", "new_visual_task_visible"],
@@ -77,11 +97,16 @@ def eyeline_task(
     subject: str = "fox_tail",
     scene_id: str = "bedroom",
     time_id: str = "night_01",
-    camera_zone: str = "bed_side",
+    camera_region: str = "bed_side",
+    camera_station: str = "STATION_A",
     camera_position: list[float] | None = None,
     camera_forward: list[float] | None = None,
     primary_anchor: str = "fox_tail",
     visible_anchors: list[str] | None = None,
+    shot_scale: str = "MS",
+    foreground_subject: str = "none",
+    background_anchor: str | None = None,
+    psychological_distance: str = "relationship",
 ) -> dict:
     return {
         "shot_id": shot_id,
@@ -91,11 +116,26 @@ def eyeline_task(
         "primary_subject_id": subject,
         "viewpoint": "objective",
         "camera": {
-            "zone_id": camera_zone,
+            "region_id": camera_region,
+            "station_id": camera_station,
             "position_world": camera_position or [3, 3, 1.6],
             "forward_world": camera_forward or [0, 1, 0],
+            "height": 1.6,
+            "shot_scale": shot_scale,
+            "foreground_subject_id": foreground_subject,
+            "background_anchor_id": background_anchor or primary_anchor,
+            "motion_mode": "locked",
+            "psychological_distance": psychological_distance,
             "primary_scene_anchor_id": primary_anchor,
             "visible_anchor_ids": visible_anchors or [primary_anchor],
+        },
+        "viewpoint_fitness": {
+            "task_requires_new_observation": True,
+            "selected_station_serves_task": True,
+            "observation_signature_changed": True,
+            "foreground_relation_changed": False,
+            "psychological_distance_changed": False,
+            "same_station_repetition_intent": "",
         },
         "required_evidence": ["target_visible", "target_key_state_visible"],
         "visible_evidence": ["target_visible", "target_key_state_visible"],
@@ -118,15 +158,30 @@ def entry_task(*, valid: bool = True) -> dict:
         "primary_subject_id": "su_qingyue",
         "viewpoint": "objective",
         "camera": {
-            "zone_id": "east_door_inside" if valid else "post_side",
+            "region_id": "east_door_inside" if valid else "post_side",
+            "station_id": "STATION_ENTRY" if valid else "STATION_POST_SIDE",
             "position_world": [10.5, 4.5, 1.6] if valid else [4.5, 3.0, 1.6],
             "forward_world": [1, 0, 0],
+            "height": 1.6,
+            "shot_scale": "MS",
+            "foreground_subject_id": "none",
+            "background_anchor_id": "east_door_frame" if valid else "su_qingyue",
+            "motion_mode": "locked",
+            "psychological_distance": "observational",
             "primary_scene_anchor_id": "east_door_threshold" if valid else "su_qingyue",
             "visible_anchor_ids": (
                 ["east_door_threshold", "east_door_frame", "entry_path"]
                 if valid
                 else ["su_qingyue"]
             ),
+        },
+        "viewpoint_fitness": {
+            "task_requires_new_observation": True,
+            "selected_station_serves_task": True,
+            "observation_signature_changed": True,
+            "foreground_relation_changed": False,
+            "psychological_distance_changed": False,
+            "same_station_repetition_intent": "",
         },
         "required_evidence": [
             "door_frame_visible",
@@ -166,10 +221,14 @@ def shot(
     stage: str = "watching",
     scene_id: str = "bedroom",
     time_id: str = "night_01",
-    camera_zone: str = "bed_side",
+    camera_region: str = "bed_side",
+    camera_station: str = "STATION_A",
     camera_position: list[float] | None = None,
     primary_anchor: str | None = None,
     visible_anchors: list[str] | None = None,
+    foreground_subject: str = "none",
+    background_anchor: str | None = None,
+    psychological_distance: str = "relationship",
     task_contract: dict | None = None,
     extra: dict | None = None,
 ) -> dict:
@@ -183,11 +242,15 @@ def shot(
         "action_stage": stage,
         "scene_id": scene_id,
         "time_id": time_id,
-        "camera_zone_id": camera_zone,
+        "camera_region_id": camera_region,
+        "camera_station_id": camera_station,
         "camera_position_world": camera_position or [3, 3, 1.6],
         "camera_forward_world": direction(forward_angle),
         "primary_scene_anchor_id": anchor,
         "visible_anchor_ids": visible_anchors or [anchor],
+        "foreground_subject_id": foreground_subject,
+        "background_anchor_id": background_anchor or anchor,
+        "psychological_distance": psychological_distance,
     }
     if task_contract is not None:
         data["task_contract"] = task_contract
@@ -246,25 +309,22 @@ class CutGeometryTests(unittest.TestCase):
         self.assertEqual("axial_scale", result["derived_difference_path"])
         self.assertEqual(4, result["shot_scale_step_difference"])
 
-    def test_same_subject_thirty_five_degree_path_passes(self):
+    def test_same_subject_distinct_camera_station_passes(self):
         after = shot(
             shot_id="SHOT_B",
-            angle=35,
-            forward_angle=35,
+            camera_station="STATION_B",
             camera_position=[4, 2, 1.6],
-            task_contract=dialogue_task(camera_position=[4, 2, 1.6], camera_forward=direction(35)),
+            task_contract=dialogue_task(camera_station="STATION_B", camera_position=[4, 2, 1.6]),
         )
-        result = CUT.validate(payload(to_shot=after, claimed_path="angle"))
+        result = CUT.validate(payload(to_shot=after, claimed_path="station_or_observation"))
         self.assertTrue(result["ok"], result)
-        self.assertEqual("angle", result["derived_difference_path"])
+        self.assertEqual("station_or_observation", result["derived_difference_path"])
 
-    def test_ten_degree_and_one_scale_step_fails_as_near_jump(self):
+    def test_same_station_and_one_scale_step_fails_as_near_jump(self):
         after = shot(
             shot_id="SHOT_B",
-            angle=10,
-            forward_angle=10,
             scale="MCU",
-            task_contract=dialogue_task(camera_forward=direction(10)),
+            task_contract=dialogue_task(shot_scale="MCU"),
         )
         result = CUT.validate(payload(to_shot=after))
         self.assertFalse(result["ok"])
@@ -281,14 +341,13 @@ class CutGeometryTests(unittest.TestCase):
         result = CUT.validate(payload(to_shot=after))
         self.assertFalse(result["ok"])
 
-    def test_twenty_degree_plus_adjacent_scale_passes_combined(self):
+    def test_adjacent_scale_plus_foreground_change_passes_combined(self):
         after = shot(
             shot_id="SHOT_B",
-            angle=20,
-            forward_angle=20,
             scale="MCU",
             stage="decision",
-            task_contract=dialogue_task(camera_forward=direction(20)),
+            foreground_subject="asuo_shoulder",
+            task_contract=dialogue_task(shot_scale="MCU", foreground_subject="asuo_shoulder"),
         )
         result = CUT.validate(payload(to_shot=after, claimed_path="combined"))
         self.assertTrue(result["ok"], result)
@@ -299,7 +358,7 @@ class CutGeometryTests(unittest.TestCase):
             shot_id="SHOT_A",
             subject="shen_yuan",
             scene_id="torture_room",
-            camera_zone="post_side",
+            camera_region="post_side",
             primary_anchor="shen_yuan",
             visible_anchors=["shen_yuan", "wooden_post"],
         )
@@ -307,7 +366,7 @@ class CutGeometryTests(unittest.TestCase):
             shot_id="SHOT_B",
             subject="su_qingyue",
             scene_id="torture_room",
-            camera_zone="post_side",
+            camera_region="post_side",
             primary_anchor="su_qingyue",
             visible_anchors=["su_qingyue"],
             task_contract=entry_task(valid=False),
@@ -322,7 +381,7 @@ class CutGeometryTests(unittest.TestCase):
             shot_id="SHOT_A",
             subject="shen_yuan",
             scene_id="torture_room",
-            camera_zone="post_front",
+            camera_region="post_front",
             primary_anchor="shen_yuan",
             visible_anchors=["shen_yuan", "wooden_post"],
         )
@@ -331,10 +390,13 @@ class CutGeometryTests(unittest.TestCase):
             shot_id="SHOT_B",
             subject="su_qingyue",
             scene_id="torture_room",
-            camera_zone="east_door_inside",
+            camera_region="east_door_inside",
+            camera_station="STATION_ENTRY",
             camera_position=[10.5, 4.5, 1.6],
             forward_angle=90,
             primary_anchor="east_door_threshold",
+            background_anchor="east_door_frame",
+            psychological_distance="observational",
             visible_anchors=["east_door_threshold", "east_door_frame", "entry_path"],
             task_contract=task,
         )
@@ -349,7 +411,7 @@ class CutGeometryTests(unittest.TestCase):
             shot_id="SHOT_A",
             subject="shen_yuan",
             scene_id="torture_room",
-            camera_zone="post_front",
+            camera_region="post_front",
             primary_anchor="shen_yuan",
             visible_anchors=["shen_yuan", "wooden_post"],
         )
@@ -358,7 +420,7 @@ class CutGeometryTests(unittest.TestCase):
             shot_id="SHOT_B",
             subject="su_qingyue",
             scene_id="torture_room",
-            camera_zone="post_side",
+            camera_region="post_side",
             camera_position=[4.5, 3.0, 1.6],
             primary_anchor="su_qingyue",
             visible_anchors=["su_qingyue"],
@@ -374,7 +436,7 @@ class CutGeometryTests(unittest.TestCase):
             shot_id="SHOT_A",
             subject="shen_yuan",
             scene_id="torture_room",
-            camera_zone="post_front",
+            camera_region="post_front",
             camera_position=[4, 3, 1.6],
             forward_angle=90,
             primary_anchor="shen_yuan",
@@ -385,10 +447,13 @@ class CutGeometryTests(unittest.TestCase):
             shot_id="SHOT_B",
             subject="su_qingyue",
             scene_id="torture_room",
-            camera_zone="east_door_inside",
+            camera_region="east_door_inside",
+            camera_station="STATION_ENTRY",
             camera_position=[10.5, 4.5, 1.6],
             forward_angle=90,
             primary_anchor="east_door_threshold",
+            background_anchor="east_door_frame",
+            psychological_distance="observational",
             visible_anchors=["east_door_threshold", "east_door_frame", "entry_path"],
             task_contract=task,
         )
@@ -450,14 +515,14 @@ class CutGeometryTests(unittest.TestCase):
     def test_scene_id_change_is_strong_after_task_passes(self):
         after_task = dialogue_task(
             scene_id="courtyard",
-            camera_zone="courtyard_center",
+            camera_region="courtyard_center",
             primary_anchor="courtyard_gate",
             visible_anchors=["courtyard_gate"],
         )
         after = shot(
             shot_id="SHOT_B",
             scene_id="courtyard",
-            camera_zone="courtyard_center",
+            camera_region="courtyard_center",
             primary_anchor="courtyard_gate",
             visible_anchors=["courtyard_gate"],
             task_contract=after_task,
@@ -466,15 +531,15 @@ class CutGeometryTests(unittest.TestCase):
         self.assertTrue(result["ok"], result)
         self.assertFalse(result["same_scene_id"])
 
-    def test_cross_axis_cannot_be_saved_by_task_or_angle(self):
+    def test_cross_axis_cannot_be_saved_by_task_or_station_change(self):
         after = shot(
             shot_id="SHOT_B",
-            angle=45,
-            forward_angle=45,
-            task_contract=dialogue_task(camera_forward=direction(45)),
+            camera_station="STATION_B",
+            camera_position=[4, 2, 1.6],
+            task_contract=dialogue_task(camera_station="STATION_B", camera_position=[4, 2, 1.6]),
         )
         result = CUT.validate(
-            payload(to_shot=after, claimed_path="angle", axis_status="crossed_without_reestablish")
+            payload(to_shot=after, claimed_path="station_or_observation", axis_status="crossed_without_reestablish")
         )
         self.assertFalse(result["ok"])
         self.assertTrue(any("180度轴线" in item for item in result["errors"]))

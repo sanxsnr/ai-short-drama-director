@@ -253,7 +253,7 @@ Skill调用命令属于对话导航，必须放在：
 
 时间轴行数由显式SHOT边界决定，不按景别、焦段或运镜阶段增加。需要多个SHOT时，为每个真实SHOT另起一行并填写CUT节点。
 
-每个SHOT另附结构字段：`shot_task`、`camera_zone`、`camera_direction`、`shot_size`、`camera_motion`、`cut_in`、`cut_out`、`focal_feel`、`action_stage`。其中`task_type`、`camera_zone_id`、`camera_forward_world`和`phase_task`属于04／14证据字段，不能替代这些SEG结构字段。
+每个SHOT另附结构字段：`shot_task`、`camera_region`、`camera_station`、`camera_direction`、`shot_size`、`camera_motion`、`cut_in`、`cut_out`、`focal_feel`、`action_stage`。其中`task_type`、`camera_region_id`、`camera_station_id`、`camera_forward_world`和`phase_task`属于04／14证据字段，不能替代这些SEG结构字段。
 
 ## 4. 同一SHOT运镜阶段／时间流逝
 
@@ -284,10 +284,10 @@ Skill调用命令属于对话导航，必须放在：
 - [ ] 每个SHOT的task_type、必要画面证据、场景锚点和动作状态转换已经通过`14`。
 - [ ] 所有CUT均来自15导演方案，并已由14和13审核，没有在下游临时新增或吞并。
 - [ ] 每个CUT已标明合法视觉差异路径，没有无意近似跳切。
-- [ ] 30度规则仅在适用时检查；主体／视角变化只有在`14`证据通过后才作为强差异。
+- [ ] 不使用固定角度阈值；主体／视角变化只有在`14`任务与视角适配证据通过后才作为强差异。
 - [ ] 动作匹配CUT的方向、速度和进度连续。
 - [ ] 人物、服装、场景、道具与锁定资产一致。
-- [ ] scene_id／time_id／camera_zone_id／camera_forward_world与固定anchor_id完整。
+- [ ] scene_id／time_id／camera_region_id／camera_station_id／camera_forward_world与固定anchor_id完整。
 - [ ] ENTER／EXIT可见边界、路径、跨越方向与落点；POV／OTS／INSERT有真实证据。
 - [ ] 左右、视线、持物手、运动方向和空间轴线连续。
 - [ ] 当前景别、光线和遮挡能展示所写关键信息。

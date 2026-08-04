@@ -243,7 +243,8 @@ def validate(payload: dict) -> dict:
                 for field in (
                     "scene_id",
                     "time_id",
-                    "camera_zone_id",
+                    "camera_region_id",
+                    "camera_station_id",
                     "camera_forward_world",
                     "primary_scene_anchor_id",
                 ):

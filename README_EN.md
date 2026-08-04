@@ -4,7 +4,7 @@
 
 > A production-oriented Skill that takes an AI short drama from an idea or novel through adaptation, dialogue, audiovisual beats, locked assets, spatially solved camera plans, storyboards, video prompts, QA, audio repair, editing, and final delivery.
 
-![Version](https://img.shields.io/badge/version-2.4.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.5.0-2563eb)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
 
 The invocation name remains:
@@ -12,6 +12,17 @@ The invocation name remains:
 ```text
 $ai-short-drama-director
 ```
+
+## What changed in V2.5
+
+V2.5 adds scene-level camera coverage so spatial safety no longer collapses a dialogue scene into one repeated medium-shot viewpoint.
+
+- 04A defines legal camera regions and a library of concrete `camera_station_candidates`.
+- 15A designs the scene-wide station schedule, shot-scale curve, and psychological-distance curve before 15B writes each SHOT camera program.
+- A solution lock is scoped to the current SHOT only. It never means that the whole scene must reuse one station.
+- A CUT inherits actor, prop, action-progress, and axis state; camera station, framing, foreground relation, and background perspective are redesigned by default.
+- Full `observation_signature` fields and `validate_camera_coverage_sequence.py` allow several medium shots from different world positions while rejecting repeated same-XYZ, same-height, same-foreground, same-background coverage.
+- The CUT audit no longer uses any fixed camera-angle threshold. Camera angle is diagnostic only; the 180-degree relationship-axis rule remains.
 
 ## What changed in V2.4
 
@@ -63,14 +74,14 @@ The Skill supplies the professional primary proposal when the project contains e
 | QA and repair | `references/06-qc-repair-post.md` |
 | Storyboards and image prompts | `references/07-storyboard-image-prompts.md` |
 | CUT geometry and adjacent-SHOT audit | `references/13-cut-shot-geometry.md` |
-| SHOT task and action coverage | `references/14-shot-task-action-coverage.md` |
-| Unified director-authored camera program | `references/15-directorial-camera-plan.md` |
+| SHOT task, action coverage, and viewpoint fitness | `references/14-shot-task-action-coverage.md` |
+| Scene coverage and unified director-authored camera program | `references/15-directorial-camera-plan.md` |
 
-`15-directorial-camera-plan.md` decides the intended photography and CUT semantics. `04-blocking-continuity.md` computes whether that plan is spatially executable. `14-shot-task-action-coverage.md` proves that the image actually covers the required task. `13-cut-shot-geometry.md` audits the proposed CUT; it does not invent a new CUT downstream.
+`15-directorial-camera-plan.md` first designs scene-level coverage and then selects one station and trajectory for each SHOT. `04-blocking-continuity.md` computes whether that plan is spatially executable. `14-shot-task-action-coverage.md` proves that the image covers the task and that the selected station serves it. `13-cut-shot-geometry.md` audits the proposed CUT without using a fixed camera-angle threshold. `validate_camera_coverage_sequence.py` rejects repeated one-view coverage across rolling multi-SHOT windows.
 
 ## Validation tools
 
-The repository includes ten dependency-free Python validators:
+The repository includes twelve dependency-free Python validators:
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
@@ -79,13 +90,15 @@ python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
 python3 scripts/validate_continuity.py continuity.json
 python3 scripts/validate_directorial_camera_plan.py directorial-camera-plan.json
+python3 scripts/validate_camera_coverage_sequence.py camera-coverage-sequence.json
 python3 scripts/validate_spatial_geometry.py spatial-geometry.json
 python3 scripts/validate_shot_task.py shot-task.json
+python3 scripts/validate_director_cut_intent.py director-cut-intent.json
 python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_rule_sources.py
 ```
 
-`validate_directorial_camera_plan.py` accepts either a flat plan object or a wrapper named `directorial_camera_plan`. It derives fixed or moving behavior from XYZ keyframes; checks bounds, blocked volumes, actor and camera speeds, angular speed, dynamic camera-to-actor clearance, relationship-axis policy, full track coverage, and solved hold time; and reports whether the plan must return to the director for redesign.
+`validate_directorial_camera_plan.py` accepts either a flat plan object or a wrapper named `directorial_camera_plan`. It validates the 15A scene grammar, station library, planned station sequence, SHOT-scoped solution locks, observation signatures, XYZ tracks, bounds, blocked volumes, speed, clearance, axis policy, and solved hold time. `validate_camera_coverage_sequence.py` allows repeated medium-shot scales from distinct stations but rejects a scene that merely swaps speakers while preserving the same camera position, height, foreground, background, and perspective.
 
 `validate_segment_structure.py` continues to treat explicit SHOT boundaries as the only SHOT-count source. Framing changes, camera movement, or focal-feel changes do not automatically create a CUT.
 
@@ -144,8 +157,10 @@ ai-short-drama-from-zero/
 │   ├── validate_prompt_package.py
 │   ├── validate_continuity.py
 │   ├── validate_directorial_camera_plan.py
+│   ├── validate_camera_coverage_sequence.py
 │   ├── validate_spatial_geometry.py
 │   ├── validate_shot_task.py
+│   ├── validate_director_cut_intent.py
 │   ├── validate_cut_geometry.py
 │   └── validate_rule_sources.py
 └── tests/

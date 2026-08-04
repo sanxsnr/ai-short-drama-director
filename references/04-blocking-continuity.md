@@ -17,7 +17,7 @@
 - SHOT之间与SEG之间的状态继承。
 - 当前景别、光线、焦点和遮挡下的信息可见性。
 
-本文件不负责决定镜头怎么拍、摄影机为什么移动或在哪里CUT；这些由`15-directorial-camera-plan.md`统一设计。本文件不负责验证SHOT是否真正完成导演任务；该职责只由`14-shot-task-action-coverage.md`定义。本文件也不负责最终审核CUT类型、30度规则、同轴景别路径或相邻SHOT视觉差异；这些只由`13-cut-shot-geometry.md`定义。
+本文件不负责决定镜头怎么拍、摄影机为什么移动或在哪里CUT；这些由`15-directorial-camera-plan.md`统一设计。本文件不负责验证SHOT是否真正完成导演任务；该职责只由`14-shot-task-action-coverage.md`定义。本文件也不负责最终审核CUT类型、同轴景别路径或相邻SHOT视觉差异；这些只由`13-cut-shot-geometry.md`定义。
 
 涉及完整分镜、多人互动、关键道具操作、人物移动、正面／侧面／背面描述、过肩／反打／主观机位或跨空间移动时必须读取本文件。固定顺序为：`02／03资产锁定 → 04A基础空间 → 15导演方案 → 04B坐标求解 → 14任务覆盖 → 13 CUT审核`。
 
@@ -46,6 +46,8 @@
 → 锁定门、窗、床、桌、柱、屏风等固定锚点
 → 标出可通行区、不可穿越物和人物初始区
 → 建立关系轴候选与运动边界
+→ 划分camera_allowed_regions
+→ 在合法区域内建立camera_station_candidates摄影点候选库
 → 输出scene_space_basis
 ```
 
@@ -115,6 +117,18 @@ scene_space_basis:
     - axis_id:
       point_a_world: [x, y, z]
       point_b_world: [x, y, z]
+  camera_allowed_regions:
+    - region_id:
+      axis_side:
+      boundary_description:
+  camera_station_candidates:
+    - station_id:
+      region_id:
+      position_world: [x, y, z]
+      forward_world: [x, y, z]
+      legal_subjects: []
+      visible_anchor_ids: []
+      foreground_relation:
   camera_clearance_units:
   actor_clearance_units:
   max_camera_speed_units_per_second:
@@ -124,7 +138,7 @@ scene_space_basis:
   locked_facts: []
 ```
 
-`relationship_axes`支持固定锚点轴和由两名人物实时位置形成的动态关系轴；动态轴必须从人物关键帧同步计算。单人环境镜头、纯道具插入或没有人物关系轴的场景可以使用空数组，不得为了满足字段而伪造轴线。该基础模型只描述客观空间，不写摄影机轨迹和CUT。
+`relationship_axes`支持固定锚点轴和由两名人物实时位置形成的动态关系轴；动态轴必须从人物关键帧同步计算。单人环境镜头、纯道具插入或没有人物关系轴的场景可以使用空数组，不得为了满足字段而伪造轴线。该基础模型只描述客观空间和可用摄影点，不决定SHOT使用哪个摄影点，不写摄影机轨迹和CUT。`camera_allowed_regions`是合法区域，`camera_station_candidates`是区域内的具体候选摄影点；同一轴线侧可以包含多个摄影点。
 
 ## 场景方向与坐标
 
@@ -226,13 +240,13 @@ C：人物 → 摄影机
 
 | 摄影机相对人物的位置 | 推导出的画面可见面 |
 |---|---|
-| `C`与`F`同向 | 正面／近正面 |
-| `C`与`F`约30°—60° | 前三分之二侧面 |
+| `C`与`F`同向或高度同向 | 正面／近正面 |
+| `C`与`F`显著斜前 | 前三分之二侧面 |
 | `C`与`F`近似垂直 | 侧面 |
-| `C`与`F`约120°—150° | 后三分之二侧面 |
+| `C`与`F`显著斜后 | 后三分之二侧面 |
 | `C`与`F`反向 | 背面 |
 
-这里的30°—60°用于判断**单个机位相对人物正面能看到哪一面**，不是相邻SHOT之间的30度剪辑规则。相邻SHOT夹角是否适用与是否充分，只由`13`判断。
+可见面根据向量点积、左右符号和实际画面证据分类，不使用固定角度阈值。
 
 画面描述必须服从推导结果：
 
@@ -251,19 +265,19 @@ C：人物 → 摄影机
 
 不得把“画面看起来正面”误写成“人物在看摄影机”。必须分别记录：`身体朝向对象`、`视线目标对象`、`摄影机位于对象方向`。
 
-### 第五步：唯一方案锁
+### 第五步：当前SHOT方案锁
 
-当以下项目已经共同锁定时，空间方案只有一个：
+当以下项目已经共同锁定时，当前SHOT必须只有一个执行方案：
 
 - 剧情对象；
 - 人物身体朝向；
 - 人物移动方式与方向；
 - 镜头要求看到的人物可见面；
-- 摄影机轴线侧或对象方向。
+- 当前SHOT选择的`camera_station_id`与轴线侧。
 
-此时必须输出“唯一方案锁：开启”，直接使用唯一合法机位。禁止额外给出侧拍、背拍或其他理论机位，也禁止在九格内部切换到另一套空间方案。
+此时必须输出“当前SHOT方案锁：开启”，禁止在同一SHOT提示词中额外给出侧拍、背拍或其他备用方案，也禁止在九格内部切换到另一套空间方案。
 
-只有上述项目未锁定，且两个方案都同样满足用户镜头目的时，才允许请求确认。
+该锁只作用于当前SHOT，不限制下一SHOT从同一合法区域选择另一个摄影点。只有当前SHOT本身仍存在会改变可见面、轴线或动作结果的关键歧义时，才允许请求确认。
 
 ### 强制矛盾检查
 
@@ -286,7 +300,7 @@ C：人物 → 摄影机
 摄影机C：位于床榻／阿琐方向，从床边朝房间中央反拍董生
 推导可见面：正面／极轻微偏正面
 视线判定：董生看床榻，摄影机与床榻同方向，因此近似直视镜头但有剧情动机
-唯一方案锁：开启
+当前SHOT方案锁：开启
 禁止方案：侧拍、背拍、横移、斜退、转身逃跑
 ```
 
@@ -310,7 +324,8 @@ C：人物 → 摄影机
 
 - 摄影机编号C1、C2、C3……
 - `scene_id`：标准场景ID，不使用自然语言标签判断换场。
-- `camera_zone_id`：摄影机所在功能区ID。
+- `camera_region_id`：摄影机所在合法区域ID。
+- `camera_station_id`：当前SHOT选用的具体摄影点ID。
 - `camera_position_world`：统一场景世界坐标。
 - `camera_forward_world`：摄影机镜头在场景中的真实朝向向量。
 - `primary_scene_anchor_id`：本镜主要场景锚点。
@@ -327,16 +342,25 @@ C：人物 → 摄影机
 
 每个SHOT生成场景观察签名：
 
-```text
-camera_zone_id
-camera_forward_world
-primary_scene_anchor_id
-visible_anchor_ids
+```yaml
+observation_signature:
+  camera_station_id:
+  camera_region_id:
+  camera_position_world:
+  camera_forward_world:
+  camera_height:
+  shot_scale:
+  primary_subject_id:
+  foreground_subject_id:
+  background_anchor_id:
+  viewpoint_type:
+  motion_mode:
+  psychological_distance:
 ```
 
-该签名交给`14`判断镜头任务与动作覆盖，并交给`13`辅助识别相邻SHOT是否只是从近似区域、近似方向重复观察同一空间。
+该签名交给`14`判断任务与视角适配，交给`13`审核相邻SHOT差异，并交给`validate_camera_coverage_sequence.py`检查三镜以上是否重复同一观察位置。主要主体改变不等于摄影机变化。
 
-本文件只确认摄影机在世界空间中是否合法、可见面是否与文案一致、是否越轴、是否能看到目标。SHOT是否真正完成任务由`14`审核；相邻SHOT是否值得CUT、30度是否适用以及视觉差异路径是否充分，由`13`审核。
+本文件只确认摄影机在世界空间中是否合法、可见面是否与文案一致、是否越轴、是否能看到目标。SHOT是否真正完成任务由`14`审核；相邻SHOT是否值得CUT以及视觉差异路径是否充分，由`13`审核。
 
 ## 同一SHOT内的摄影机轨迹求解
 
@@ -374,6 +398,7 @@ spatial_solution:
   redesign_constraints: []
   shot_solutions:
     - shot_id:
+      camera_station_id:
       axis_policy: preserve | visible_reestablish | not_applicable
       relationship_axis_id:
       axis_reestablishment_evidence: []
@@ -475,7 +500,6 @@ time_id：连续时间段ID
 - 人物位置与相对距离。
 - 剧情对象。
 - 身体朝向、头部方向与视线目标。
-- 人物可见面与摄影机所在半空间。
 - 屏幕左右和运动方向。
 - 动作完成程度、速度与发力状态。
 - 持物手、支撑手、接触关系和道具归属。
@@ -484,6 +508,14 @@ time_id：连续时间段ID
 - 服装、发型、污渍、雨水、战损与环境光线。
 - 已经发生的剧情结果。
 - 标准scene_id、time_id、人物zone_id与动作状态机节点。
+
+CUT后默认不继承：
+
+- `camera_station_id`、摄影机XYZ和朝向；
+- 景别、前景肩位、背景透视与摄影机高度；
+- 心理距离和构图中心。
+
+只有仍属于同一连续SHOT，或15明确提供`camera_station_inherited_from_previous=true`、`repetition_intent`和`repetition_payoff`时，才允许摄影点继承。
 
 下一SHOT起始状态必须同时包含仍然成立的旧主体与新主体，不能只描述新出场人物。
 
@@ -499,7 +531,7 @@ time_id：连续时间段ID
 
 TIME CUT、明确场景转换、梦境或回忆切换时，原空间坐标与屏幕左右可标记“不适用”，但必须明确哪些人物状态、服装、伤势、道具和剧情结果仍然继承。
 
-状态继承不等于复制上一镜画面、保持同一机位或重演动作。
+状态继承不等于复制上一镜画面、保持同一机位或重演动作；CUT后摄影点默认重新设计。
 
 ## 信息可见性
 
@@ -532,7 +564,7 @@ TIME CUT、明确场景转换、梦境或回忆切换时，原空间坐标与屏
 
 - 状态：已确认／可唯一推导／关键歧义
 - 依据：
-- 唯一方案锁：开启／关闭
+- 当前SHOT方案锁：开启／关闭
 - 本场方向定义：
 - 固定场景锚点：
 - 可通行区／障碍：
@@ -561,7 +593,7 @@ TIME CUT、明确场景转换、梦境或回忆切换时，原空间坐标与屏
 
 ### 摄影机世界事实与轨迹关键帧
 - scene_id／time_id：
-- C1／SHOT X：camera_zone_id、camera_position_world、camera_forward_world、高度、轴线侧。
+- C1／SHOT X：camera_region_id、camera_station_id、camera_position_world、camera_forward_world、高度、轴线侧。
 - camera_keyframes：时间、XYZ、朝向、景别。
 - actor_keyframes：人物时间、XYZ、身体朝向。
 - spatial_solution.status：solved／return_to_director_plan。
@@ -577,7 +609,7 @@ TIME CUT、明确场景转换、梦境或回忆切换时，原空间坐标与屏
 - 禁止变化：
 ```
 
-只有真正的关键歧义才能额外输出A／B方案。唯一方案锁开启时，禁止提供替代机位。
+只有真正的关键歧义才能额外输出A／B方案。当前SHOT方案锁开启时，禁止提供替代机位。
 
 ## 写入下游提示词
 
@@ -585,8 +617,8 @@ TIME CUT、明确场景转换、梦境或回忆切换时，原空间坐标与屏
 
 ```text
 空间状态引用：[场景／SHOT状态编号]
-scene_id／time_id／camera_zone_id／anchor_id：
-唯一方案锁：开启／关闭
+scene_id／time_id／camera_region_id／camera_station_id／anchor_id：
+当前SHOT方案锁：开启／关闭
 ⚠️空间锁：剧情对象、人物位置与正面方向、移动方式与轨迹、摄影机相对方位、推导可见面、轴线侧、屏幕关系和禁止变化项。
 ```
 
@@ -612,16 +644,17 @@ scene_id／time_id／camera_zone_id／anchor_id：
 - 与剧情对象的靠近／远离关系与M、T一致。
 - 摄影机推导可见面与提示词中的正面／侧面／背面一致。
 - scene_id、time_id、zone_id与anchor_id使用标准ID。
-- camera_position_world、camera_forward_world和场景观察签名完整。
+- camera_allowed_regions与camera_station_candidates已经建立。
+- camera_position_world、camera_forward_world、camera_station_id和完整观察签名齐全。
 - 动作状态机没有重复进入、重复抬头、重复跌倒或重复拿取。
 - 人物近似看镜头时，摄影机确实与剧情对象同方向。
-- 唯一方案锁开启时没有混入替代机位。
+- 当前SHOT方案锁只作用于当前SHOT，且没有混入替代机位。
 - 身体朝向、视线、关系轴线与运动轴线成立。
 - 摄影机位置、朝向、轴线侧和屏幕关系明确。
 - 持物手、支撑手、接触点与固定障碍正确。
 - 道具表面、高度、状态和归属正确。
 - 当前机位能看到所描述的关键信息。
-- 下一SHOT完整继承上一SHOT仍然成立的状态。
+- 下一SHOT完整继承人物与道具状态，但没有无理由继承摄影点。
 - 没有“或”“可能”“大概”等多解状态。
 
 任一核心项错误时，04B输出`return_to_director_plan`并列出约束，返回15重做；不得作为下游任务覆盖、CUT、故事板或视频提示词的已确认真源。

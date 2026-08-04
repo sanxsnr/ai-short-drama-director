@@ -50,8 +50,8 @@ SCALE_LEVELS = {
 }
 
 PATH_ALIASES = {
-    "angle": "angle",
-    "角度": "angle",
+    "station_or_observation": "station_or_observation",
+    "摄影点或观察关系变化": "station_or_observation",
     "axial_scale": "axial_scale",
     "同轴大景别": "axial_scale",
     "subject_or_viewpoint": "subject_or_viewpoint",
@@ -92,6 +92,9 @@ OPTIONAL_VISUAL_FIELDS = {
     "relationship_frame": "relationship_frame",
     "screen_relation": "screen_relation",
     "background_relation": "background_relation",
+    "foreground_subject_id": "foreground_subject_id",
+    "background_anchor_id": "background_anchor_id",
+    "psychological_distance": "psychological_distance",
 }
 
 
@@ -251,24 +254,15 @@ def validate(payload: dict) -> dict:
         "action_stage",
         "scene_id",
         "time_id",
-        "camera_zone_id",
+        "camera_region_id",
         "primary_scene_anchor_id",
+        "camera_station_id",
     )
     for name, shot in (("from_shot", from_shot), ("to_shot", to_shot)):
         for field in required_fields:
             if not text(shot.get(field)):
                 errors.append(f"{name}.{field} 不能为空")
 
-    from_subject_camera = vector(
-        from_shot.get("subject_to_camera"),
-        "from_shot.subject_to_camera",
-        errors,
-    )
-    to_subject_camera = vector(
-        to_shot.get("subject_to_camera"),
-        "to_shot.subject_to_camera",
-        errors,
-    )
     from_camera_position = vector(
         from_shot.get("camera_position_world"),
         "from_shot.camera_position_world",
@@ -326,8 +320,23 @@ def validate(payload: dict) -> dict:
         errors.append("to_shot.primary_subject 与 task_contract.primary_subject_id 不一致")
         task_contract_matches_shot = False
     if isinstance(task_observation, dict):
-        if text(to_shot.get("camera_zone_id")) != text(task_observation.get("camera_zone_id")):
-            errors.append("to_shot.camera_zone_id 与 task_contract.camera.zone_id 不一致")
+        if text(to_shot.get("camera_region_id")) != text(task_observation.get("camera_region_id")):
+            errors.append("to_shot.camera_region_id 与 task_contract.camera.region_id 不一致")
+            task_contract_matches_shot = False
+        if text(to_shot.get("camera_station_id")) != text(task_observation.get("camera_station_id")):
+            errors.append("to_shot.camera_station_id 与 task_contract.camera.station_id 不一致")
+            task_contract_matches_shot = False
+        if text(to_shot.get("shot_scale")) != text(task_observation.get("shot_scale")):
+            errors.append("to_shot.shot_scale 与 task_contract.camera.shot_scale 不一致")
+            task_contract_matches_shot = False
+        if text(to_shot.get("foreground_subject_id")) != text(task_observation.get("foreground_subject_id")):
+            errors.append("to_shot.foreground_subject_id 与 task_contract不一致")
+            task_contract_matches_shot = False
+        if text(to_shot.get("background_anchor_id")) != text(task_observation.get("background_anchor_id")):
+            errors.append("to_shot.background_anchor_id 与 task_contract不一致")
+            task_contract_matches_shot = False
+        if text(to_shot.get("psychological_distance")) != text(task_observation.get("psychological_distance")):
+            errors.append("to_shot.psychological_distance 与 task_contract不一致")
             task_contract_matches_shot = False
         if text(to_shot.get("primary_scene_anchor_id")) != text(task_observation.get("primary_scene_anchor_id")):
             errors.append("to_shot.primary_scene_anchor_id 与 task_contract不一致")
@@ -374,17 +383,17 @@ def validate(payload: dict) -> dict:
     claimed_path = canonical_path(claimed_path_raw)
     if claimed_path_raw and not claimed_path:
         errors.append(
-            "claimed_difference_path 必须是 angle/axial_scale/subject_or_viewpoint/"
+            "claimed_difference_path 必须是 station_or_observation/axial_scale/subject_or_viewpoint/"
             "combined/intentional_jump/graphic_match 或中文对应值"
         )
 
-    camera_angle = None
-    observation_angle = None
+    observation_direction_change = None
+    camera_position_distance = None
     scale_steps = None
-    if from_subject_camera is not None and to_subject_camera is not None:
-        camera_angle = angle_degrees(from_subject_camera, to_subject_camera)
     if from_camera_forward is not None and to_camera_forward is not None:
-        observation_angle = angle_degrees(from_camera_forward, to_camera_forward)
+        observation_direction_change = angle_degrees(from_camera_forward, to_camera_forward)
+    if from_camera_position is not None and to_camera_position is not None:
+        camera_position_distance = math.sqrt(sum((a - b) ** 2 for a, b in zip(from_camera_position, to_camera_position)))
     if from_scale is not None and to_scale is not None:
         scale_steps = abs(from_scale - to_scale)
 
@@ -397,23 +406,28 @@ def validate(payload: dict) -> dict:
     action_stage_changed = text(from_shot.get("action_stage")) != text(
         to_shot.get("action_stage")
     )
-    same_camera_zone = text(from_shot.get("camera_zone_id")) == text(
-        to_shot.get("camera_zone_id")
+    same_camera_station = text(from_shot.get("camera_station_id")) == text(
+        to_shot.get("camera_station_id")
+    )
+    same_camera_region = text(from_shot.get("camera_region_id")) == text(
+        to_shot.get("camera_region_id")
     )
     same_scene_anchor = text(from_shot.get("primary_scene_anchor_id")) == text(
         to_shot.get("primary_scene_anchor_id")
     )
     visible_anchor_overlap = anchor_overlap(from_visible_anchors, to_visible_anchors)
     observation_equivalent = bool(
-        observation_angle is not None
-        and observation_angle < 10.0
-        and same_camera_zone
+        same_camera_station
+        and same_camera_region
         and same_scene_anchor
         and visible_anchor_overlap >= 0.8
+        and (camera_position_distance is None or camera_position_distance <= 0.25)
+        and (observation_direction_change is None or observation_direction_change <= 10.0)
     )
 
     task_passed = bool(task_result.get("derived_independent_task")) and task_contract_matches_shot
     viewpoint_evidence_passed = bool(task_result.get("viewpoint_evidence_passed"))
+    viewpoint_fitness_passed = bool(task_result.get("viewpoint_fitness_passed"))
     task_type = text(task_result.get("task_type"))
 
     if task_type in {"ENTER", "EXIT"} and isinstance(task_contract, dict):
@@ -457,20 +471,15 @@ def validate(payload: dict) -> dict:
         strong_visual_changes.append("verified_viewpoint")
     if not same_subject and task_passed:
         strong_visual_changes.append("task_verified_primary_subject")
-    if camera_angle is not None:
-        if camera_angle >= 30.0:
-            strong_visual_changes.append("camera_angle_30_plus")
-        elif 15.0 <= camera_angle < 30.0:
-            moderate_visual_changes.append("camera_angle_15_29")
+    if not same_camera_station:
+        strong_visual_changes.append("camera_station")
     if scale_steps is not None:
         if scale_steps >= 2:
             strong_visual_changes.append("shot_scale_2_plus")
         elif scale_steps == 1:
             moderate_visual_changes.append("shot_scale_1")
-    if observation_angle is not None and 15.0 <= observation_angle < 30.0:
-        moderate_visual_changes.append("scene_observation_15_29")
-    if not same_camera_zone:
-        moderate_visual_changes.append("camera_zone")
+    if not same_camera_region:
+        moderate_visual_changes.append("camera_region")
     if not same_scene_anchor:
         moderate_visual_changes.append("scene_anchor")
     moderate_visual_changes.extend(optional_visual_changes)
@@ -500,8 +509,8 @@ def validate(payload: dict) -> dict:
     elif not same_subject and task_passed:
         derived_path = "subject_or_viewpoint"
         difference_strength = "strong"
-    elif camera_angle is not None and camera_angle >= 30.0:
-        derived_path = "angle"
+    elif not same_camera_station:
+        derived_path = "station_or_observation"
         difference_strength = "strong"
     elif scale_steps is not None and scale_steps >= 2:
         derived_path = "axial_scale"
@@ -523,25 +532,6 @@ def validate(payload: dict) -> dict:
             "前后主体虽改变，但场景观察签名近似；CUT只有在14任务覆盖证据真实成立时才允许"
         )
 
-    thirty_degree_applicable = bool(
-        same_subject
-        and same_time
-        and same_scene
-        and not viewpoint_changed
-        and (scale_steps is not None and scale_steps <= 1)
-        and editing_device == "none"
-    )
-    if derived_path == "angle":
-        thirty_degree_status = "met"
-    elif thirty_degree_applicable and derived_path == "combined":
-        thirty_degree_status = "not_met_but_equivalent_visual_path"
-    elif thirty_degree_applicable:
-        thirty_degree_status = "not_met"
-    elif editing_device != "none":
-        thirty_degree_status = "not_applicable_editing_device"
-    else:
-        thirty_degree_status = "not_applicable"
-
     if claimed_path and claimed_path != derived_path:
         errors.append(
             f"声明的视觉差异路径为{claimed_path}，但推导结果为{derived_path}"
@@ -561,9 +551,9 @@ def validate(payload: dict) -> dict:
         "task_type": task_type,
         "task_coverage_passed": task_passed,
         "task_validation": task_result,
-        "camera_angle_degrees": round(camera_angle, 2) if camera_angle is not None else None,
-        "scene_observation_angle_degrees": (
-            round(observation_angle, 2) if observation_angle is not None else None
+        "camera_position_distance": round(camera_position_distance, 3) if camera_position_distance is not None else None,
+        "scene_observation_direction_change_degrees": (
+            round(observation_direction_change, 2) if observation_direction_change is not None else None
         ),
         "shot_scale_step_difference": scale_steps,
         "same_primary_subject": same_subject,
@@ -574,8 +564,7 @@ def validate(payload: dict) -> dict:
         "observation_equivalent": observation_equivalent,
         "visible_anchor_overlap": round(visible_anchor_overlap, 3),
         "axis_status": axis_status,
-        "thirty_degree_applicable": thirty_degree_applicable,
-        "thirty_degree_status": thirty_degree_status,
+        "same_camera_station": same_camera_station,
         "derived_difference_path": derived_path,
         "difference_strength": difference_strength,
         "strong_visual_changes": strong_visual_changes,

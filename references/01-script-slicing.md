@@ -17,7 +17,7 @@
 - 场景基础空间模型、人物／摄影机XYZ轨迹、朝向、轴线、状态继承、场景世界机位或信息可见性；这些只由`04-blocking-continuity.md`定义。
 - 场景怎么拍、每个SHOT内摄影机怎么走、在哪里CUT；这些只由`15-directorial-camera-plan.md`统一设计。
 - SHOT任务证据、动作覆盖、进出场Gate、视角证据和动作状态机；这些只由`14-shot-task-action-coverage.md`定义。
-- CUT类型的导演意图与连接方式由`15-directorial-camera-plan.md`提出；CUT是否真正成立、30度适用性、同轴景别路径和相邻SHOT视觉差异只由`13-cut-shot-geometry.md`审核。
+- CUT类型的导演意图与连接方式由`15-directorial-camera-plan.md`提出；CUT是否真正成立、摄影点／观察关系路径、同轴大景别路径和相邻SHOT视觉差异只由`13-cut-shot-geometry.md`审核。
 
 涉及完整分镜、段内SHOT、故事板格序或机位变化时，必须先确认`02／03`的视觉与场景布局资产已经锁定，再按`04A → 15 → 04B → 14 → 13`读取。本文件不得改写或覆盖它们。
 
@@ -244,7 +244,8 @@ segment_content_type: normal | high_speed_action | fixed_camera_time_passage
 shots:
   - shot_id:
     shot_task:
-    camera_zone:
+    camera_region:
+    camera_station:
     camera_direction:
     shot_size:
     camera_motion:
@@ -277,7 +278,7 @@ time_passage:
 `shots`中的以下字段名必须原样存在，不能只用其他模块字段替代：
 
 - `shot_task`：当前SHOT的导演目标；`task_type`是14的任务分类，二者可以并存但不能互相省略。
-- `camera_zone`：可与04的`camera_zone_id`取相同值，但结构字段仍须保留。
+- `camera_region`：可与04的`camera_region_id`取相同值；具体摄影点另用`camera_station_id`记录，结构字段仍须保留。
 - `camera_direction`：可直接复制04的`camera_forward_world`，不能只提供后者。
 - `action_stage`：当前SHOT在动作链中的阶段；`phase_task`只描述运镜阶段任务，不能代替。
 - `shot_size`、`camera_motion`、`cut_in`、`cut_out`与`focal_feel`同样必须显式填写；无内部CUT时使用`null`，不得省略字段。

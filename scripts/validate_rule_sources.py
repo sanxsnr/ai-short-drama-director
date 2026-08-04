@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate unique rule ownership and the unified directorial-camera pipeline."""
+"""Validate unique rule ownership and the scene-level camera-coverage pipeline."""
 from __future__ import annotations
 
 import json
@@ -21,8 +21,11 @@ FILES = {
     "director": ROOT / "references/15-directorial-camera-plan.md",
     "segment_validator": ROOT / "scripts/validate_segment_structure.py",
     "director_validator": ROOT / "scripts/validate_directorial_camera_plan.py",
+    "coverage_validator": ROOT / "scripts/validate_camera_coverage_sequence.py",
     "director_cut_validator": ROOT / "scripts/validate_director_cut_intent.py",
     "cut_validator": ROOT / "scripts/validate_cut_geometry.py",
+    "shot_task_validator": ROOT / "scripts/validate_shot_task.py",
+    "spatial_validator": ROOT / "scripts/validate_spatial_geometry.py",
     "agent": ROOT / "agents/openai.yaml",
     "production_template": ROOT / "assets/production-document-template.md",
 }
@@ -35,9 +38,9 @@ STALE_FILES = (
 
 FORBIDDEN = {
     "skill": ["## CUT优先分镜规则", "## 空间确认Gate", "## ENTER／EXIT进出场Gate"],
-    "script": ["## 30度规则", "## 相邻SHOT视觉差异闸门", "## ENTER／EXIT进出场Gate"],
+    "script": ["## 相邻SHOT视觉差异闸门", "## ENTER／EXIT进出场Gate"],
     "spatial": ["## 有效CUT触发条件", "## CUT类型", "## SHOT任务合同", "## 导演读解"],
-    "director": ["## 场景方向与坐标", "## ENTER／EXIT进出场Gate", "## 相邻SHOT视觉差异闸门", "## 30度角度路径"],
+    "director": ["## 场景方向与坐标", "## ENTER／EXIT进出场Gate", "## 相邻SHOT视觉差异闸门"],
     "cut": ["## 场景方向与坐标", "## 人物空间状态", "## SHOT任务合同", "## 导演读解"],
     "task": ["## 场景方向与坐标", "## 有效CUT触发条件", "## CUT类型", "## 导演读解"],
 }
@@ -46,13 +49,13 @@ REQUIRED_REFERENCES = {
     "skill": [
         "references/01-script-slicing.md", "references/04-blocking-continuity.md",
         "references/15-directorial-camera-plan.md", "references/14-shot-task-action-coverage.md",
-        "references/13-cut-shot-geometry.md",
+        "references/13-cut-shot-geometry.md", "validate_camera_coverage_sequence.py",
     ],
     "script": ["04-blocking-continuity.md", "15-directorial-camera-plan.md", "14-shot-task-action-coverage.md", "13-cut-shot-geometry.md"],
-    "spatial": ["02-visual-style.md", "03-asset-design.md", "15-directorial-camera-plan.md", "14-shot-task-action-coverage.md", "13-cut-shot-geometry.md"],
-    "director": ["01-script-slicing.md", "02-visual-style.md", "03-asset-design.md", "04-blocking-continuity.md", "14-shot-task-action-coverage.md", "13-cut-shot-geometry.md"],
-    "task": ["04-blocking-continuity.md", "15-directorial-camera-plan.md", "13-cut-shot-geometry.md"],
-    "cut": ["04-blocking-continuity.md", "15-directorial-camera-plan.md", "14-shot-task-action-coverage.md"],
+    "spatial": ["02-visual-style.md", "03-asset-design.md", "15-directorial-camera-plan.md", "14-shot-task-action-coverage.md", "13-cut-shot-geometry.md", "validate_camera_coverage_sequence.py"],
+    "director": ["01-script-slicing.md", "02-visual-style.md", "03-asset-design.md", "04-blocking-continuity.md", "14-shot-task-action-coverage.md", "13-cut-shot-geometry.md", "validate_camera_coverage_sequence.py"],
+    "task": ["04-blocking-continuity.md", "15-directorial-camera-plan.md", "13-cut-shot-geometry.md", "validate_camera_coverage_sequence.py"],
+    "cut": ["04-blocking-continuity.md", "15-directorial-camera-plan.md", "14-shot-task-action-coverage.md", "validate_camera_coverage_sequence.py"],
     "video": ["01-script-slicing.md", "15-directorial-camera-plan.md", "04-blocking-continuity.md"],
     "qc": ["01-script-slicing.md", "15-directorial-camera-plan.md"],
     "storyboard": ["01-script-slicing.md", "15-directorial-camera-plan.md"],
@@ -70,24 +73,25 @@ SEGMENT_COUNT_LIMIT_MARKERS = (
     "too_many_shots_for_normal_segment",
 )
 DIRECTOR_CONTRACT = (
-    "DIRECTORIAL_CAMERA_PLAN_V1", "DIRECTORIAL_CAMERA_PIPELINE_V2",
-    "director_read", "camera_trajectory_intent", "cut_out_intent",
-    "segment_content_type", "actor_ids", "axis_policy",
-    "scene_space_basis", "spatial_solution", "return_to_director_plan",
+    "DIRECTORIAL_CAMERA_PLAN_V2", "DIRECTORIAL_CAMERA_PIPELINE_V3",
+    "## 第二步：15A场景摄影覆盖预设计", "## 第四步：15B设计统一镜头方案",
+    "scene_camera_grammar", "camera_station_candidates", "planned_station_sequence",
+    "shot_scale_curve", "psychological_distance_curve", "shot_solution_lock",
+    "observation_signature", "camera_station_inherited_from_previous",
     "不得再把`locked | movement | cut_to_new_shot`作为上游三选一输入",
 )
 SPATIAL_CONTRACT = (
     "04A｜场景基础空间模型", "04B｜人物与摄影机XYZ轨迹求解",
+    "camera_allowed_regions", "camera_station_candidates", "camera_station_id",
     "scene_space_basis", "spatial_solution", "camera_keyframes", "actor_keyframes",
-    "axis_policy", "max_camera_angular_speed_degrees_per_second",
-    "return_to_director_plan", "人物—剧情对象—运动—摄影机几何求解",
-    "推导可见面", "唯一方案锁", "无动机看镜头",
+    "axis_policy", "return_to_director_plan", "人物—剧情对象—运动—摄影机几何求解",
+    "推导可见面", "当前SHOT方案锁", "CUT后默认不继承",
 )
 TASK_CONTRACT = (
-    "## SHOT任务合同", "derived_independent_task", "## ENTER／EXIT进出场Gate",
-    "## EYELINE_REVEAL视线揭示Gate", "## DIALOGUE对白任务Gate",
-    "## 视角标签证据", "## 状态机与重复动作",
-    "15设计的这个SHOT是否真的拍到了任务",
+    "## SHOT任务合同", "derived_independent_task", "## 视角适配Gate",
+    "selected_station_serves_task", "new_observation_not_demonstrated",
+    "mechanical_dialogue_view_repetition", "## ENTER／EXIT进出场Gate",
+    "## DIALOGUE对白任务Gate", "## 视角标签证据", "## 状态机与重复动作",
 )
 CUT_CONTRACT = (
     "审核`15-directorial-camera-plan.md`已经设计的CUT点是否有效",
@@ -95,7 +99,7 @@ CUT_CONTRACT = (
     "主体名称改变不能自动证明新镜头成立", "## 视觉差异充分性",
     "无意的近似机位跳切", "本文件不在没有15方案时自行新增CUT",
     "director_cut_intent", "cut_type_intent", "transition_mechanism",
-    "action_match", "审核失败时输出返工原因并返回15重做",
+    "station_or_observation", "固定角度阈值", "审核失败时输出返工原因并返回15重做",
 )
 DIRECTOR_CUT_VALIDATOR_CONTRACT = (
     "director_cut_intent", "CUT_TYPE_INTENTS", "CUT_TRANSITION_MECHANISMS",
@@ -105,21 +109,30 @@ DIRECTOR_CUT_VALIDATOR_CONTRACT = (
     '"transition_mechanism"', '"action_match_valid"',
 )
 DIRECTOR_VALIDATOR_CONTRACT = (
-    "def validate", "DIRECTOR_READ_FIELDS", "stale_three_mode_contract",
-    "spatial_plan_requires_redesign", "camera_keyframe_timeline_error",
-    "camera_intent_solution_mismatch", "hold_duration_not_solved",
+    "def validate", "stale_three_mode_contract", "spatial_plan_requires_redesign",
+    "camera_keyframe_timeline_error", "camera_intent_solution_mismatch",
     "camera_path_intersects_obstacle", "camera_path_intersects_subject",
-    "actor_path_intersects_obstacle", "camera_speed_exceeds_space_limit",
-    "camera_angular_speed_exceeds_space_limit", "actor_speed_exceeds_space_limit",
-    "axis_policy_mismatch", "minimum_synchronous_distance",
-    '"derived_shot_count"', '"derived_cut_count"', '"derived_behaviors"',
-    '"derived_spatial_checks"',
+    "actor_path_intersects_obstacle", "axis_policy_mismatch",
+    "camera_station_candidates", "scene_camera_grammar", "shot_solution_lock",
+    "observation_signature", "camera_coverage_validation",
+)
+COVERAGE_VALIDATOR_CONTRACT = (
+    "def validate", "repetitive_observation_sequence", "single_station_scene_coverage",
+    "camera_inherited_without_directorial_reason", "invalid_solution_lock_scope",
+    "camera_station_id", "camera_region_id", "psychological_distance",
+    "rolling_windows", "unique_camera_station_count",
+)
+SHOT_TASK_VALIDATOR_CONTRACT = (
+    "def validate", "viewpoint_fitness", "selected_station_does_not_serve_task",
+    "new_observation_not_demonstrated", "mechanical_dialogue_view_repetition",
+    "camera.station_id", '"viewpoint_fitness_passed"',
 )
 SKILL_PIPELINE_CONTRACT = (
-    "02／03 视觉风格与场景资产锁定", "04A 场景基础空间模型", "15-directorial-camera-plan.md",
-    "04B 人物与摄影机XYZ轨迹求解", "14-shot-task-action-coverage.md",
-    "13-cut-shot-geometry.md", "validate_directorial_camera_plan.py",
-    "derived_independent_task", "统一摄影机程序定义",
+    "04A 场景基础空间模型", "15A 场景摄影覆盖与机位调度",
+    "15B 逐SHOT摄影机程序与CUT意图", "04B 人物与摄影机XYZ轨迹求解",
+    "14-shot-task-action-coverage.md", "13-cut-shot-geometry.md",
+    "场景级摄影覆盖重复检查", "validate_camera_coverage_sequence.py",
+    "当前SHOT方案锁", "camera_station_id", "observation_signature",
 )
 
 STALE_GLOBAL_PHRASES = (
@@ -131,8 +144,11 @@ STALE_GLOBAL_PHRASES = (
     "自然语言场景名称不同即视为换场", "camera_decision_contract",
     "CAMERA_DECISION_GATE_V1", "mode: locked | movement | cut_to_new_shot",
     "主动比较固定机位、连续运镜与CUT候选",
-    "axis_side_preserved:", "axis_reestablished:",
-    "duration_feasible:", "required_action_visible:",
+    "axis_side_preserved:", "axis_reestablished:", "duration_feasible:",
+    "required_action_visible:", "唯一" + "方案锁", "thirty_" + "degree_applicable",
+    "thirty_" + "degree_status", "camera_angle_" + str(3 * 10) + "_plus",
+    str(3 * 10) + "度规则", str(3 * 10) + "度适用性",
+    str(3 * 10) + "度角度路径", str(3 * 10) + "-degree rule",
 )
 
 
@@ -167,26 +183,30 @@ def validate(root: Path = ROOT) -> dict[str, object]:
     skill = texts.get("skill", "")
     for phrase in SKILL_PIPELINE_CONTRACT:
         if phrase not in skill:
-            errors.append(f"SKILL.md缺少统一导演流水线合同：{phrase}")
+            errors.append(f"SKILL.md缺少场景摄影覆盖流水线合同：{phrase}")
     pipeline_sequence = (
         "01-script-slicing.md\n"
         "→ 02／03 视觉风格与场景资产锁定\n"
         "→ 04A 场景基础空间模型\n"
-        "→ 15-directorial-camera-plan.md\n"
+        "→ 15A 场景摄影覆盖与机位调度\n"
+        "→ 15B 逐SHOT摄影机程序与CUT意图\n"
         "→ 04B 人物与摄影机XYZ轨迹求解\n"
         "→ 14-shot-task-action-coverage.md\n"
-        "→ 13-cut-shot-geometry.md"
+        "→ 13-cut-shot-geometry.md\n"
+        "→ 场景级摄影覆盖重复检查"
     )
     if pipeline_sequence not in skill:
-        errors.append("SKILL.md职责顺序必须明确为01→02／03→04A→15→04B→14→13→01。")
+        errors.append("SKILL.md职责顺序必须明确为01→02／03→04A→15A→15B→04B→14→13→场景覆盖→01。")
 
     for name, contract, label in (
         ("director", DIRECTOR_CONTRACT, "导演合同"),
         ("spatial", SPATIAL_CONTRACT, "双阶段空间合同"),
-        ("task", TASK_CONTRACT, "任务合同"),
+        ("task", TASK_CONTRACT, "任务与视角适配合同"),
         ("cut", CUT_CONTRACT, "CUT审核合同"),
         ("script", SEGMENT_POLICY_CONTRACT, "SEG结构合同"),
-        ("director_validator", DIRECTOR_VALIDATOR_CONTRACT, "可执行合同"),
+        ("director_validator", DIRECTOR_VALIDATOR_CONTRACT, "导演可执行合同"),
+        ("coverage_validator", COVERAGE_VALIDATOR_CONTRACT, "场景覆盖验证合同"),
+        ("shot_task_validator", SHOT_TASK_VALIDATOR_CONTRACT, "任务验证合同"),
         ("director_cut_validator", DIRECTOR_CUT_VALIDATOR_CONTRACT, "导演CUT审核合同"),
     ):
         value = texts.get(name, "")
@@ -203,16 +223,21 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         if phrase not in segment_validator:
             errors.append(f"scripts/validate_segment_structure.py缺少可执行合同：{phrase}")
 
+    validator_self = (root / "scripts/validate_rule_sources.py").resolve()
     for path in root.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in {".md", ".yaml", ".yml"}:
+        if not path.is_file() or path.suffix.lower() not in {".md", ".yaml", ".yml", ".py"}:
             continue
-        if any(part in {".git", "tests", "__pycache__"} for part in path.parts):
+        if any(part in {".git", "__pycache__", "tests"} for part in path.parts):
+            continue
+        if path.parent.name == "scripts" and path.name in {"validate_directorial_camera_plan.py", "validate_rule_sources.py"}:
+            continue
+        if path.resolve() == validator_self:
             continue
         value = path.read_text(encoding="utf-8")
         for phrase in STALE_GLOBAL_PHRASES:
             if phrase in value:
                 errors.append(f"{path.relative_to(root)}保留了过时规则：{phrase}")
-        if path.relative_to(root) != Path("references/01-script-slicing.md"):
+        if path.suffix.lower() in {".md", ".yaml", ".yml"} and path.relative_to(root) != Path("references/01-script-slicing.md"):
             for marker in SEGMENT_COUNT_LIMIT_MARKERS:
                 if marker in value:
                     errors.append(f"{path.relative_to(root)}重复维护SEG数量上限：{marker}；数量规则只能存在于references/01-script-slicing.md")
@@ -225,16 +250,17 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         value = path.read_text(encoding="utf-8")
         for phrase in (
             "15-directorial-camera-plan.md", "validate_directorial_camera_plan.py",
-            "validate_spatial_geometry.py", "validate_shot_task.py",
-            "validate_cut_geometry.py", "validate_segment_structure.py",
+            "validate_camera_coverage_sequence.py", "validate_spatial_geometry.py",
+            "validate_shot_task.py", "validate_cut_geometry.py", "validate_segment_structure.py",
         ):
             if phrase not in value:
-                errors.append(f"{readme_name}缺少统一导演方案说明：{phrase}")
+                errors.append(f"{readme_name}缺少场景摄影覆盖说明：{phrase}")
 
     for relative in (
-        "scripts/validate_directorial_camera_plan.py", "scripts/validate_spatial_geometry.py",
-        "scripts/validate_shot_task.py", "scripts/validate_director_cut_intent.py",
-        "scripts/validate_cut_geometry.py", "scripts/validate_segment_structure.py",
+        "scripts/validate_directorial_camera_plan.py", "scripts/validate_camera_coverage_sequence.py",
+        "scripts/validate_spatial_geometry.py", "scripts/validate_shot_task.py",
+        "scripts/validate_director_cut_intent.py", "scripts/validate_cut_geometry.py",
+        "scripts/validate_segment_structure.py",
     ):
         if not (root / relative).exists():
             errors.append(f"缺少验证器：{relative}")

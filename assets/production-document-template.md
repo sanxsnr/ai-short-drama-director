@@ -52,7 +52,7 @@
 |---|---|---|---|
 | 人物 |  |  | 位置、身体朝向、视线、姿态 |
 | 道具 |  |  | 表面、高度、持物手、归属 |
-| 摄影机 | C1／C2… |  | camera_zone_id、世界坐标、世界朝向、scene anchor、轴线侧、屏幕关系 |
+| 摄影机 | C1／C2… |  | camera_region_id、camera_station_id、世界坐标、世界朝向、scene anchor、轴线侧、屏幕关系 |
 
 - 04A scene_space_basis：尺寸、锚点、可通行区、障碍、人物初始区。
 - 15 directorial_camera_plan：导演读解、视觉节拍、SHOT序列、camera_trajectory_intent，以及包含cut_type_intent／transition_mechanism的cut_out_intent。
@@ -77,15 +77,16 @@
 
 - directorial_camera_plan_id／camera_trajectory_intent／cut_out_intent：
 - director_cut_intent：from_shot_id／to_shot_id／cut_type_intent／transition_mechanism／reason；MATCH-ON-ACTION补action_match。
-- shot_task／camera_zone／camera_direction／shot_size／camera_motion／cut_in／cut_out／focal_feel／action_stage：
+- shot_task／camera_region／camera_station／camera_direction／shot_size／camera_motion／cut_in／cut_out／focal_feel／action_stage：
 - SHOT任务合同／derived_independent_task：
 - required_evidence／visible_evidence：
-- camera_zone_id／camera_forward_world／primary_scene_anchor_id／visible_anchor_ids：
+- camera_region_id／camera_station_id／camera_forward_world／primary_scene_anchor_id／visible_anchor_ids：
+- 当前SHOT方案锁：scope=shot／locked_camera_station_id：
+- observation_signature／viewpoint_fitness：
 - 起始状态：
 - CUT前结束状态：
 - 下一SHOT起始状态：
-- 相邻SHOT视觉差异路径：角度／同轴大景别／主体或视角变化／组合差异／有意跳切。
-- 30度适用性：适用／不适用；适用时写主体处夹角，不适用时写依据。
+- 观察差异路径：摄影点／观察关系、同轴大景别、主体／视角、组合差异、有意跳切或图形匹配。
 - 景别差异：前后景别与跨级数。
 - 视觉差异结论：强差异／组合差异／需返工。
 - 信息可见性：
@@ -117,7 +118,9 @@
 - [ ] ENTER／EXIT的边界、路径和落点可见；POV／OTS／INSERT有真实证据。
 - [ ] 每个CUT有明确节点和经验证的独立叙事任务。
 - [ ] 已排除无意近似机位跳切；相邻景别没有被机械判错。
-- [ ] 每个CUT通过一条合法视觉差异路径，30度与同轴景别不是累计门槛。
+- [ ] 每个CUT通过一条合法视觉差异路径；摄影机角度只作诊断，不作为固定通过阈值。
+- [ ] 连续三镜以上已检查摄影点和观察签名重复。
+- [ ] 相同中景若连续使用，来自不同摄影点或具有明确的观察关系变化。
 - [ ] MATCH-ON-ACTION方向、速度和动作进度连续。
 - [ ] 人物、服装、场景和道具与锁定真源一致。
 - [ ] 位置、朝向、视线、持物手、运动方向和轴线连续。
