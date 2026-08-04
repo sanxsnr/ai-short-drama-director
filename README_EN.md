@@ -2,299 +2,75 @@
 
 [简体中文](README.md) | **English**
 
-> You do not need to learn screenwriting, shot planning, camera language, or prompt syntax before you begin. This Skill finds your real starting point and guides one production step at a time—from an idea, novel, or half-finished project to screenplay, shots, assets, images, Seedance 2.0 video, audio, editing, and a finished film.
+> A production-oriented Skill that takes an AI short drama from an idea or novel through adaptation, dialogue, audiovisual beats, locked assets, spatially solved camera plans, storyboards, video prompts, QA, audio repair, editing, and final delivery.
 
-![Version](https://img.shields.io/badge/version-2.3.0-2563eb)
-![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
-![Languages](https://img.shields.io/badge/docs-Chinese%20%7C%20English-ef4444)
+![Version](https://img.shields.io/badge/version-2.4.0-2563eb)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
 
-![AI Short Drama From Zero social preview](docs/media/social-preview.jpg)
-
-![Workflow demo](docs/media/workflow-demo.gif)
-
-## Start at any point
-
-| What you have | What the Skill does first | Your first deliverable |
-|---|---|---|
-| **A. Only an idea** | Turns a vague thought into a protagonist, goal, conflict, hook, and ending direction | Logline and a usable story skeleton |
-| **B. A novel, story, outline, or script** | Separates usable material from narration that must become visible action or dialogue | Adaptation plan and episode structure or shootable screenplay |
-| **C. A half-finished project that is stuck** | Audits what is actually complete, incomplete, and due for rework, then traces the real cause | A repaired shot script, asset package, prompt, or checked document |
-
-Reply with `A`, `B`, or `C`, or upload the text, images, prompts, error screenshots, or clips you already have. When there is enough evidence, the Skill selects the entry point automatically instead of making you complete a long questionnaire.
-
-## Beginner mode: make while learning
-
-Each turn advances one production gate:
-
-1. explain the single task in plain language and the failure it prevents;
-2. inherit facts already confirmed instead of asking again;
-3. translate professional decisions into exactly three choices—A, B, and C—with one recommendation;
-4. create the actual production deliverable;
-5. check it and report what is complete, incomplete, blocked, or due for rework;
-6. end every response with exactly three concrete next steps that can be selected with a letter.
-
-The professional acceptance bar stays the same. Timing, atomic actions, identity, props, screen direction, first/last states, reference roles, audio, and edit continuity are still checked—the rules are simply revealed only when they are useful.
+The invocation name remains:
 
 ```text
-Use $ai-short-drama-director in beginner mode.
-I only have an idea / I have a novel / I am halfway through and stuck.
-Find my starting point, guide one step at a time,
-and tell me what is complete and what is still missing.
+$ai-short-drama-director
 ```
 
-> The repository is named `ai-short-drama-from-zero`. The invocation name remains `$ai-short-drama-director` so existing users and projects do not break.
+## What changed in V2.4
 
-## Fixed output contract
+The Skill no longer treats a locked camera, camera movement, and CUT as three separate upstream choices.
 
-Every response uses the same four-part shell:
+It now uses one unified directorial camera program:
 
-1. **Result**: the answer, repaired content, prompt, or file comes first;
-2. **Progress update**: current stage, completed, in progress, incomplete, rework, and blockers;
-3. **Self-check**: passed, in progress, rework, or blocked, based on actual evidence;
-4. **Choose next**: exactly A, B, and C, with exactly one recommended action.
+```text
+idea or novel
+→ adaptation and shootable script
+→ dialogue, action chain, and audiovisual beats
+→ lock visual, character, prop, and scene-layout assets
+→ 04A base scene-space model
+→ 15 unified directorial camera plan: how to shoot, how the camera travels, and where to CUT
+→ 04B actor and camera XYZ trajectory solve
+→ return to 15 when the spatial solve is impossible
+→ 14 shot-task and action-coverage validation
+→ 13 CUT-geometry audit
+→ SEG packaging, storyboard, and video prompt
+```
 
-Production documents also use one stable wrapper: document metadata, progress summary, complete body, self-check report, revision log, and remaining work. Shot documents use compact tables instead of a long label/value stack:
+Inside one SHOT, camera state `C(t)` is continuous. When it remains unchanged, the result is a locked camera. When it changes continuously, the result is camera movement. A boundary between two continuous SHOT intervals is a CUT. These are outcomes of one plan, not three independent calculation systems.
 
-| Shot section | Required content |
+The Skill supplies the professional primary proposal when the project contains enough information. The user may request changes, but the workflow does not push the decision “locked, movement, or CUT?” back to the user.
+
+## Main capabilities
+
+- Turn an idea, story, or novel into a shootable short-drama structure.
+- Preserve locked dialogue and project facts while converting narration into visible action.
+- Lock character, costume, prop, voice, and scene-layout assets before camera calculation.
+- Build a measurable scene basis with dimensions, anchors, walkable zones, obstacles, and relationship axes.
+- Design SHOT intervals, camera-trajectory intent, endpoints, holds, and CUT intent in one director-authored plan.
+- Solve the plan into actor and camera XYZ keyframes, world-facing vectors, speed, clearance, obstacle, and axis evidence.
+- Return an infeasible solve to the directing layer instead of silently changing the scene purpose or asking the user to choose another camera mode.
+- Validate action visibility, entry and exit boundaries, POV/OTS/INSERT evidence, state machines, and adjacent-SHOT geometry.
+- Distinguish SEG, SHOT, CUT, camera movement, framing, and soft focal-feel hints.
+- Support ordinary dialogue, high-speed action, and fixed-camera time-passage SEG types.
+- Produce production documents, storyboards, Seedance 2.0/I2V/FLF2V prompts, repair reports, and final QA.
+
+## Core rule sources
+
+| Module | Rule source |
 |---|---|
-| Basics | Episode, SEG ID, 10s/15s mode, SEG content type, explicit SHOT/CUT counts, story function, scene |
-| Assets and continuity | Character, wardrobe, prop, blocking, inherited state, opening state, final frame, next inheritance |
-| Timeline | Timecode, internal shot, visible action, performance, dialogue/audio, framing/camera/lens/movement |
-| Generation and references | Global style, one role per reference, storyboard/image/video prompt |
-| Unit self-check | Duration, atomic action, dialogue capacity, assets, screen direction, opening/final state |
+| Script, dialogue, timing, and SEG packaging | `references/01-script-slicing.md` |
+| Visual style | `references/02-visual-style.md` |
+| Character, prop, voice, and scene-layout assets | `references/03-asset-design.md` |
+| 04A scene basis and 04B XYZ spatial solve | `references/04-blocking-continuity.md` |
+| Video-prompt packaging | `references/05-video-prompting.md` |
+| QA and repair | `references/06-qc-repair-post.md` |
+| Storyboards and image prompts | `references/07-storyboard-image-prompts.md` |
+| CUT geometry and adjacent-SHOT audit | `references/13-cut-shot-geometry.md` |
+| SHOT task and action coverage | `references/14-shot-task-action-coverage.md` |
+| Unified director-authored camera program | `references/15-directorial-camera-plan.md` |
 
-The A/B/C navigation always stays outside prompts, XML, JSON, and model payloads.
-
-## Tutorial snapshots
-
-| Map the workflow | Lock character assets | Lock scene space |
-|---|---|---|
-| ![Full production workflow](docs/tutorial/01-workflow-map.jpg) | ![Character turnaround and detail asset](docs/tutorial/02-character-assets.jpg) | ![Six-panel scene concept board](docs/tutorial/03-scene-board.jpg) |
-| **Turn the pipeline into executable steps** | **Reduce face and wardrobe drift** | **Fix space before blocking and shots** |
-| Assemble the video input | Review the generated result | Repair dialogue and audio |
-| ![Prompt and character references](docs/tutorial/04-video-prompt-package.jpg) | ![Generated short-drama frame](docs/tutorial/05-generated-result.jpg) | ![Dialogue and audio editing timeline](docs/tutorial/06-audio-editing.jpg) |
-| **Send only what the current clip needs** | **Check story and asset fidelity** | **Repair missing words, voice drift, and joins** |
-
-The frames are excerpts from tutorial videos made available for download by their creator. Original watermarks and creator identifiers are preserved. See the [media note and frame index](docs/tutorial/README.md); the repository does not redistribute the full videos.
-
-## Why this project exists
-
-Most prompt assistants solve only the last sentence a creator typed. Real AI video production fails elsewhere:
-
-- the creator does not know what stage the project has actually reached;
-- a readable novel becomes an unshootable screenplay;
-- dialogue, actions, and cuts do not fit the available duration;
-- faces, costumes, props, scenes, blocking, or voices drift between clips;
-- references conflict and overpower the written instruction;
-- a video model rejects the prompt, ignores it, or generates the wrong event;
-- a local prop fix is never propagated to later shots and prompt packages;
-- clips look good independently but fail when edited together.
-
-`ai-short-drama-director` first diagnoses the project state and the real blocker. It then creates or repairs the production-ready deliverable, checks downstream impact, and reports exactly what is complete, incomplete, blocked, or due for rework. For first-time creators, the same professional workflow becomes a one-gate-at-a-time guided mode.
-
-## What makes it different
-
-| Typical prompt assistant | AI Short Drama From Zero |
-|---|---|
-| Responds only to the latest request | Reconstructs the verified production stage and blocker |
-| Gives suggestions | Repairs the screenplay, shot plan, asset, prompt, or full document |
-| Fixes one sentence | Traces the source of truth and updates every affected deliverable |
-| Treats one generation as completion | Checks story, assets, space, audio, and clip continuity |
-| Ends with “keep optimizing” | Gives exactly A/B/C next actions with one recommendation |
-| Packs every rule into one giant prompt | Loads only the workflow needed for the current stage |
-
-![Before and after comparison](docs/media/before-after.svg)
-
-## Core capabilities
-
-### 0. Step-by-step beginner mode
-
-- Detects three entry points: only an idea, existing writing, or a half-finished project.
-- Explains a technical term in plain language only when it becomes useful.
-- Activates one production gate at a time and produces the real deliverable for that gate.
-- Updates a beginner progress card with completed, locked, incomplete, and rework items.
-- Recommends a path when the user is unsure and accepts “continue with the recommendation.”
-
-### 1. Project-state diagnosis
-
-- Detects whether the project is at idea, adaptation, screenplay, shot planning, asset, storyboard, video, repair, or post-production stage.
-- Separates completed, in progress, not started, blocked, and rework items.
-- Identifies the single blocker with the largest downstream impact.
-- Defines the next milestone and its acceptance criteria.
-
-### 2. Idea and story development
-
-- Clarifies audience, genre promise, core conflict, hook, escalation, reversal, and ending experience.
-- Supports single shorts, episodic vertical dramas, and longer serialized projects.
-
-### 3. Novel-to-screenplay adaptation
-
-- Extracts the main plot, necessary subplots, relationships, world rules, and immutable facts.
-- Converts narration and internal thoughts into visible actions, environments, or performable dialogue.
-- Produces episode outlines, scene structures, and shootable scripts.
-
-### 4. Dialogue and duration control
-
-- Differentiates voices by age, identity, period, region, and character intent.
-- Adds dialogue only when it advances plot, relationship, information, or emotion.
-- Checks speaking speed, pauses, action time, and comfortable dialogue density.
-- Repairs overloaded dialogue by rewriting, extending, or carrying it across shots.
-
-### 5. 10-second and 15-second production slicing
-
-- Requires the user to choose the 10-second or 15-second mode before the full screenplay is segmented.
-- If the user is unsure, creates one representative clip in both modes and waits for the user to choose.
-- Locks one mode for the current episode or batch instead of silently mixing both.
-- Reads the entire episode before segmenting it.
-- Protects atomic actions such as opening a door, falling, grabbing an object, or completing physical contact.
-- Starts a new unit for scene changes, time jumps, and major state changes.
-- Outputs assets, opening state, action, camera, dialogue, sound, and end-state continuity.
-
-### 6. Visual and reusable asset design
-
-- Supports cinematic live action, stylized 3D, game CG, 2D animation, and custom visual systems.
-- Creates character, crowd, costume, scene, prop, and voice assets.
-- Separates permanent identity from temporary story state.
-- Uses stable asset IDs and versions with draft, candidate, locked, and deprecated states.
-
-### 7. Storyboard and image prompts
-
-- Chooses 6, 9, 12, or another panel count from content density.
-- Separates storyboard panels from camera-shot count.
-- Preserves shot identity, screen direction, prop hand, opening state, final state, and motion direction.
-- Assigns one clear responsibility to every layout, character, scene, prop, or frame reference.
-
-### 8. Blocking, screen direction, and physical contact
-
-- Selects the correct front or reverse view of the scene.
-- Establishes depth layers, screen sides, dedicated backgrounds, and the 180-degree axis.
-- Records start position, movement path, end position, and obstacles.
-- Describes physical interaction as actor, body part or prop, target, contact point, force direction, and result.
-- Checks the generated blocking image instead of treating generation as success.
-
-### 9. Seedance 2.0 and video prompting
-
-- Separates the internal director plan from the external copyable prompt.
-- Supports Seedance 2.0, I2V, FLF2V, extension, action, and camera references.
-- Keeps or removes timecodes, IDs, and production notes according to the target model.
-- Controls action density, asset roles, lighting, dialogue, audio, and end-state holds.
-- Keeps the final prompt compact, natural, and free of internal navigation or self-check logs.
-
-### 10. Generation failure diagnosis
-
-- Distinguishes submission failure, ignored instructions, wrong output, and dialogue/audio failure.
-- Checks subject overload, parallel actions, scene complexity, reference conflicts, and stale context.
-- Replaces contaminated references or starts a clean generation session when necessary.
-- Performs the smallest compliant rewrite and never claims a moderation bypass or guaranteed success.
-
-### 11. Repair and global propagation
-
-- Logs prompt version, references, visible defects, and adoption reason for each attempt.
-- Rejects attractive frames that change story, identity, space, or a critical prop.
-- Traces character, costume, prop, scene, dialogue, and blocking errors to the source of truth.
-- Updates every affected shot, storyboard, frame, and video prompt.
-- Searches the full document for stale errors before delivering the revised version.
-
-### 12. Voice repair, editing, and final QC
-
-- Creates stable voice assets for original or authorized characters.
-- Supports per-line voice replacement with neutral voice anchors and emotion references.
-- Checks waveform, duration, stress, lip movement, room tone, music, and ambience.
-- Removes repeated starts, repairs sound bridges, and preserves motion direction across joins.
-- Uses slow motion and optical flow cautiously and inspects interpolation artifacts frame by frame.
-- Performs a full-film pass for identity, props, background, dialogue, audio, and continuity.
-
-## Workflow
-
-```mermaid
-flowchart TD
-    A["Idea or source story"] --> B["Story and screenplay"]
-    B --> C["Dialogue and production slicing"]
-    C --> D["Complete shot script"]
-    D --> E["Visual system and assets"]
-    E --> F["Storyboards and images"]
-    F --> G["Video prompt package"]
-    G --> H["Generation QC"]
-    H --> I["Voice and editing"]
-    I --> J["Final film"]
-    H -->|"Defect found"| K["Trace source of truth"]
-    K --> D
-    K --> E
-    K --> F
-```
-
-A stage is complete only when the deliverable is usable downstream, consistent with locked assets, feasible within time, spatially continuous, and checked against the source material.
-
-## Quick start
-
-### Download
-
-- [Download the main branch as ZIP](https://github.com/sanxsnr/ai-short-drama-from-zero/archive/refs/heads/main.zip)
-- Or clone:
-
-```bash
-git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
-```
-
-Import the repository root using the custom Skill workflow supported by your ChatGPT or Codex client. Keep `SKILL.md`, `references/`, `scripts/`, `assets/`, and `agents/` in their original relative locations.
-
-### Invoke
-
-```text
-Use $ai-short-drama-director to diagnose my short-drama project.
-Tell me what is verified complete, incomplete, blocked, or due for rework.
-Identify the real blocker and end every response with exactly three next actions: A, B, and C.
-```
-
-```text
-Use $ai-short-drama-director to adapt this story into three vertical-drama episodes.
-Add performable dialogue, split it into 10-second production units,
-and deliver a complete shot script.
-```
-
-```text
-Use $ai-short-drama-director to inspect this failed Seedance result.
-Trace the blocking and prop errors to their source,
-then return the complete repaired prompt package and self-check report.
-```
-
-## Inputs and deliverables
-
-| You provide | The Skill can deliver |
-|---|---|
-| A one-line idea | Premise, audience promise, conflict, hook, short-film structure |
-| A novel or story | Adaptation plan, episode outline, screenplay |
-| A complete script | 10s/15s units, shot script, asset list |
-| Character background and visual direction | Character, crowd, costume, scene, prop, and voice assets |
-| A shot script | Storyboard prompts, image prompts, first/last frame prompts |
-| Storyboards and references | Seedance 2.0, I2V, FLF2V, or extension prompts |
-| A rejected or ignored prompt | Compliance, complexity, reference, and context diagnosis plus a full revision |
-| Generated images or videos | Visible defects, upstream cause, repaired version, regression check |
-| Multiple clips | Voice consistency, stitching, audio bridge, pacing, and final QC plan |
-| DOCX, PDF, or tables | Fully revised file and validation report |
-
-## V2.3 additions
-
-- Fixed four-part response shell: result, progress, self-check, and next-step choice.
-- Exactly three A/B/C actions at the end of every response, with exactly one recommendation.
-- Stable production-document wrapper and reusable template.
-- Compact production-unit metadata, asset continuity, and timeline tables.
-- Clear separation between a 10s/15s production unit and its internal camera shots.
-- Required dialogue/audio, opening state, final frame, next-unit inheritance, and unit self-check fields.
-
-## V2.2 additions
-
-- Mandatory duration-choice gate before full shot segmentation.
-- Three paths: `A: 10-second`, `B: 15-second`, or `C: compare one sample in both`.
-- Persists the confirmed choice in the project-state record.
-- Prevents unexplained mixing of 10-second and 15-second modes in one episode.
-- Validates that a duration mode has been selected when shot planning begins.
-- Adds a 1280×640 GitHub social preview image.
+`15-directorial-camera-plan.md` decides the intended photography and CUT semantics. `04-blocking-continuity.md` computes whether that plan is spatially executable. `14-shot-task-action-coverage.md` proves that the image actually covers the required task. `13-cut-shot-geometry.md` audits the proposed CUT; it does not invent a new CUT downstream.
 
 ## Validation tools
 
-Nine dependency-free Python validators are included:
+The repository includes ten dependency-free Python validators:
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
@@ -302,13 +78,38 @@ python3 scripts/validate_segment_structure.py segment-structure.json
 python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
 python3 scripts/validate_continuity.py continuity.json
+python3 scripts/validate_directorial_camera_plan.py directorial-camera-plan.json
 python3 scripts/validate_spatial_geometry.py spatial-geometry.json
 python3 scripts/validate_shot_task.py shot-task.json
 python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_rule_sources.py
 ```
 
-They validate timing and dialogue capacity; AI-direct SEG type, explicit SHOT/CUT counts, camera-motion phases, and fixed-camera time passage; project-stage evidence; prompt-package completeness; inherited state; subject-facing and camera visibility; SHOT task/action coverage; adjacent-shot visual-difference paths; and repository-wide rule-source consistency.
+`validate_directorial_camera_plan.py` accepts either a flat plan object or a wrapper named `directorial_camera_plan`. It derives fixed or moving behavior from XYZ keyframes; checks bounds, blocked volumes, actor and camera speeds, angular speed, dynamic camera-to-actor clearance, relationship-axis policy, full track coverage, and solved hold time; and reports whether the plan must return to the director for redesign.
+
+`validate_segment_structure.py` continues to treat explicit SHOT boundaries as the only SHOT-count source. Framing changes, camera movement, or focal-feel changes do not automatically create a CUT.
+
+## Quick start
+
+Download the main branch ZIP or clone the repository:
+
+```bash
+git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
+```
+
+Keep `SKILL.md`, `references/`, `scripts/`, `assets/`, and `agents/` in their original relative locations when importing the Skill.
+
+Example invocation:
+
+```text
+Use $ai-short-drama-director to inspect my current short-drama project, identify the real production stage and upstream cause of any error, repair the complete affected artifact, and report what is complete, in progress, blocked, or requires rework.
+```
+
+For a new project:
+
+```text
+Use $ai-short-drama-director to turn this novel into a shootable short drama. Build the dialogue and audiovisual action chain, lock the scene-layout assets, create a unified directorial camera plan, solve actor and camera XYZ trajectories, validate SHOT tasks and CUT geometry, then package production-ready SEGs.
+```
 
 ## Repository structure
 
@@ -317,42 +118,50 @@ ai-short-drama-from-zero/
 ├── SKILL.md
 ├── README.md
 ├── README_EN.md
-├── ROADMAP.md
 ├── agents/
 ├── assets/
 ├── references/
+│   ├── 00-project-diagnosis.md
+│   ├── 01-script-slicing.md
+│   ├── 02-visual-style.md
+│   ├── 03-asset-design.md
+│   ├── 04-blocking-continuity.md
+│   ├── 05-video-prompting.md
+│   ├── 06-qc-repair-post.md
+│   ├── 07-storyboard-image-prompts.md
+│   ├── 08-document-revision-delivery.md
+│   ├── 09-generation-session-control.md
+│   ├── 10-voice-editing-repair.md
+│   ├── 11-beginner-guided-mode.md
+│   ├── 12-output-format-and-choice-footer.md
+│   ├── 13-cut-shot-geometry.md
+│   ├── 14-shot-task-action-coverage.md
+│   └── 15-directorial-camera-plan.md
 ├── scripts/
-├── docs/
-│   ├── demo/
-│   ├── media/
-│   └── tutorial/
-└── .github/
-    └── ISSUE_TEMPLATE/
+│   ├── validate_timeline.py
+│   ├── validate_segment_structure.py
+│   ├── validate_project_state.py
+│   ├── validate_prompt_package.py
+│   ├── validate_continuity.py
+│   ├── validate_directorial_camera_plan.py
+│   ├── validate_spatial_geometry.py
+│   ├── validate_shot_task.py
+│   ├── validate_cut_geometry.py
+│   └── validate_rule_sources.py
+└── tests/
 ```
 
-## Design and safety principles
+## Design boundaries
 
-- No private project, fixed aspect ratio, fixed storyboard grid, personal voice, or individual aesthetic becomes a universal default.
-- Do not send an entire episode directly to a single video generation.
-- Do not use decorative prompt language to hide story, action, or spatial defects.
-- When repair is requested, deliver the repaired artifact instead of stopping at advice.
-- Do not present temporary platform behavior as a permanent success rate or limit.
-- Do not claim moderation bypasses or guaranteed generation.
-- Do not target public figures, protected characters, or a living artist's exact style.
-
-## Demo, roadmap, and contribution
-
-- [General original workflow demo](docs/demo/README.md)
-- [Project roadmap](ROADMAP.md)
-- [Contribution guide](CONTRIBUTING.md)
-- [Report a production or prompt failure](https://github.com/sanxsnr/ai-short-drama-from-zero/issues/new/choose)
-
-Reproducible examples are especially useful: include the production stage, sanitized input, expected result, actual result, reference responsibilities, and the smallest prompt that still reproduces the problem.
+- Locked user facts and dialogue remain higher priority than generic rules.
+- The spatial layer may reject a plan but may not silently redesign the director’s intention.
+- The task layer may reject missing evidence but may not create a new SHOT boundary.
+- The CUT layer audits the director’s CUT type, transition mechanism, action progress, axis, and visual difference; it does not add an unplanned CUT.
+- Exact focal-length values remain optional visual hints, not hard spatial controls.
+- High-speed-action exceptions do not apply to ordinary dialogue or routine prop actions.
+- A visible day/night transition in one locked composition is not automatically a montage of different camera positions.
+- The system reduces detectable structural errors but does not promise model approval or a perfect first generation.
 
 ## License
 
 [MIT License](LICENSE)
-
----
-
-If this project saves you one unnecessary regeneration cycle, consider starring it. Reproducible production failures improve the Skill more than any “universal magic prompt.”

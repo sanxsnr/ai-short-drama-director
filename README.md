@@ -4,7 +4,7 @@
 
 > 你不需要先学会编剧、分镜、运镜或提示词。这个 Skill 会先判断你已经做到哪里，再一次只带你完成一步：从一句灵感、小说或半成品开始，逐步做到剧本、分镜、资产、图片、Seedance 2.0 视频、声音剪辑和最终成片。
 
-![Version](https://img.shields.io/badge/version-2.3.0-2563eb)
+![Version](https://img.shields.io/badge/version-2.4.0-2563eb)
 ![Beginner mode](https://img.shields.io/badge/mode-zero--to--one-7c3aed)
 ![Languages](https://img.shields.io/badge/docs-中文%20%7C%20English-ef4444)
 ![License](https://img.shields.io/badge/license-MIT-16a34a)
@@ -172,24 +172,26 @@
 
 - 全局画风锁定：真人电影、3D国风、3A游戏CG、二维动画及自定义风格。
 - 核心角色三视图、面部特写和身份细节。
-- 群演群体、六格场景概念板、道具资产卡和声线资产。
+- 群演群体、六格场景概念板、可计算的场景布局图、道具资产卡和声线资产。
+- 场景布局在摄影机设计前锁定门、窗、床、桌、柱、通道和相对比例，防止后续为了机位临时移动布景。
 - 区分常驻资产与临时剧情状态。
 - 使用稳定资产编号和版本，支持草稿、候选、锁定和作废状态。
 
-### 7. 故事板与图片提示词
+### 7. 场景空间与统一导演镜头方案
+
+- 先锁定场景布局资产，再建立场景尺寸、固定锚点、可通行区、障碍物和人物初始区。
+- 导演思维主动决定每个SHOT怎么拍、摄影机怎么走、在哪里停、在哪里CUT，不把选择推给用户。
+- 将导演方案求解为人物与摄影机XYZ关键帧、世界朝向、速度、动态安全距离和关系轴结果。
+- 空间算不通时返回导演方案重做，不由空间层私自改CUT或镜头目的。
+- 固定、运镜和CUT由同一时间序列自然产生，不使用三套独立模式。
+
+### 8. 故事板与图片提示词
 
 - 根据内容密度选择6格、9格、12格或其他格数。
 - 明确“故事板格数不等于切镜数”，支持一镜到底式连续关键帧。
 - 锁定首帧、尾帧、人物左右、持物手、场景锚点和运动方向。
 - 为版式、角色、场景、道具和首尾帧分配唯一参考职责。
-
-### 8. 站位、防跳轴与物理接触
-
-- 选择正确场景正／反视角。
-- 建立前中后景、左右阵营、专属背景和180度轴线。
-- 写清人物的起点、运动方向、终点和固定障碍。
-- 用“执行者—身体部位或道具—目标—接触位置—力量方向—结果”锁定物理关系。
-- 生成站位图后再核对人数、左右、背景、持物手和接触点。
+- 故事板必须继承已经通过XYZ求解和CUT审核的镜头方案，不能用图片重新发明站位或机位。
 
 ### 9. Seedance 2.0 与视频提示词
 
@@ -227,19 +229,24 @@
 
 ```mermaid
 flowchart TD
-    A["灵感／小说"] --> B["故事与剧本"]
-    B --> C["对白与视听切片"]
-    C --> D["完整分镜脚本"]
-    D --> E["视觉与资产"]
-    E --> F["故事板与图片"]
-    F --> G["视频提示词"]
-    G --> H["生成质检"]
-    H --> I["声音与剪辑"]
-    I --> J["最终成片"]
-    H -->|"发现错误"| K["回溯唯一真源"]
-    K --> D
-    K --> E
-    K --> F
+    A["灵感／小说"] --> B["改编方案与可拍摄剧本"]
+    B --> C["对白、动作链与视听节拍"]
+    C --> D["视觉风格、角色／道具／场景资产锁定"]
+    D --> E["04A 场景基础空间模型"]
+    E --> F["15 导演统一镜头方案：怎么拍、怎么运、怎么切"]
+    F --> G["04B 人物与摄影机XYZ轨迹求解"]
+    G -->|"空间不可执行"| F
+    G --> H["14 任务与动作覆盖"]
+    H --> I["13 CUT几何审核"]
+    I --> J["SEG封装、故事板与提示词"]
+    J --> K["生成质检"]
+    K --> L["声音与剪辑"]
+    L --> M["最终成片"]
+    K -->|"发现错误"| N["回溯唯一真源"]
+    N --> B
+    N --> D
+    N --> F
+    N --> G
 ```
 
 每一关只有满足“内容完整、资产一致、时间可实现、空间连续、下一步可直接使用”后，才会标记为已完成。
@@ -298,6 +305,14 @@ git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 | 多段成片 | 声线统一、拼接、声音桥、节奏和最终巡检方案 |
 | DOCX／PDF／表格 | 完整修订文件和自检报告 |
 
+## V2.4 新增｜统一导演镜头方案
+
+- 不再把固定、运镜和CUT作为三套独立模式或上游三选一。
+- 导演思维先一次性设计每个SHOT怎么拍、摄影机轨迹、CUT节点、CUT类型和转接机制；13只审核，不在下游重新发明CUT。
+- 04分为两阶段：04A建立场景尺寸与锚点；04B把导演方案求解为人物与摄影机XYZ关键帧。
+- 空间求解失败时自动返回导演层重做，不把专业选择推给用户。
+- 新增`references/15-directorial-camera-plan.md`和`validate_directorial_camera_plan.py`。
+
 ## V2.3 新增
 
 - 固定“本轮结果→进度更新→自检结论→下一步请选择”四段式回答合同。
@@ -342,7 +357,7 @@ git clone https://github.com/sanxsnr/ai-short-drama-from-zero.git
 
 ## 验证工具
 
-仓库内提供九个无第三方依赖的 Python 验证脚本：
+仓库内提供十个无第三方依赖的 Python 验证脚本：
 
 ```bash
 python3 scripts/validate_timeline.py timeline.json
@@ -350,13 +365,14 @@ python3 scripts/validate_segment_structure.py segment-structure.json
 python3 scripts/validate_project_state.py project-state.json
 python3 scripts/validate_prompt_package.py prompt-package.json
 python3 scripts/validate_continuity.py continuity.json
+python3 scripts/validate_directorial_camera_plan.py directorial-camera-plan.json
 python3 scripts/validate_spatial_geometry.py spatial-geometry.json
 python3 scripts/validate_shot_task.py shot-task.json
 python3 scripts/validate_cut_geometry.py cut-geometry.json
 python3 scripts/validate_rule_sources.py
 ```
 
-它们分别检查时间码与对白容量、AI直接成片SEG的类型／显式SHOT／CUT／运镜阶段／固定机位时间流逝、项目阶段证据、提示词输入包、跨镜状态继承、人物面向与摄影机可见面、SHOT任务与动作覆盖、相邻SHOT视觉差异路径，以及全仓库规则真源一致性。脚本不会取代导演对剧情、表演和美感的判断。
+它们分别检查时间码与对白容量、AI直接成片SEG结构、统一导演镜头方案及其人物／摄影机XYZ空间解、项目阶段证据、提示词输入包、跨镜状态继承、人物面向与摄影机可见面、SHOT任务与动作覆盖、导演提出的CUT类型／转接机制及相邻SHOT视觉差异路径，以及全仓库规则真源一致性。脚本不会取代导演对剧情、表演和美感的判断。
 
 ## 目录结构
 
@@ -389,13 +405,15 @@ ai-short-drama-from-zero/
 │   ├── 11-beginner-guided-mode.md
 │   ├── 12-output-format-and-choice-footer.md
 │   ├── 13-cut-shot-geometry.md
-│   └── 14-shot-task-action-coverage.md
+│   ├── 14-shot-task-action-coverage.md
+│   └── 15-directorial-camera-plan.md
 ├── scripts/
 │   ├── validate_timeline.py
 │   ├── validate_segment_structure.py
 │   ├── validate_project_state.py
 │   ├── validate_prompt_package.py
 │   ├── validate_continuity.py
+│   ├── validate_directorial_camera_plan.py
 │   ├── validate_spatial_geometry.py
 │   ├── validate_shot_task.py
 │   ├── validate_cut_geometry.py

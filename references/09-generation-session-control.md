@@ -33,14 +33,15 @@
 任务编号与目标平台：
 目标时长、画幅和生成模式：
 当前SEG源剧本：
-当前SEG包含的SHOT task_type、必要证据、状态转换与CUT：
+当前SEG的directorial_camera_plan：SHOT顺序、轨迹意图、CUT意图：
+当前SEG包含的SHOT task_type、必要证据、状态转换与CUT审核：
 上一SHOT／上一SEG结束状态：
 本SEG起始状态：
 本SEG目标结束状态：
 下一SEG需要继承的状态：
 精简全局风格：
 本段人物／服装／声线简述：
-已确认scene_id／time_id、camera_zone_id、camera_forward_world、固定anchor_id和摄影机轴线侧：
+已确认scene_space_basis、spatial_solution、scene_id／time_id、camera_zone_id、camera_position_world、camera_forward_world、固定anchor_id和摄影机轴线侧：
 关键道具、表面、持物手和状态：
 参考图／视频／音频唯一职责：
 禁止新增、删除或改变的内容：
@@ -56,7 +57,7 @@
 
 1. 用户本轮最新确认。
 2. 当前真源剧本和锁定对白。
-3. 已确认空间、SHOT任务合同、CUT和跨镜状态。
+3. 已确认15导演镜头方案、04空间解、SHOT任务合同、CUT和跨镜状态。
 4. 锁定资产及当前物理状态。
 5. 当前平台规格和生成模式。
 6. 只与本段有关的风格和参考素材。

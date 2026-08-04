@@ -5,7 +5,8 @@
 本文件是以下内容的唯一规则真源：
 
 - 场景方向、统一世界坐标、标准scene_id／zone_id与固定anchor_id。
-- 人物、道具和摄影机的空间位置。
+- 04A：场景基础空间模型，包括尺寸、固定锚点、可通行区、不可穿越物、人物初始区和候选关系轴。
+- 04B：读取`15-directorial-camera-plan.md`后，把导演方案求解为人物、道具和摄影机的XYZ关键帧与世界朝向。
 - 摄影机世界坐标、世界朝向、所属功能区与场景观察签名。
 - 同一SHOT内连续摄影机运动的路径、轴线穿越交代、障碍避让与锁定状态。
 - 人物身体朝向、头部方向、视线目标和屏幕左右。
@@ -16,9 +17,9 @@
 - SHOT之间与SEG之间的状态继承。
 - 当前景别、光线、焦点和遮挡下的信息可见性。
 
-本文件不负责验证SHOT是否真正完成导演任务；该职责只由`14-shot-task-action-coverage.md`定义。本文件也不负责决定何时CUT、30度规则是否适用、同轴景别路径或相邻SHOT视觉差异是否充分；这些只由`13-cut-shot-geometry.md`定义。
+本文件不负责决定镜头怎么拍、摄影机为什么移动或在哪里CUT；这些由`15-directorial-camera-plan.md`统一设计。本文件不负责验证SHOT是否真正完成导演任务；该职责只由`14-shot-task-action-coverage.md`定义。本文件也不负责最终审核CUT类型、30度规则、同轴景别路径或相邻SHOT视觉差异；这些只由`13-cut-shot-geometry.md`定义。
 
-涉及完整分镜、多人互动、关键道具操作、人物移动、正面／侧面／背面描述、过肩／反打／主观机位或跨空间移动时必须读取本文件。若任务同时存在CUT，固定顺序为先读取`14`验证任务覆盖，再读取`13`审核CUT。
+涉及完整分镜、多人互动、关键道具操作、人物移动、正面／侧面／背面描述、过肩／反打／主观机位或跨空间移动时必须读取本文件。固定顺序为：`02／03资产锁定 → 04A基础空间 → 15导演方案 → 04B坐标求解 → 14任务覆盖 → 13 CUT审核`。
 
 ## 优先级
 
@@ -30,53 +31,50 @@
 
 任何示例方向都不能覆盖用户真实场景。
 
-## 空间确认Gate
+## 双阶段空间求解Gate
 
-执行顺序：
+04必须分成两个阶段，不能在导演方案出现之前就自行决定镜头。
 
-```text
-锁定场景结构 → 建立方向或坐标 → 锁定人物和道具位置
-→ 锁定剧情对象 → 求解人物朝向、移动向量和摄影机相对方位
-→ 推导摄影机实际可见面 → 建立关系轴线与运动轴线
-→ 标出摄影机允许区／唯一机位 → 检查遮挡、屏幕左右和信息可见性
-→ 锁定scene_id、zone_id、anchor_id、摄影机世界坐标与世界朝向
-→ 输出唯一空间状态 → 交给14验证SHOT任务与动作覆盖
-```
+### 04A｜场景基础空间模型
 
-禁止先写“正面中景”“侧面特写”等结果，再倒推人物和摄影机。必须先完成几何求解，再写景别和构图。
+04A必须读取`02-visual-style.md`与`03-asset-design.md`已经锁定的场景布局资产；没有可确认的门、窗、床、桌、柱、通道与比例关系时，先补齐场景资产，不得凭镜头需要临时移动家具。
 
-禁止先设计好看的机位，再让人物无理由转向摄影机、瞬间移动或改变道具位置。
-
-### A. 已确认
-
-用户已确认场景资产、站位图、坐标、人物朝向、摄影机方位、上一SHOT唯一状态或固定空间设定时，直接继承，不重复提问，也不得额外扩展替代机位。
+在15设计镜头之前，只建立客观场景事实：
 
 ```text
-空间状态：已确认
-依据：[具体资产／站位图／上一SHOT／用户确认内容]
-唯一方案锁：开启
+锁定场景尺寸与工作坐标
+→ 锁定门、窗、床、桌、柱、屏风等固定锚点
+→ 标出可通行区、不可穿越物和人物初始区
+→ 建立关系轴候选与运动边界
+→ 输出scene_space_basis
 ```
 
-### B. 可唯一推导
+04A不决定SHOT数量，不选择固定／运镜／CUT，不先写正面中景、反打或环绕。它只回答“这个场景真实长什么样、哪里能走、哪里不能穿”。
 
-资料没有显式坐标，但从固定锚点、剧情对象、动作方向、人物朝向和上一状态只能得到一种合理布局时，内部建立空间表并直接继续，不停机，不提供理论上可拍但不符合原镜头目的的替代方案。
+### 15｜导演镜头方案
+
+`15-directorial-camera-plan.md`读取剧本和04A，主动决定每个SHOT怎么拍、摄影机在SHOT内怎么走以及CUT发生在哪里。
+
+### 04B｜人物与摄影机XYZ轨迹求解
+
+04B读取15方案后执行：
 
 ```text
-空间状态：可唯一推导
-依据：[固定锚点、剧情对象、动作目标、上一SHOT状态]
-唯一方案锁：开启
+锁定每个SHOT的人物起点、动作路径和终点
+→ 求解摄影机起点、终点和中间关键帧XYZ
+→ 求解camera_forward_world、人物body_forward_world和视线
+→ 检查障碍、演员路线、关系轴、屏幕方向与可见面
+→ 检查轨迹与SHOT时长是否可执行
+→ 输出spatial_solution
 ```
 
-### C. 关键歧义
+若方案不可执行，04B必须输出`status=return_to_director_plan`、失败代码、阻塞事实和重设计约束，返回15重做。04不得私自把运镜改成CUT、把CUT改成长镜头、改变主体或镜头目的，也不得默认让用户替导演选择。
 
-只有同时满足以下条件才停止正式分镜并请求确认：
+### 已确认、可唯一推导与关键歧义
 
-1. 存在两种以上同样符合用户镜头目的和已锁定事实的合理布局；
-2. 不同布局会改变人物左右、轴线、可见面、道具接触或CUT结果。
+用户已确认场景资产、站位图、坐标、人物朝向或上一SHOT唯一状态时直接继承。资料没有显式坐标但可唯一推导时，内部建立工作坐标并继续。只有存在两种以上同样符合锁定导演意图、且会改变人物左右、轴线、可见面、道具接触或CUT结果的布局时，才请求用户确认。
 
-“理论上还可以从侧面拍”不构成关键歧义。只要用户已经锁定正面反拍、剧情对象方向或镜头目的，其他理论机位自动排除。
-
-不得因无关装饰尺寸、次要家具或可回滚细节停机。可回滚细节必须写成一个明确临时假设，不能写“或”“可能”“大概”。
+“理论上还可以从侧面拍”不构成关键歧义。用户没有指定拍法时，Skill仍应先由15给出主方案，再由04B计算，而不是把专业判断推给用户。
 
 ## 何时必须建立空间图
 
@@ -97,6 +95,36 @@
 - 无具体位置要求的抽象插入镜头。
 
 跳过时记录原因。
+
+## 04A输出｜scene_space_basis
+
+```yaml
+scene_space_basis:
+  scene_id:
+  bounds_world:
+    x: [min, max]
+    y: [min, max]
+    z: [min, max]
+  anchor_ids: []
+  walkable_zone_ids: []
+  blocked_volumes:
+    - obstacle_id:
+      min_world: [x, y, z]
+      max_world: [x, y, z]
+  relationship_axes:
+    - axis_id:
+      point_a_world: [x, y, z]
+      point_b_world: [x, y, z]
+  camera_clearance_units:
+  actor_clearance_units:
+  max_camera_speed_units_per_second:
+  max_actor_speed_units_per_second:
+  max_camera_angular_speed_degrees_per_second:
+  actor_initial_zones: []
+  locked_facts: []
+```
+
+`relationship_axes`支持固定锚点轴和由两名人物实时位置形成的动态关系轴；动态轴必须从人物关键帧同步计算。单人环境镜头、纯道具插入或没有人物关系轴的场景可以使用空数组，不得为了满足字段而伪造轴线。该基础模型只描述客观空间，不写摄影机轨迹和CUT。
 
 ## 场景方向与坐标
 
@@ -276,9 +304,9 @@ C：人物 → 摄影机
 
 禁止道具漂浮、无过程换手、无过程消失或出现在错误表面。
 
-## 摄影机空间事实
+## 04B摄影机与人物空间求解
 
-每个SHOT必须同时记录人物局部几何和场景世界几何：
+每个SHOT必须读取15的`camera_trajectory_intent`，并同时记录人物局部几何和场景世界几何：
 
 - 摄影机编号C1、C2、C3……
 - `scene_id`：标准场景ID，不使用自然语言标签判断换场。
@@ -310,9 +338,9 @@ visible_anchor_ids
 
 本文件只确认摄影机在世界空间中是否合法、可见面是否与文案一致、是否越轴、是否能看到目标。SHOT是否真正完成任务由`14`审核；相邻SHOT是否值得CUT、30度是否适用以及视觉差异路径是否充分，由`13`审核。
 
-## 同一SHOT内的连续摄影机路径
+## 同一SHOT内的摄影机轨迹求解
 
-推、拉、摇、移、跟、升降、环绕、连续后退，以及“先移动、再固定”都可以属于同一个SHOT。必须把运镜写成可连续求解的阶段：
+推、拉、摇、移、跟、升降、环绕、连续后退，以及“先移动、再固定”都可以属于同一个SHOT。运动意图由15设计；本文件必须把它求解为连续XYZ关键帧：
 
 ```text
 start_state → movement → end_state → lock_after_move
@@ -321,6 +349,10 @@ start_state → movement → end_state → lock_after_move
 每个阶段检查：
 
 - 摄影机位置与世界朝向连续变化，没有瞬移或无解释重置。
+- 根据XYZ关键帧实际计算线段与blocked_volumes的相交，不接受只自报`path_clear=true`。
+- 根据camera_clearance_units和人物轨迹，按同一时间参数计算摄影机与动态演员轨迹的真实最小距离，不靠稀疏抽样或自报安全。
+- 对人物轨迹同样计算与blocked_volumes的相交，人物不能穿墙、穿床或穿过固定道具。
+- 根据关键帧距离与时间实际计算摄影机线速度、摄影机转向角速度和人物速度，不能只自报`duration_feasible=true`。
 - 摄影机不穿墙、不穿家具、不穿过人物身体，也不进入不可通行区。
 - 人物位置、身体朝向、动作进度和屏幕方向随时间连续。
 - 若摄影机在SHOT内跨越关系轴线，跨越过程真实可见并重新建立屏幕关系；无交代翻转仍判越轴。
@@ -330,6 +362,36 @@ start_state → movement → end_state → lock_after_move
 连续运镜不能掩盖人物瞬移、动作状态重置、场景突然更换、人物左右镜像或不可能的摄影机穿越。出现这些现象时必须返工空间路径，而不是增加运镜术语。
 
 精确焦段数值只可作为辅助视觉提示，不参与越轴、人物换位、摄影机允许区、动作可见性或空间合法性的硬判定。
+
+## 04B输出｜spatial_solution
+
+```yaml
+spatial_solution:
+  status: solved | return_to_director_plan
+  failed_shot_id:
+  failure_codes: []
+  blocking_facts: []
+  redesign_constraints: []
+  shot_solutions:
+    - shot_id:
+      axis_policy: preserve | visible_reestablish | not_applicable
+      relationship_axis_id:
+      axis_reestablishment_evidence: []
+      camera_keyframes:
+        - time_seconds:
+          position_world: [x, y, z]
+          forward_world: [x, y, z]
+          framing:
+      actor_keyframes:
+        - actor_id:
+          time_seconds:
+          position_world: [x, y, z]
+          body_forward_world: [x, y, z]
+```
+
+每个SHOT的`actor_keyframes`必须与15中的`actor_ids`一致，并覆盖该SHOT完整起止时间；无人镜头可为空数组。`axis_policy=not_applicable`时不要求`relationship_axis_id`；`preserve`由XYZ计算证明摄影机保持同侧；`visible_reestablish`必须同时出现真实跨越和画面内重建证据。`path_clear`、`intersects_subject`、`intersects_obstacle`、速度和轴侧结论均由验证器从坐标推导，不作为可信自报字段。
+
+只有`status=solved`才能交给14。`return_to_director_plan`表示镜头设计需要由15重做，不是让04自行改导演方案。
 
 ## 关系轴线、运动轴线与屏幕方向
 
@@ -466,6 +528,8 @@ TIME CUT、明确场景转换、梦境或回忆切换时，原空间坐标与屏
 ```markdown
 ## 空间状态：场景／SHOT范围
 
+- 求解阶段：04A scene_space_basis／04B spatial_solution
+
 - 状态：已确认／可唯一推导／关键歧义
 - 依据：
 - 唯一方案锁：开启／关闭
@@ -495,9 +559,12 @@ TIME CUT、明确场景转换、梦境或回忆切换时，原空间坐标与屏
 ### 道具
 - P1：表面／持有人、坐标、高度、朝向、状态、归属、可见性。
 
-### 摄影机世界事实
+### 摄影机世界事实与轨迹关键帧
 - scene_id／time_id：
 - C1／SHOT X：camera_zone_id、camera_position_world、camera_forward_world、高度、轴线侧。
+- camera_keyframes：时间、XYZ、朝向、景别。
+- actor_keyframes：人物时间、XYZ、身体朝向。
+- spatial_solution.status：solved／return_to_director_plan。
 - primary_scene_anchor_id：
 - visible_anchor_ids：
 - 场景观察签名：
@@ -514,7 +581,7 @@ TIME CUT、明确场景转换、梦境或回忆切换时，原空间坐标与屏
 
 ## 写入下游提示词
 
-空间确认后，相关故事板或视频提示词至少包含：
+15导演方案与04B空间求解通过后，相关故事板或视频提示词至少包含：
 
 ```text
 空间状态引用：[场景／SHOT状态编号]
@@ -536,6 +603,9 @@ scene_id／time_id／camera_zone_id／anchor_id：
 ## 本文件自检
 
 - 人数和出场时点正确。
+- 04A场景尺寸、锚点、可通行区和障碍已经先建立。
+- 15导演方案已经明确怎么拍、怎么运、怎么切。
+- 04B没有私自改变15的镜头目的或CUT。
 - 坐标、距离、左右、前后和专属背景唯一明确。
 - 剧情对象T、人物正面F、移动M和摄影机方向C全部锁定。
 - 人物前进、后退、侧移或转身逻辑与F、M一致。
@@ -554,4 +624,4 @@ scene_id／time_id／camera_zone_id／anchor_id：
 - 下一SHOT完整继承上一SHOT仍然成立的状态。
 - 没有“或”“可能”“大概”等多解状态。
 
-任一核心项错误时，空间状态标记为“需返工”，不得作为下游CUT、故事板或视频提示词的已确认真源。
+任一核心项错误时，04B输出`return_to_director_plan`并列出约束，返回15重做；不得作为下游任务覆盖、CUT、故事板或视频提示词的已确认真源。

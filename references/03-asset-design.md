@@ -92,6 +92,8 @@ A highly professional strictly 6-panel scene concept board. Top half: exactly 2 
 
 场景小结必须包含建筑风格、默认光影、空间开阔度、三个固定锚点和不可跨越障碍。
 
+场景资产是`04-blocking-continuity.md`建立04A基础空间模型的前置真源。正式设计摄影机前，必须先锁定场景版本、三个以上固定锚点、门窗／家具位置、主要通道、不可穿越物和相对比例；后续不得为了迁就机位无过程移动布景。
+
 场景资产除概念板外，至少准备：
 
 - 无主要人物的正向干净背景板。
