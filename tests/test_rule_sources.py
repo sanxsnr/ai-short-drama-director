@@ -21,16 +21,17 @@ class RuleSourceTests(unittest.TestCase):
         return root
 
     def test_current_repository_passes(self):
-        self.assertTrue(VALIDATOR.validate(ROOT)["ok"])
+        result = VALIDATOR.validate(ROOT)
+        self.assertTrue(result["ok"], result)
 
-    def test_missing_director_stage_fails(self):
+    def test_missing_15a_stage_fails(self):
         with tempfile.TemporaryDirectory() as temp:
             root = self.copied_repo(temp)
             path = root / "SKILL.md"
-            path.write_text(path.read_text().replace("→ 15-directorial-camera-plan.md\n", ""))
+            path.write_text(path.read_text().replace("→ 15A 场景摄影覆盖与机位调度\n", ""))
             result = VALIDATOR.validate(root)
             self.assertFalse(result["ok"])
-            self.assertTrue(any("15" in item or "职责顺序" in item for item in result["errors"]))
+            self.assertTrue(any("15A" in item or "职责顺序" in item for item in result["errors"]))
 
     def test_missing_04b_fails(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -58,6 +59,24 @@ class RuleSourceTests(unittest.TestCase):
             self.assertFalse(result["ok"])
             self.assertTrue(any("过时规则" in item for item in result["errors"]))
 
+    def test_removed_angle_rule_phrase_fails(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = self.copied_repo(temp)
+            path = root / "references/05-video-prompting.md"
+            path.write_text(path.read_text() + "\n" + "30" + "度适用性\n")
+            result = VALIDATOR.validate(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any(("30" + "度适用性") in item for item in result["errors"]))
+
+    def test_old_global_solution_lock_phrase_fails(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = self.copied_repo(temp)
+            path = root / "references/05-video-prompting.md"
+            path.write_text(path.read_text() + "\n" + "唯一" + "方案锁\n")
+            result = VALIDATOR.validate(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any(("唯一" + "方案锁") in item for item in result["errors"]))
+
     def test_seg_limit_cannot_be_duplicated(self):
         with tempfile.TemporaryDirectory() as temp:
             root = self.copied_repo(temp)
@@ -66,6 +85,15 @@ class RuleSourceTests(unittest.TestCase):
             result = VALIDATOR.validate(root)
             self.assertFalse(result["ok"])
             self.assertTrue(any("重复维护SEG数量上限" in item for item in result["errors"]))
+
+    def test_coverage_validator_contract_is_required(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = self.copied_repo(temp)
+            path = root / "scripts/validate_camera_coverage_sequence.py"
+            path.write_text(path.read_text().replace("repetitive_observation_sequence", "removed_repetition_error"))
+            result = VALIDATOR.validate(root)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("场景覆盖验证合同" in item for item in result["errors"]))
 
     def test_director_cut_validator_contract_is_required(self):
         with tempfile.TemporaryDirectory() as temp:

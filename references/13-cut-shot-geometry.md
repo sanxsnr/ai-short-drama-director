@@ -6,9 +6,9 @@
 
 - 读取15的`director_cut_intent`，确认`cut_type_intent`、`transition_mechanism`、切点与导演理由完整。
 - 读取`14-shot-task-action-coverage.md`的任务覆盖结论，确认下一SHOT已被证明具有独立导演任务。
-- 读取`04-blocking-continuity.md`的空间解，检查关系轴、运动方向、摄影机世界位置、状态继承和信息可见性。
+- 读取`04-blocking-continuity.md`的空间解，检查关系轴、运动方向、摄影机世界位置、摄影点ID、状态继承和信息可见性。
 - 审核普通CUT、MATCH-ON-ACTION、REACTION、EYELINE、INSERT、SPACE、TIME、POV与遮挡CUT。
-- 审核相邻SHOT视觉差异、30度适用性、同轴大景别路径、组合差异、图形匹配和有意跳切。
+- 审核相邻SHOT的摄影点变化、观察签名变化、同轴大景别路径、组合差异、图形匹配和有意跳切。
 
 本文件不在没有15方案时自行新增CUT，不负责决定整场怎么拍，也不重新计算人物或摄影机XYZ。审核失败时输出返工原因并返回15重做，不在13内部临时发明另一种CUT。
 
@@ -17,8 +17,8 @@
 ```text
 15 director_cut_intent
 → scripts/validate_director_cut_intent.py
-→ 04空间与轴线结果
-→ 14任务覆盖与动作状态机
+→ 04空间、摄影点与轴线结果
+→ 14任务覆盖、视角适配与动作状态机
 → 本文件CUT几何审核
 → scripts/validate_cut_geometry.py
 → 通过／返回15重做
@@ -32,7 +32,7 @@ CUT成立必须同时满足：
 4. 04证明状态、方向、轴线和空间关系合法。
 5. 相邻SHOT通过至少一条有效视觉差异路径。
 
-主体名称改变、换说话人、viewpoint字符串改变或自然语言场景标签改变都不能自动证明CUT成立。
+主体名称改变、换说话人、viewpoint字符串改变、自然语言场景标签改变或只修改景别名称，都不能自动证明CUT成立。
 
 ## director_cut_intent合同
 
@@ -131,9 +131,13 @@ python3 scripts/validate_cut_geometry.py cut-geometry.json
 
 任何CUT在任务和轴线先通过后，至少满足一条视觉差异路径。各路径是替代关系，不是累计门槛。
 
-### 1. angle
+### 1. station_or_observation
 
-同一主体、近似景别、连续时空时，主体处摄影机夹角通常达到约30度可形成明确角度路径。30度只在该类比较中适用，不高于180度轴线。
+摄影机切换到04A摄影点库中的另一个`camera_station_id`，且04B证明其世界坐标、朝向、前景关系、背景锚点或心理距离形成新的观察关系。
+
+同一轴线侧可以设置多个合法摄影点。摄影点变化不要求改变景别；连续多个中景完全可以成立，只要它们来自不同世界位置、不同前景关系或不同空间透视，并服务于不同导演任务。
+
+只修改摄影点名称、而实际XYZ、朝向、前景、背景和透视仍近似相同，不构成该路径。
 
 ### 2. axial_scale
 
@@ -145,7 +149,7 @@ python3 scripts/validate_cut_geometry.py cut-geometry.json
 
 ### 4. combined
 
-角度、景别、构图、主体占比、前后景关系等多项中等差异组合后可以充分。不能把“改变两项”写成所有CUT的机械门槛。
+景别、构图中心、主体占比、前后景关系、背景锚点、摄影机高度、焦点和心理距离等多项中等差异组合后可以充分。不能把“改变两项”写成所有CUT的机械门槛。
 
 ### 5. intentional_jump
 
@@ -155,19 +159,21 @@ python3 scripts/validate_cut_geometry.py cut-geometry.json
 
 必须提供真实图形匹配依据，例如圆窗与月亮在画面中的位置、尺寸和轮廓对应。
 
-## 30度适用性
+## 不使用固定角度阈值
 
-30度规则适用于同一主体、相近景别、连续时空且采用角度路径的相邻SHOT。以下情况可以不适用：
+本Skill不使用固定摄影机夹角作为CUT通行证。摄影机角度变化可以作为诊断信息，但不能单独替代：
 
-- 同轴大景别跨级。
-- 已验证的新主体、POV／OTS／INSERT或空间／时间变化。
-- 图形匹配或有意跳切。
+- 新摄影点的真实世界坐标；
+- 新的观察任务；
+- 前景与背景透视变化；
+- 任务覆盖；
+- 180度轴线合法性。
 
-反方向同侧反打不等于越轴。摄影机方向近似相反时，仍应以04的关系轴侧和屏幕关系判断是否合法。
+相邻SHOT是否成立，按摄影点ID、观察签名、任务证据和轴线共同判断，不按单一角度数值判定。
 
 ## 180度轴线优先
 
-若04判定`crossed_without_reestablish`，任何任务、角度或景别差异都不能挽救CUT。合法状态包括：
+若04判定`crossed_without_reestablish`，任何任务、摄影点或景别差异都不能挽救CUT。合法状态包括：
 
 ```text
 same_side
@@ -177,10 +183,12 @@ not_applicable
 
 越轴需要镜头内可见穿越、人物走位改变轴线、中性机位或重新建立空间。
 
-## 与14和04的边界
+## 与15、14、04和场景覆盖审核的边界
 
-- 14决定下一SHOT是否真的拍到了任务，不接受`independent_task=true`自报。
-- 04决定人物、摄影机、关系轴、可见面和状态继承是否合法。
+- 15决定下一SHOT为什么需要新的观察位置，并选择`camera_station_id`。
+- 04决定摄影点、人物、关系轴、可见面和状态继承是否合法。
+- 14决定下一SHOT是否真的拍到了任务，并验证所选视角是否适合该任务。
+- `validate_camera_coverage_sequence.py`检查三镜以上是否重复同一摄影点或近似观察签名。
 - 13只审核15提出的CUT意图及相邻几何。
 - 13不能因为几何差异够大而绕过任务失败，也不能因为任务成立而绕过轴线失败。
 
@@ -192,8 +200,10 @@ director_cut_intent:
 task_coverage_passed:
 task_type:
 axis_status:
-thirty_degree_applicable:
-camera_angle_difference_degrees:
+from_camera_station_id:
+to_camera_station_id:
+camera_position_distance:
+scene_observation_direction_change_degrees:
 shot_scale_step_difference:
 derived_difference_path:
 director_cut_intent_valid:
@@ -218,13 +228,14 @@ cross_axis_without_reestablish
 
 - [ ] 15已设计CUT类型、连接机制、切点和理由。
 - [ ] `validate_director_cut_intent.py`通过。
-- [ ] 14任务覆盖通过。
-- [ ] 04状态、方向、轴线和空间继承通过。
+- [ ] 14任务覆盖和视角适配通过。
+- [ ] 04状态、方向、摄影点、轴线和空间继承通过。
 - [ ] 相邻SHOT通过至少一条真实视觉差异路径。
 - [ ] MATCH-ON-ACTION动作进度没有重置。
 - [ ] 反打没有被仅凭拍摄方向误判越轴。
+- [ ] 三镜以上重复观察已交给场景覆盖验证器检查。
 - [ ] 审核失败已返回15重做，没有在13临时改方案。
 
 ## 视觉差异充分性
 
-`14`任务覆盖通过是CUT审核前提。主体名称改变不能自动证明新镜头成立；只有真实任务证据和视觉路径共同成立时才通过。审核目标是拦截无意的近似机位跳切，而不是机械禁止相邻景别。
+`14`任务覆盖通过是CUT审核前提。主体名称改变不能自动证明新镜头成立；只有真实任务证据、摄影点或观察签名变化和视觉路径共同成立时才通过。审核目标是拦截无意的近似机位跳切，而不是机械禁止相邻景别或连续中景。

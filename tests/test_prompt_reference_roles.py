@@ -43,7 +43,8 @@ def base_payload(references: list[dict]) -> dict:
                 "id": "SHOT01",
                 "scene_id": "torture_room",
                 "time_id": "night_01",
-                "camera_zone_id": "inside_center",
+                "camera_region_id": "inside_room",
+                "camera_station_id": "inside_center",
                 "camera_forward_world": [1, 0, 0],
                 "primary_scene_anchor_id": "shen_yuan",
                 "task_validation": {

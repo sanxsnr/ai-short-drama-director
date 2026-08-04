@@ -22,7 +22,8 @@ def dialogue_task() -> dict:
     return {
         "shot_id": "S2", "task_type": "DIALOGUE", "scene_id": "room", "time_id": "t1",
         "primary_subject_id": "b", "viewpoint": "objective",
-        "camera": {"zone_id": "z2", "position_world": [1, 1, 1], "forward_world": direction(0), "primary_scene_anchor_id": "b", "visible_anchor_ids": ["b"]},
+        "camera": {"region_id": "z2", "station_id": "STATION_B", "position_world": [1, 1, 1], "forward_world": direction(0), "height": 1.6, "shot_scale": "MS", "foreground_subject_id": "none", "background_anchor_id": "b", "motion_mode": "locked", "psychological_distance": "relationship", "primary_scene_anchor_id": "b", "visible_anchor_ids": ["b"]},
+        "viewpoint_fitness": {"task_requires_new_observation": True, "selected_station_serves_task": True, "observation_signature_changed": True, "foreground_relation_changed": False, "psychological_distance_changed": False, "same_station_repetition_intent": ""},
         "required_evidence": ["focus_subject_visible", "new_visual_task_visible"],
         "visible_evidence": ["focus_subject_visible", "new_visual_task_visible"],
         "action": {"dialogue_focus_reason": "关键回答成为新重心", "focus_subject_visible": True, "new_visual_task_visible": True, "mechanical_speaker_switch": False},
@@ -32,7 +33,7 @@ def dialogue_task() -> dict:
 def eyeline_task() -> dict:
     p = dialogue_task()
     p.update(task_type="EYELINE_REVEAL", primary_subject_id="tail")
-    p["camera"].update(primary_scene_anchor_id="tail", visible_anchor_ids=["tail"])
+    p["camera"].update(primary_scene_anchor_id="tail", background_anchor_id="tail", visible_anchor_ids=["tail"])
     p["required_evidence"] = ["target_visible", "target_key_state_visible"]
     p["visible_evidence"] = ["target_visible", "target_key_state_visible"]
     p["action"] = {"previous_eyeline_locked": True, "target_id": "tail", "target_visible": True, "target_direction_matches": True, "target_key_state_visible": True}

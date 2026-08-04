@@ -10,6 +10,7 @@ camera modes.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import sys
@@ -44,6 +45,19 @@ MOVEMENT_CUES = (
 )
 HOLD_CUES = ("固定", "锁定", "保持", "不动", "静止", "hold", "locked", "static")
 LEGACY_MODE_VALUES = {"locked", "movement", "cut_to_new_shot"}
+
+
+def load_coverage_validator():
+    path = Path(__file__).with_name("validate_camera_coverage_sequence.py")
+    spec = importlib.util.spec_from_file_location("validate_camera_coverage_sequence", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"无法加载场景摄影覆盖验证器：{path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+COVERAGE_VALIDATOR = load_coverage_validator()
 
 
 def load_payload(path: str | None) -> dict[str, Any]:
@@ -332,6 +346,7 @@ def parse_scene_basis(
     list[tuple[str, tuple[float, float, float], tuple[float, float, float]]],
     dict[str, dict[str, object]],
     dict[str, float],
+    dict[str, dict[str, object]],
 ]:
     bounds_raw = basis.get("bounds_world") if isinstance(basis.get("bounds_world"), dict) else {}
     bounds: dict[str, tuple[float, float]] = {}
@@ -405,6 +420,53 @@ def parse_scene_basis(
                     "actor_b_id": actor_b_id,
                 }
 
+    camera_regions: set[str] = set()
+    raw_regions = basis.get("camera_allowed_regions")
+    if not isinstance(raw_regions, list) or not raw_regions:
+        add(errors, error_codes, "invalid_scene_space_basis", "camera_allowed_regions必须是非空数组")
+    else:
+        for index, item in enumerate(raw_regions, start=1):
+            if not isinstance(item, dict):
+                add(errors, error_codes, "invalid_scene_space_basis", f"camera_allowed_regions[{index}]必须是对象")
+                continue
+            region_id = text(item.get("region_id"))
+            if not region_id or region_id in camera_regions:
+                add(errors, error_codes, "invalid_scene_space_basis", f"camera_allowed_regions[{index}].region_id为空或重复")
+                continue
+            camera_regions.add(region_id)
+
+    camera_stations: dict[str, dict[str, object]] = {}
+    raw_stations = basis.get("camera_station_candidates")
+    if not isinstance(raw_stations, list) or not raw_stations:
+        add(errors, error_codes, "invalid_scene_space_basis", "camera_station_candidates必须是非空数组")
+    else:
+        for index, item in enumerate(raw_stations, start=1):
+            if not isinstance(item, dict):
+                add(errors, error_codes, "invalid_scene_space_basis", f"camera_station_candidates[{index}]必须是对象")
+                continue
+            station_id = text(item.get("station_id"))
+            region_id = text(item.get("region_id"))
+            position = vector(item.get("position_world"))
+            forward = vector(item.get("forward_world"))
+            if not station_id or station_id in camera_stations:
+                add(errors, error_codes, "invalid_scene_space_basis", f"camera_station_candidates[{index}].station_id为空或重复")
+                continue
+            if not region_id or region_id not in camera_regions:
+                add(errors, error_codes, "invalid_scene_space_basis", f"camera_station_candidates[{index}].region_id无效")
+                continue
+            if position is None or forward is None or normalized(forward) is None:
+                add(errors, error_codes, "invalid_scene_space_basis", f"camera_station_candidates[{index}]坐标或朝向无效")
+                continue
+            if bounds and not in_bounds(position, bounds):
+                add(errors, error_codes, "invalid_scene_space_basis", f"camera_station_candidates[{index}]超出场景边界")
+                continue
+            camera_stations[station_id] = {
+                "region_id": region_id,
+                "position_world": position,
+                "forward_world": forward,
+                "height": position[2],
+            }
+
     limits: dict[str, float] = {}
     for field in (
         "camera_clearance_units",
@@ -418,7 +480,7 @@ def parse_scene_basis(
             add(errors, error_codes, "invalid_scene_space_basis", f"scene_space_basis.{field}必须大于0")
         else:
             limits[field] = value
-    return bounds, obstacles, axes, limits
+    return bounds, obstacles, axes, limits, camera_stations
 
 
 def validate(payload: dict[str, Any]) -> dict[str, Any]:
@@ -467,7 +529,26 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
         add(errors, error_codes, "missing_director_read", "scene_intention不能只是电影感等空泛词")
 
     basis = payload.get("scene_space_basis") if isinstance(payload.get("scene_space_basis"), dict) else {}
-    bounds, obstacles, relationship_axes, limits = parse_scene_basis(basis, errors, error_codes)
+    bounds, obstacles, relationship_axes, limits, camera_stations = parse_scene_basis(basis, errors, error_codes)
+
+    scene_camera_grammar = payload.get("scene_camera_grammar") if isinstance(payload.get("scene_camera_grammar"), dict) else {}
+    for field in ("dramatic_progression", "coverage_intent"):
+        if not text(scene_camera_grammar.get(field)):
+            add(errors, error_codes, "invalid_scene_camera_grammar", f"scene_camera_grammar.{field}不能为空")
+    grammar_station_library = scene_camera_grammar.get("station_library")
+    if not isinstance(grammar_station_library, list) or not grammar_station_library:
+        add(errors, error_codes, "invalid_scene_camera_grammar", "scene_camera_grammar.station_library必须是非空数组")
+        grammar_station_ids: set[str] = set()
+    else:
+        grammar_station_ids = {text(item) for item in grammar_station_library if text(item)}
+        if len(grammar_station_ids) != len(grammar_station_library):
+            add(errors, error_codes, "invalid_scene_camera_grammar", "scene_camera_grammar.station_library存在空值或重复")
+        unknown = grammar_station_ids - set(camera_stations)
+        if unknown:
+            add(errors, error_codes, "invalid_scene_camera_grammar", f"station_library引用未知摄影点：{sorted(unknown)}")
+    for field in ("planned_station_sequence", "shot_scale_curve", "psychological_distance_curve"):
+        if not isinstance(scene_camera_grammar.get(field), list) or not scene_camera_grammar.get(field):
+            add(errors, error_codes, "invalid_scene_camera_grammar", f"scene_camera_grammar.{field}必须是非空数组")
 
     beats_raw = payload.get("beats")
     beats = beats_raw if isinstance(beats_raw, list) else []
@@ -509,6 +590,9 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
     seen_shot_ids: set[str] = set()
     shot_ranges: dict[str, tuple[float, float]] = {}
     shot_actor_ids: dict[str, set[str]] = {}
+    shot_station_ids: dict[str, str] = {}
+    shot_observation_signatures: dict[str, dict[str, object]] = {}
+    shot_inheritance_flags: dict[str, bool] = {}
     previous_end = 0.0
     for index, shot in enumerate(shots):
         ordinal = index + 1
@@ -542,6 +626,32 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
         if len(set(actor_ids)) != len(actor_ids):
             add(errors, error_codes, "invalid_shot_timeline", f"SHOT {shot_id or ordinal}.actor_ids不得重复")
         shot_actor_ids[shot_id] = set(actor_ids)
+
+        camera_station_id = text(shot.get("camera_station_id"))
+        if not camera_station_id or camera_station_id not in camera_stations:
+            add(errors, error_codes, "invalid_camera_station", f"SHOT {shot_id or ordinal}.camera_station_id缺失或不在04A摄影点库")
+        shot_station_ids[shot_id] = camera_station_id
+        lock = shot.get("shot_solution_lock") if isinstance(shot.get("shot_solution_lock"), dict) else {}
+        if text(lock.get("scope")) != "shot":
+            add(errors, error_codes, "invalid_solution_lock_scope", f"SHOT {shot_id or ordinal}方案锁只能作用于当前SHOT")
+        if text(lock.get("locked_camera_station_id")) != camera_station_id:
+            add(errors, error_codes, "invalid_solution_lock_scope", f"SHOT {shot_id or ordinal}锁定摄影点必须与camera_station_id一致")
+        inherited = shot.get("camera_station_inherited_from_previous")
+        if not isinstance(inherited, bool):
+            add(errors, error_codes, "invalid_camera_inheritance_contract", f"SHOT {shot_id or ordinal}.camera_station_inherited_from_previous必须为布尔值")
+            inherited = False
+        shot_inheritance_flags[shot_id] = inherited
+        signature = shot.get("observation_signature") if isinstance(shot.get("observation_signature"), dict) else {}
+        for field in (
+            "camera_region_id", "shot_scale", "foreground_subject_id",
+            "background_anchor_id", "viewpoint_type", "motion_mode",
+            "psychological_distance",
+        ):
+            if not text(signature.get(field)):
+                add(errors, error_codes, "invalid_observation_signature", f"SHOT {shot_id or ordinal}.observation_signature.{field}不能为空")
+        if camera_station_id in camera_stations and text(signature.get("camera_region_id")) != text(camera_stations[camera_station_id].get("region_id")):
+            add(errors, error_codes, "invalid_observation_signature", f"SHOT {shot_id or ordinal}观察签名的camera_region_id与摄影点库不一致")
+        shot_observation_signatures[shot_id] = signature
 
         intent = shot.get("camera_trajectory_intent") if isinstance(shot.get("camera_trajectory_intent"), dict) else {}
         for field in TRAJECTORY_FIELDS:
@@ -585,6 +695,19 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
     if duration and abs(previous_end - duration) > EPS:
         add(errors, error_codes, "invalid_shot_timeline", "SHOT时间轴必须完整覆盖duration_seconds")
 
+    planned_station_sequence = [text(item) for item in scene_camera_grammar.get("planned_station_sequence", [])] if isinstance(scene_camera_grammar.get("planned_station_sequence"), list) else []
+    actual_station_sequence = [shot_station_ids.get(shot_id, "") for shot_id in planned_shot_ids]
+    if planned_station_sequence != actual_station_sequence:
+        add(errors, error_codes, "invalid_scene_camera_grammar", "planned_station_sequence必须与SHOT camera_station_id顺序一致")
+    shot_scale_curve = [text(item) for item in scene_camera_grammar.get("shot_scale_curve", [])] if isinstance(scene_camera_grammar.get("shot_scale_curve"), list) else []
+    actual_scale_curve = [text(shot_observation_signatures.get(shot_id, {}).get("shot_scale")) for shot_id in planned_shot_ids]
+    if shot_scale_curve != actual_scale_curve:
+        add(errors, error_codes, "invalid_scene_camera_grammar", "shot_scale_curve必须与SHOT观察签名一致")
+    psychological_curve = [text(item) for item in scene_camera_grammar.get("psychological_distance_curve", [])] if isinstance(scene_camera_grammar.get("psychological_distance_curve"), list) else []
+    actual_psychological_curve = [text(shot_observation_signatures.get(shot_id, {}).get("psychological_distance")) for shot_id in planned_shot_ids]
+    if psychological_curve != actual_psychological_curve:
+        add(errors, error_codes, "invalid_scene_camera_grammar", "psychological_distance_curve必须与SHOT观察签名一致")
+
     solution = payload.get("spatial_solution") if isinstance(payload.get("spatial_solution"), dict) else {}
     status = text(solution.get("status"))
     if status == "return_to_director_plan":
@@ -598,6 +721,7 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
 
     derived_behaviors: list[dict[str, object]] = []
     derived_spatial_checks: list[dict[str, object]] = []
+    coverage_shots: list[dict[str, object]] = []
     spatial_error_codes = {
         "camera_position_out_of_bounds", "actor_position_out_of_bounds",
         "camera_path_intersects_obstacle", "actor_path_intersects_obstacle",
@@ -624,6 +748,8 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
                 continue
             shot_id = planned_shot_ids[shot_index]
             solved = by_id.get(shot_id, {})
+            if text(solved.get("camera_station_id")) != shot_station_ids.get(shot_id, ""):
+                add(errors, error_codes, "spatial_solution_station_mismatch", f"SHOT {shot_id}空间解camera_station_id与导演方案不一致")
             start, end = shot_ranges.get(shot_id, (0.0, 0.0))
             before_codes = len(error_codes)
 
@@ -882,6 +1008,36 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
                 "axis_policy": axis_policy,
                 "axis_crossed": actual_cross,
             })
+            signature = shot_observation_signatures.get(shot_id, {})
+            coverage_shots.append({
+                "shot_id": shot_id,
+                "solution_lock_scope": "shot",
+                "camera_station_id": shot_station_ids.get(shot_id, ""),
+                "camera_region_id": text(signature.get("camera_region_id")),
+                "camera_position_world": list(parsed_frames[0]["_position"]),
+                "camera_forward_world": list(parsed_frames[0]["_forward"]),
+                "camera_height": float(parsed_frames[0]["_position"][2]),
+                "shot_scale": text(signature.get("shot_scale")),
+                "primary_subject_id": text(shot.get("primary_subject_id")),
+                "foreground_subject_id": text(signature.get("foreground_subject_id")),
+                "background_anchor_id": text(signature.get("background_anchor_id")),
+                "viewpoint_type": text(signature.get("viewpoint_type")),
+                "motion_mode": text(signature.get("motion_mode")),
+                "psychological_distance": text(signature.get("psychological_distance")),
+                "camera_station_inherited_from_previous": shot_inheritance_flags.get(shot_id, False),
+                "repetition_intent": text(shot.get("repetition_intent")),
+                "repetition_payoff": text(shot.get("repetition_payoff")),
+            })
+
+    coverage_result = COVERAGE_VALIDATOR.validate({
+        "scene_id": text(payload.get("scene_id")),
+        "window_size": 3,
+        "shots": coverage_shots,
+    }) if coverage_shots else {"ok": False, "errors": ["invalid_camera_coverage: 缺少可验证SHOT"], "error_codes": ["invalid_camera_coverage"], "warnings": [], "warning_codes": []}
+    for message, code in zip(coverage_result.get("errors", []), coverage_result.get("error_codes", [])):
+        add(errors, error_codes, code, message.split(": ", 1)[-1])
+    for message, code in zip(coverage_result.get("warnings", []), coverage_result.get("warning_codes", [])):
+        add(warnings, warning_codes, code, message.split(": ", 1)[-1])
 
     return {
         "ok": not errors,
@@ -891,6 +1047,7 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
         "derived_cut_count": max(0, len(shots) - 1),
         "derived_behaviors": derived_behaviors,
         "derived_spatial_checks": derived_spatial_checks,
+        "camera_coverage_validation": coverage_result,
         "requires_director_redesign": status == "return_to_director_plan" or any(
             code in spatial_error_codes for code in error_codes
         ),

@@ -220,9 +220,12 @@ def validate(payload: dict) -> dict:
     camera_id = str(camera.get("id", "")).strip()
     if not camera_id:
         errors.append("camera.id 不能为空")
-    camera_zone_id = str(camera.get("zone_id", "")).strip()
-    if not camera_zone_id:
-        errors.append("camera.zone_id 不能为空")
+    camera_region_id = str(camera.get("region_id", "")).strip()
+    camera_station_id = str(camera.get("station_id", "")).strip()
+    if not camera_region_id:
+        errors.append("camera.region_id 不能为空")
+    if not camera_station_id:
+        errors.append("camera.station_id 不能为空")
     camera_position = vector(
         camera.get("position_world"), "camera.position_world", errors
     )
@@ -289,16 +292,24 @@ def validate(payload: dict) -> dict:
         )
         allowed_faces = set()
 
-    locked_solution = payload.get("locked_solution")
-    if not isinstance(locked_solution, bool):
-        errors.append("locked_solution 必须是布尔值")
-        locked_solution = False
+    shot_solution_lock = payload.get("shot_solution_lock")
+    if not isinstance(shot_solution_lock, dict):
+        errors.append("shot_solution_lock 必须是对象")
+        shot_solution_lock = {}
+    lock_scope = str(shot_solution_lock.get("scope", "")).strip()
+    locked_station_id = str(shot_solution_lock.get("locked_camera_station_id", "")).strip()
+    if lock_scope != "shot":
+        errors.append("shot_solution_lock.scope 必须是shot，不能锁定整个场景")
+    if not locked_station_id:
+        errors.append("shot_solution_lock.locked_camera_station_id 不能为空")
+    elif camera_station_id and locked_station_id != camera_station_id:
+        errors.append("shot_solution_lock锁定的摄影点与camera.station_id不一致")
     alternatives = payload.get("alternative_camera_solutions", [])
     if not isinstance(alternatives, list):
         errors.append("alternative_camera_solutions 必须是数组")
         alternatives = []
-    if locked_solution and alternatives:
-        errors.append("唯一方案锁已开启，不得同时提供替代摄影机方案")
+    if lock_scope == "shot" and alternatives:
+        errors.append("当前SHOT方案锁已开启，不得在同一SHOT同时提供替代摄影机方案")
 
     derived: dict[str, object] = {}
 
@@ -415,14 +426,18 @@ def validate(payload: dict) -> dict:
         "time_id": time_id,
         "subject_id": subject_id,
         "camera_id": camera_id,
-        "camera_zone_id": camera_zone_id,
+        "camera_region_id": camera_region_id,
+        "camera_station_id": camera_station_id,
         "observation_signature": {
             "camera_position_world": list(camera_position) if camera_position else None,
             "camera_forward_world": list(camera_forward) if camera_forward else None,
             "primary_scene_anchor_id": primary_scene_anchor_id,
             "visible_anchor_ids": sorted(visible_anchor_ids),
         },
-        "locked_solution": locked_solution,
+        "shot_solution_lock": {
+            "scope": lock_scope,
+            "locked_camera_station_id": locked_station_id,
+        },
         "derived": derived,
         "errors": errors,
         "warnings": warnings,

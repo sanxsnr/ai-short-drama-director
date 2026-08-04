@@ -27,7 +27,7 @@
 每个SHOT至少明确：
 
 1. `15`设计的dramatic_task、camera_trajectory_intent和cut_out_intent。
-2. `04B`求解的scene_id／camera_zone_id、摄影机XYZ关键帧与朝向、人物XYZ关键帧、主要场景锚点和轴线侧。
+2. `04B`求解的scene_id／camera_region_id／camera_station_id、摄影机XYZ关键帧与朝向、人物XYZ关键帧、完整观察签名、主要场景锚点和轴线侧。
 3. `14`验证通过的task_type、必要画面证据与动作状态转换。
 4. 起始状态：人物位置、朝向、视线、道具和动作进度。
 5. 连续动作和对白。

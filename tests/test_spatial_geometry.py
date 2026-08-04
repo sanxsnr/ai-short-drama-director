@@ -48,7 +48,8 @@ def dongsheng_payload() -> dict:
         },
         "camera": {
             "id": "D",
-            "zone_id": "bed_front",
+            "region_id": "bed_front",
+            "station_id": "STATION_BED_FRONT",
             "position_world": [0, 4, 1.5],
             "forward_world": [0, 1, -1.5],
             "primary_scene_anchor_id": "bed",
@@ -57,7 +58,10 @@ def dongsheng_payload() -> dict:
             "same_direction_as_story_target": True,
             "subject_appears_to_look_toward_lens": True,
         },
-        "locked_solution": True,
+        "shot_solution_lock": {
+            "scope": "shot",
+            "locked_camera_station_id": "STATION_BED_FRONT",
+        },
         "alternative_camera_solutions": [],
     }
 
@@ -108,14 +112,21 @@ class SpatialGeometryTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertTrue(any("主要场景锚点" in item for item in result["errors"]))
 
-    def test_locked_solution_rejects_alternative_camera(self):
+    def test_shot_solution_lock_rejects_alternative_camera(self):
         payload = dongsheng_payload()
         payload["alternative_camera_solutions"] = [
             {"id": "B", "description": "房间侧面横拍"}
         ]
         result = GEOMETRY.validate(payload)
         self.assertFalse(result["ok"])
-        self.assertTrue(any("不得同时提供替代摄影机方案" in item for item in result["errors"]))
+        self.assertTrue(any("同一SHOT" in item for item in result["errors"]))
+
+    def test_scene_scope_lock_is_rejected(self):
+        payload = dongsheng_payload()
+        payload["shot_solution_lock"]["scope"] = "scene"
+        result = GEOMETRY.validate(payload)
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("不能锁定整个场景" in item for item in result["errors"]))
 
 
 if __name__ == "__main__":

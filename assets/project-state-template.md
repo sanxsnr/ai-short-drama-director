@@ -28,7 +28,7 @@
 | 灵感与故事核心 | 未开始 |  |  |  |
 | 小说／素材改编 | 未开始 |  |  |  |
 | 分集与剧本 | 未开始 |  |  |  |
-| 空间确认、SHOT任务覆盖、CUT与分镜 | 未开始 |  |  |  |
+| 空间确认、场景摄影覆盖、SHOT任务适配、CUT与分镜 | 未开始 |  |  |  |
 | 视觉与资产 | 未开始 |  |  |  |
 | 故事板与生图提示词 | 未开始 |  |  |  |
 | 视频提示词 | 未开始 |  |  |  |
@@ -41,9 +41,10 @@
 
 - 剧本版本：
 - 分镜版本：
-- SHOT任务覆盖规则版本：
+- 导演摄影覆盖规则版本：
+- SHOT任务与视角适配规则版本：
 - CUT规则版本：
-- 空间图／scene_id／zone_id／anchor_id版本：
+- 空间图／scene_id／camera_region_id／camera_station_id／anchor_id版本：
 - 全局风格版本：
 - 锁定角色／服装／声线：
 - 锁定场景：
@@ -57,7 +58,9 @@
 - 人物坐标、朝向和视线：
 - 道具表面、位置和归属：
 - 关系轴线与运动轴线：
-- 摄影机允许区：
+- 摄影机合法区域：
+- 摄影点候选库：
+- 当前SHOT方案锁范围：shot
 - 已确认位置：是／可唯一推导／关键歧义待确认
 - 确认依据：
 
@@ -66,7 +69,9 @@
 - SEG编号：
 - duration_seconds／shot_count／cut_count：
 - directorial_camera_plan_id：
-- director_read／camera_trajectory_intent／cut_out_intent：
+- director_read／scene_camera_grammar：
+- planned_station_sequence／shot_scale_curve／psychological_distance_curve：
+- camera_trajectory_intent／cut_out_intent：
 - director_cut_intent／cut_type_intent／transition_mechanism：
 - scene_space_basis：
 - spatial_solution.status：
@@ -77,14 +82,16 @@
 - 当前SHOT编号：
 - 上一SHOT结束状态：
 - 当前SHOT起始状态：
+- 当前SHOT camera_region_id／camera_station_id／observation_signature：
 - 当前SHOT摄影机XYZ轨迹与轴线侧：
+- viewpoint_fitness：
 - 当前CUT点／类型：
 - 下一SHOT起始状态：
 - 本SEG结束状态：
 - 下一SEG继承要求：
 - 参考素材唯一职责：
 
-> 状态继承不等于复制上一尾帧或保持同一机位。只有用户明确选择I2V／FLF2V／首尾帧工作流时，才记录具体帧约束。
+> 状态继承不等于复制上一尾帧或保持同一机位。CUT后人物、道具、动作和轴线状态必须继承；摄影点、景别、前景关系和背景透视默认重新设计。只有用户明确选择I2V／FLF2V／首尾帧工作流时，才记录具体帧约束。
 
 ## 本轮工作
 

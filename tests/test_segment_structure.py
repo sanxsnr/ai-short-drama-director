@@ -57,7 +57,8 @@ def shot(
     data = {
         "shot_id": shot_id,
         "shot_task": task,
-        "camera_zone": "room_center",
+        "camera_region": "room_side_a",
+        "camera_station": "station_center",
         "camera_direction": direction,
         "shot_size": size,
         "camera_motion": motion,
@@ -335,7 +336,8 @@ class SegmentStructureTests(unittest.TestCase):
         alias_only_shot = {
             "shot_id": "SHOT_1",
             "task_type": "time_passage",
-            "camera_zone_id": "round_window_axis",
+            "camera_region_id": "round_window_side",
+            "camera_station_id": "round_window_axis",
             "camera_forward_world": "+Y",
             "shot_size": "MS",
             "camera_motion": "push_then_lock",
@@ -354,7 +356,7 @@ class SegmentStructureTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("incomplete_shot_structure", result["error_codes"])
         self.assertTrue(any("shot_task" in error for error in result["errors"]))
-        self.assertTrue(any("camera_zone" in error for error in result["errors"]))
+        self.assertTrue(any("camera_region" in error for error in result["errors"]))
         self.assertTrue(any("camera_direction" in error for error in result["errors"]))
         self.assertTrue(any("action_stage" in error for error in result["errors"]))
 

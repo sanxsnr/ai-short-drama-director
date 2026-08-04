@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate whether a SHOT actually completes its declared directing task."""
+"""Validate whether a SHOT completes its task and uses a task-fit viewpoint."""
 
 from __future__ import annotations
 
@@ -69,20 +69,22 @@ def normalize(value: tuple[float, float, float] | None) -> list[float] | None:
     return [round(item / size, 6) for item in value]
 
 
-def require_bool(container: dict, field: str, errors: list[str]) -> bool:
-    value = container.get(field)
-    if not isinstance(value, bool):
-        errors.append(f"{field} 必须是布尔值")
-        return False
-    return value
+def finite_number(value: object, field: str, errors: list[str]) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        errors.append(f"{field} 必须是有限数字")
+        return None
+    if not math.isfinite(number):
+        errors.append(f"{field} 必须是有限数字")
+        return None
+    return number
 
 
 def validate_viewpoint(contract: dict, errors: list[str]) -> bool:
     viewpoint = text(contract.get("viewpoint"))
     if viewpoint not in VIEWPOINT_TYPES:
-        errors.append(
-            "viewpoint 必须是 objective/POV/OTS/INSERT/subjective"
-        )
+        errors.append("viewpoint 必须是 objective/POV/OTS/INSERT/subjective")
         return False
     if viewpoint == "objective":
         return True
@@ -131,7 +133,6 @@ def validate_viewpoint(contract: dict, errors: list[str]) -> bool:
             ok = False
         return ok
 
-    # subjective
     if not text(evidence.get("subjective_source_id")):
         errors.append("subjective视角必须提供 subjective_source_id")
         return False
@@ -139,6 +140,57 @@ def validate_viewpoint(contract: dict, errors: list[str]) -> bool:
         errors.append("subjective视角必须证明 subjective_geometry_valid=true")
         return False
     return True
+
+
+def validate_viewpoint_fitness(payload: dict, task_type: str, errors: list[str]) -> bool:
+    fitness = payload.get("viewpoint_fitness")
+    if not isinstance(fitness, dict):
+        errors.append("viewpoint_fitness 必须是对象")
+        return False
+
+    required_bools = (
+        "task_requires_new_observation",
+        "selected_station_serves_task",
+        "observation_signature_changed",
+        "foreground_relation_changed",
+        "psychological_distance_changed",
+    )
+    values: dict[str, bool] = {}
+    for field in required_bools:
+        value = fitness.get(field)
+        if not isinstance(value, bool):
+            errors.append(f"viewpoint_fitness.{field} 必须是布尔值")
+            values[field] = False
+        else:
+            values[field] = value
+
+    if values.get("selected_station_serves_task") is not True:
+        errors.append("selected_station_does_not_serve_task")
+
+    changed = any(
+        values.get(field) is True
+        for field in (
+            "observation_signature_changed",
+            "foreground_relation_changed",
+            "psychological_distance_changed",
+        )
+    )
+    repeat_intent = text(fitness.get("same_station_repetition_intent"))
+
+    if values.get("task_requires_new_observation") is True and not changed and not repeat_intent:
+        errors.append("new_observation_not_demonstrated")
+
+    if task_type == "DIALOGUE" and not changed and not repeat_intent:
+        errors.append("mechanical_dialogue_view_repetition")
+
+    return not any(
+        item in errors
+        for item in (
+            "selected_station_does_not_serve_task",
+            "new_observation_not_demonstrated",
+            "mechanical_dialogue_view_repetition",
+        )
+    )
 
 
 def validate_enter_exit(
@@ -180,9 +232,7 @@ def validate_enter_exit(
     if boundary_id and boundary_id not in visible_anchor_ids:
         errors.append(f"{task_type}必须让边界锚点 {boundary_id} 进入画面")
     if boundary_id and primary_anchor != boundary_id:
-        errors.append(
-            f"{task_type}的主要场景锚点必须是边界 {boundary_id}，不能只把人物当作锚点"
-        )
+        errors.append(f"{task_type}的主要场景锚点必须是边界 {boundary_id}，不能只把人物当作锚点")
     if action.get("crossing_visible") is not True:
         errors.append(f"{task_type}必须证明 crossing_visible=true")
     if action.get("path_visible") is not True:
@@ -190,9 +240,7 @@ def validate_enter_exit(
     if action.get("movement_crosses_boundary") is not True:
         errors.append(f"{task_type}必须证明 movement_crosses_boundary=true")
 
-    movement = vector(action.get("movement_world"), "action.movement_world", errors)
-    if movement is None:
-        pass
+    vector(action.get("movement_world"), "action.movement_world", errors)
 
     if task_type == "ENTER":
         if state_before != "outside":
@@ -284,32 +332,48 @@ def validate(payload: dict) -> dict:
         errors.append("camera 必须是对象")
         camera = {}
 
-    camera_zone_id = text(camera.get("zone_id"))
+    camera_region_id = text(camera.get("region_id"))
+    camera_station_id = text(camera.get("station_id"))
     primary_anchor_id = text(camera.get("primary_scene_anchor_id"))
-    if not camera_zone_id:
-        errors.append("camera.zone_id 不能为空")
+    if not camera_region_id:
+        errors.append("camera.region_id 不能为空")
+    if not camera_station_id:
+        errors.append("camera.station_id 不能为空")
     if not primary_anchor_id:
         errors.append("camera.primary_scene_anchor_id 不能为空")
 
     camera_position = vector(camera.get("position_world"), "camera.position_world", errors)
     camera_forward = vector(camera.get("forward_world"), "camera.forward_world", errors)
-    visible_anchor_ids = string_list(
-        camera.get("visible_anchor_ids"), "camera.visible_anchor_ids", errors
-    )
+    camera_height = finite_number(camera.get("height"), "camera.height", errors)
+
+    shot_scale = text(camera.get("shot_scale"))
+    foreground_subject_id = text(camera.get("foreground_subject_id"))
+    background_anchor_id = text(camera.get("background_anchor_id"))
+    motion_mode = text(camera.get("motion_mode"))
+    psychological_distance = text(camera.get("psychological_distance"))
+    for field, value in (
+        ("camera.shot_scale", shot_scale),
+        ("camera.background_anchor_id", background_anchor_id),
+        ("camera.motion_mode", motion_mode),
+        ("camera.psychological_distance", psychological_distance),
+    ):
+        if not value:
+            errors.append(f"{field} 不能为空")
+
+    visible_anchor_ids = string_list(camera.get("visible_anchor_ids"), "camera.visible_anchor_ids", errors)
     if primary_anchor_id and primary_anchor_id not in visible_anchor_ids:
         errors.append("camera.primary_scene_anchor_id 必须同时存在于 visible_anchor_ids")
+    if background_anchor_id and background_anchor_id not in visible_anchor_ids:
+        errors.append("camera.background_anchor_id 必须同时存在于 visible_anchor_ids")
 
-    required_evidence = string_list(
-        payload.get("required_evidence"), "required_evidence", errors
-    )
-    visible_evidence = string_list(
-        payload.get("visible_evidence"), "visible_evidence", errors
-    )
+    required_evidence = string_list(payload.get("required_evidence"), "required_evidence", errors)
+    visible_evidence = string_list(payload.get("visible_evidence"), "visible_evidence", errors)
     missing_evidence = sorted(set(required_evidence) - set(visible_evidence))
     if missing_evidence:
         errors.append("SHOT未完成必要任务证据：" + ", ".join(missing_evidence))
 
     viewpoint_evidence_passed = validate_viewpoint(payload, errors)
+    viewpoint_fitness_passed = validate_viewpoint_fitness(payload, task_type, errors)
 
     if task_type in {"ENTER", "EXIT"}:
         validate_enter_exit(payload, task_type, camera, visible_anchor_ids, errors)
@@ -366,11 +430,21 @@ def validate(payload: dict) -> dict:
         "primary_subject_id": primary_subject_id,
         "derived_independent_task": derived_independent_task,
         "viewpoint_evidence_passed": viewpoint_evidence_passed,
+        "viewpoint_fitness_passed": viewpoint_fitness_passed,
         "missing_evidence": missing_evidence,
         "observation_signature": {
-            "camera_zone_id": camera_zone_id,
+            "camera_station_id": camera_station_id,
+            "camera_region_id": camera_region_id,
             "camera_position_world": list(camera_position) if camera_position else None,
             "camera_forward_world": normalize(camera_forward),
+            "camera_height": camera_height,
+            "shot_scale": shot_scale,
+            "primary_subject_id": primary_subject_id,
+            "foreground_subject_id": foreground_subject_id,
+            "background_anchor_id": background_anchor_id,
+            "viewpoint_type": text(payload.get("viewpoint")),
+            "motion_mode": motion_mode,
+            "psychological_distance": psychological_distance,
             "primary_scene_anchor_id": primary_anchor_id,
             "visible_anchor_ids": sorted(visible_anchor_ids),
         },

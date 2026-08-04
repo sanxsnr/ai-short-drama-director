@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for SHOT task and action-coverage validation."""
+"""Regression tests for SHOT task, action coverage, and viewpoint fitness."""
 
 from __future__ import annotations
 
@@ -23,6 +23,38 @@ def load_module():
 TASK = load_module()
 
 
+def base_camera(station_id: str = "STATION_ENTRY") -> dict:
+    return {
+        "region_id": "ROOM_SIDE_A",
+        "station_id": station_id,
+        "position_world": [10.5, 4.5, 1.6],
+        "forward_world": [1, 0, 0],
+        "height": 1.6,
+        "shot_scale": "medium",
+        "foreground_subject_id": "",
+        "background_anchor_id": "east_door_frame",
+        "motion_mode": "locked",
+        "psychological_distance": "observational",
+        "primary_scene_anchor_id": "east_door_threshold",
+        "visible_anchor_ids": [
+            "east_door_threshold",
+            "east_door_frame",
+            "entry_path",
+        ],
+    }
+
+
+def fitness(*, changed: bool = True, requires_new: bool = True, repeat_intent: str = "") -> dict:
+    return {
+        "task_requires_new_observation": requires_new,
+        "selected_station_serves_task": True,
+        "observation_signature_changed": changed,
+        "foreground_relation_changed": False,
+        "psychological_distance_changed": False,
+        "same_station_repetition_intent": repeat_intent,
+    }
+
+
 def entry_contract() -> dict:
     return {
         "shot_id": "SHOT_02",
@@ -31,17 +63,8 @@ def entry_contract() -> dict:
         "time_id": "night_01",
         "primary_subject_id": "su_qingyue",
         "viewpoint": "objective",
-        "camera": {
-            "zone_id": "east_door_inside",
-            "position_world": [10.5, 4.5, 1.6],
-            "forward_world": [1, 0, 0],
-            "primary_scene_anchor_id": "east_door_threshold",
-            "visible_anchor_ids": [
-                "east_door_threshold",
-                "east_door_frame",
-                "entry_path",
-            ],
-        },
+        "camera": base_camera(),
+        "viewpoint_fitness": fitness(),
         "required_evidence": [
             "door_frame_visible",
             "threshold_crossing_visible",
@@ -75,17 +98,16 @@ class ShotTaskTests(unittest.TestCase):
         result = TASK.validate(entry_contract())
         self.assertTrue(result["ok"], result)
         self.assertTrue(result["derived_independent_task"])
-        self.assertEqual(
-            "east_door_threshold",
-            result["observation_signature"]["primary_scene_anchor_id"],
-        )
+        self.assertTrue(result["viewpoint_fitness_passed"])
+        self.assertEqual("STATION_ENTRY", result["observation_signature"]["camera_station_id"])
 
     def test_side_character_shot_without_boundary_fails_entry(self):
         contract = entry_contract()
         contract["camera"].update(
             {
-                "zone_id": "post_side",
+                "station_id": "STATION_POST_SIDE",
                 "primary_scene_anchor_id": "su_qingyue",
+                "background_anchor_id": "su_qingyue",
                 "visible_anchor_ids": ["su_qingyue"],
             }
         )
@@ -113,12 +135,15 @@ class ShotTaskTests(unittest.TestCase):
             "primary_subject_id": "fox_tail",
             "viewpoint": "objective",
             "camera": {
-                "zone_id": "bed_side",
+                **base_camera("STATION_DONGSHENG_POV_SIDE"),
                 "position_world": [3, 5, 1.5],
                 "forward_world": [0, 1, 0],
+                "height": 1.5,
+                "background_anchor_id": "fox_tail",
                 "primary_scene_anchor_id": "fox_tail",
                 "visible_anchor_ids": ["fox_tail"],
             },
+            "viewpoint_fitness": fitness(),
             "required_evidence": ["tail_visible"],
             "visible_evidence": ["tail_visible"],
             "action": {
@@ -143,9 +168,54 @@ class ShotTaskTests(unittest.TestCase):
             "focus_subject_id": "su_qingyue",
             "axis_valid": True,
         }
+        contract["camera"]["foreground_subject_id"] = "shen_yuan"
+        contract["action"] = {
+            "dialogue_focus_reason": "关键回答",
+            "focus_subject_visible": True,
+            "new_visual_task_visible": True,
+            "mechanical_speaker_switch": False,
+        }
         result = TASK.validate(contract)
         self.assertFalse(result["ok"])
         self.assertTrue(any("foreground_shoulder_visible" in item for item in result["errors"]))
+
+    def test_dialogue_same_view_without_reason_fails(self):
+        contract = entry_contract()
+        contract["task_type"] = "DIALOGUE"
+        contract["viewpoint_fitness"] = fitness(changed=False, requires_new=True)
+        contract["action"] = {
+            "dialogue_focus_reason": "换人说话",
+            "focus_subject_visible": True,
+            "new_visual_task_visible": True,
+            "mechanical_speaker_switch": False,
+        }
+        result = TASK.validate(contract)
+        self.assertFalse(result["ok"])
+        self.assertIn("mechanical_dialogue_view_repetition", result["errors"])
+
+    def test_dialogue_same_station_with_explicit_standoff_intent_passes(self):
+        contract = entry_contract()
+        contract["task_type"] = "DIALOGUE"
+        contract["viewpoint_fitness"] = fitness(
+            changed=False,
+            requires_new=True,
+            repeat_intent="保持审讯式固定观察，强化权力僵持",
+        )
+        contract["action"] = {
+            "dialogue_focus_reason": "关键威胁落地",
+            "focus_subject_visible": True,
+            "new_visual_task_visible": True,
+            "mechanical_speaker_switch": False,
+        }
+        result = TASK.validate(contract)
+        self.assertTrue(result["ok"], result)
+
+    def test_missing_camera_station_fails(self):
+        contract = entry_contract()
+        contract["camera"]["station_id"] = ""
+        result = TASK.validate(contract)
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("camera.station_id" in item for item in result["errors"]))
 
 
 if __name__ == "__main__":

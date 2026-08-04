@@ -222,7 +222,8 @@ class PromptPackageValidatorTests(unittest.TestCase):
                         "id": "SHOT02",
                         "scene_id": "torture_room",
                         "time_id": "night_01",
-                        "camera_zone_id": "post_front",
+                        "camera_region_id": "post_side",
+                        "camera_station_id": "post_front",
                         "camera_forward_world": [1, 0, 0],
                         "primary_scene_anchor_id": "shen_yuan",
                         "task_validation": {
@@ -237,7 +238,8 @@ class PromptPackageValidatorTests(unittest.TestCase):
                         "id": "SHOT03",
                         "scene_id": "torture_room",
                         "time_id": "night_01",
-                        "camera_zone_id": "east_door_inside",
+                        "camera_region_id": "door_side",
+                        "camera_station_id": "east_door_inside",
                         "camera_forward_world": [1, 0, 0],
                         "primary_scene_anchor_id": "east_door_threshold",
                         "task_validation": {

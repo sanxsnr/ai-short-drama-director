@@ -101,9 +101,9 @@ SHOT数量由15统一镜头方案中的显式边界决定，并由14与13审核�
 - segment_content_type、shot_count、cut_count与显式SHOT边界。
 - 同一SHOT的camera_keyframes、连续景别变化、到达时刻和终点停稳时间。
 - time_passage启用时的摄影机锁定、场景几何、人物屏幕位置与可见时间变化。
-- SEG结构中的`shot_task`、`camera_zone`、`camera_direction`和`action_stage`已经显式填写；04／14的相近字段只提供值来源，不能替代结构字段名。
+- SEG结构中的`shot_task`、`camera_region`、`camera_station`、`camera_direction`和`action_stage`已经显式填写；04／14的相近字段只提供值来源，不能替代结构字段名。
 - 对每个显式新SHOT，14是否已取得`derived_independent_task=true`；同一SHOT的轨迹阶段是否通过`phase_coverage_passed`。
-- 相邻SHOT是否已按`13`标明视觉差异路径、30度适用性／不适用原因、景别差异和信息可见性。
+- 相邻SHOT是否已按`13`标明摄影点／观察关系、同轴大景别、主体／视角、组合差异或明确剪辑装置，并通过信息可见性检查。
 - CUT前结束状态与下一SHOT起始状态。
 - 原始对白是否完整，OS、画外音和实际对白是否区分。
 - 语速和动作时长是否可实现。
@@ -114,7 +114,7 @@ SHOT数量由15统一镜头方案中的显式边界决定，并由14与13审核�
 【SHOT 1】【00:00—00:XX】
 镜头任务／task_type：
 必要画面证据／动作状态转换：
-scene_id／camera_zone_id／scene anchor：
+scene_id／camera_region_id／camera_station_id／scene anchor：
 景别／机位／轴线侧／运镜：
 人物与道具起始状态：
 动作与对白：

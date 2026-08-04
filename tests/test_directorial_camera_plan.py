@@ -35,6 +35,12 @@ def base_plan() -> dict:
             "bounds_world": {"x": [0, 10], "y": [0, 8], "z": [0, 4]},
             "anchor_ids": ["bed", "round_window"],
             "walkable_zone_ids": ["bed_side_lane"],
+            "camera_allowed_regions": [
+                {"region_id": "ROOM_SAME_SIDE", "axis_side": "same_side"},
+            ],
+            "camera_station_candidates": [
+                {"station_id": "ROOM_MOVE_START", "region_id": "ROOM_SAME_SIDE", "position_world": [2, 2, 1.6], "forward_world": [0, 1, 0]},
+            ],
             "blocked_volumes": [],
             "relationship_axes": [
                 {"axis_id": "room_axis", "source_type": "fixed", "point_a_world": [8, 0, 0], "point_b_world": [8, 8, 0]},
@@ -45,6 +51,14 @@ def base_plan() -> dict:
             "max_actor_speed_units_per_second": 5,
             "max_camera_angular_speed_degrees_per_second": 90,
             "locked_facts": ["床头到圆窗之间存在可通行床侧通道"],
+        },
+        "scene_camera_grammar": {
+            "dramatic_progression": "人物关系转向时间见证",
+            "coverage_intent": "从床头关系位移动到圆窗时间位，不把全场压成单一观察点",
+            "station_library": ["ROOM_MOVE_START"],
+            "planned_station_sequence": ["ROOM_MOVE_START"],
+            "shot_scale_curve": ["MS_TO_WINDOW_MASTER"],
+            "psychological_distance_curve": ["relationship_to_observation"],
         },
         "beats": [
             {
@@ -73,6 +87,18 @@ def base_plan() -> dict:
                 "primary_subject_id": "dong_and_asuo",
                 "actor_ids": ["dongsheng", "asuo"],
                 "beat_ids": ["B1", "B2"],
+                "camera_station_id": "ROOM_MOVE_START",
+                "camera_station_inherited_from_previous": False,
+                "shot_solution_lock": {"scope": "shot", "locked_camera_station_id": "ROOM_MOVE_START"},
+                "observation_signature": {
+                    "camera_region_id": "ROOM_SAME_SIDE",
+                    "shot_scale": "MS_TO_WINDOW_MASTER",
+                    "foreground_subject_id": "none",
+                    "background_anchor_id": "round_window",
+                    "viewpoint_type": "objective",
+                    "motion_mode": "continuous_motion",
+                    "psychological_distance": "relationship_to_observation",
+                },
                 "camera_trajectory_intent": {
                     "start_composition": "床头双人中景",
                     "path_intent": "沿床侧通道缓慢推进到圆窗后保持固定",
@@ -93,6 +119,7 @@ def base_plan() -> dict:
             "shot_solutions": [
                 {
                     "shot_id": "S1",
+                    "camera_station_id": "ROOM_MOVE_START",
                     "axis_policy": "preserve",
                     "relationship_axis_id": "room_axis",
                     "camera_keyframes": [
@@ -127,11 +154,32 @@ def two_shot_plan() -> dict:
             "required_visible_evidence": ["醒来", "脚落床外侧"],
         },
     ]
+    p["scene_space_basis"]["camera_station_candidates"] = [
+        {"station_id": "FLOOR_DONG", "region_id": "ROOM_SAME_SIDE", "position_world": [5, 2, 0.5], "forward_world": [0, 1, 0]},
+        {"station_id": "BED_LOW_ASUO", "region_id": "ROOM_SAME_SIDE", "position_world": [5, 4, 0.4], "forward_world": [0, 1, 0]},
+    ]
+    p["scene_camera_grammar"] = {
+        "dramatic_progression": "董生反应转向阿琐下床威胁",
+        "coverage_intent": "使用两个不同低位摄影点完成视线揭示，不复用同一视角",
+        "station_library": ["FLOOR_DONG", "BED_LOW_ASUO"],
+        "planned_station_sequence": ["FLOOR_DONG", "BED_LOW_ASUO"],
+        "shot_scale_curve": ["MS", "MLS"],
+        "psychological_distance_curve": ["vulnerability", "threat"],
+    }
     p["shots"] = [
         {
             "shot_id": "S1", "start_seconds": 0, "end_seconds": 5,
             "dramatic_task": "拍董生跌地后的目光", "primary_subject_id": "dongsheng",
             "actor_ids": ["dongsheng"], "beat_ids": ["B1"],
+            "camera_station_id": "FLOOR_DONG",
+            "camera_station_inherited_from_previous": False,
+            "shot_solution_lock": {"scope": "shot", "locked_camera_station_id": "FLOOR_DONG"},
+            "observation_signature": {
+                "camera_region_id": "ROOM_SAME_SIDE", "shot_scale": "MS",
+                "foreground_subject_id": "none", "background_anchor_id": "bed",
+                "viewpoint_type": "objective", "motion_mode": "locked",
+                "psychological_distance": "vulnerability",
+            },
             "camera_trajectory_intent": {
                 "start_composition": "地面正面中景", "path_intent": "保持固定构图",
                 "movement_purpose": "让跌地反应在稳定画面中成立", "speed_rhythm": "固定",
@@ -149,6 +197,15 @@ def two_shot_plan() -> dict:
             "shot_id": "S2", "start_seconds": 5, "end_seconds": 10,
             "dramatic_task": "低位反打阿琐下床", "primary_subject_id": "asuo",
             "actor_ids": ["asuo"], "beat_ids": ["B2"],
+            "camera_station_id": "BED_LOW_ASUO",
+            "camera_station_inherited_from_previous": False,
+            "shot_solution_lock": {"scope": "shot", "locked_camera_station_id": "BED_LOW_ASUO"},
+            "observation_signature": {
+                "camera_region_id": "ROOM_SAME_SIDE", "shot_scale": "MLS",
+                "foreground_subject_id": "dong_floor_edge", "background_anchor_id": "bed",
+                "viewpoint_type": "objective", "motion_mode": "continuous_motion",
+                "psychological_distance": "threat",
+            },
             "camera_trajectory_intent": {
                 "start_composition": "董生地面一侧低机位朝床", "path_intent": "保持低位并轻微跟随阿琐落脚",
                 "movement_purpose": "维持低位压迫并看清下床动作", "speed_rhythm": "落脚时短促跟随后停稳",
@@ -160,7 +217,7 @@ def two_shot_plan() -> dict:
     ]
     p["spatial_solution"]["shot_solutions"] = [
         {
-            "shot_id": "S1", "axis_policy": "preserve", "relationship_axis_id": "room_axis",
+            "shot_id": "S1", "camera_station_id": "FLOOR_DONG", "axis_policy": "preserve", "relationship_axis_id": "room_axis",
             "camera_keyframes": [
                 {"time_seconds": 0, "position_world": [5, 2, 0.5], "forward_world": [0, 1, 0], "framing": "董生地面中景"},
                 {"time_seconds": 5, "position_world": [5, 2, 0.5], "forward_world": [0, 1, 0], "framing": "董生地面中景"},
@@ -171,7 +228,7 @@ def two_shot_plan() -> dict:
             ],
         },
         {
-            "shot_id": "S2", "axis_policy": "preserve", "relationship_axis_id": "room_axis",
+            "shot_id": "S2", "camera_station_id": "BED_LOW_ASUO", "axis_policy": "preserve", "relationship_axis_id": "room_axis",
             "camera_keyframes": [
                 {"time_seconds": 5, "position_world": [5, 4, 0.4], "forward_world": [0, 1, 0], "framing": "低位床榻中全景"},
                 {"time_seconds": 9, "position_world": [5.2, 4.2, 0.4], "forward_world": [0, 1, 0], "framing": "低位阿琐全身"},
